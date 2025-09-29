@@ -1,14 +1,13 @@
 package com.condominio.persistence.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Getter
 @Service
@@ -23,4 +22,7 @@ public class Casa {
     private Propietario propietario;
     @OneToOne
     private Arrendatario arrendatario;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<Miembro> miembros;
+
 }
