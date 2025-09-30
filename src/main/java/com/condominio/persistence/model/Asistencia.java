@@ -7,17 +7,23 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Getter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
-public class Arrendatario extends Persona {
+public class Asistencia {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Date fecha;
+    @ManyToOne(targetEntity = Casa.class)
+    private Casa casas;
     @OneToOne
-    private UserEntity user;
-    @Enumerated(EnumType.STRING)
-    private TipoDocumento tipoDocumento;
-    private String numeroDocumento;
-    private long telefono;
+    private Asamblea asamblea;
+    private Boolean estado;
+
 }

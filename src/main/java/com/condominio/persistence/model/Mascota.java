@@ -13,11 +13,12 @@ import org.springframework.stereotype.Service;
 @NoArgsConstructor
 @Builder
 @Entity
-public class Arrendatario extends Persona {
-    @OneToOne
-    private UserEntity user;
+public class Mascota {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @Enumerated(EnumType.STRING)
-    private TipoDocumento tipoDocumento;
-    private String numeroDocumento;
-    private long telefono;
+    private TipoMascota tipoMascota;
+    @ManyToOne(targetEntity = Casa.class)
+    private Casa casa;
 }

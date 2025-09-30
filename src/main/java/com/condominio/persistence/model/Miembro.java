@@ -1,6 +1,7 @@
 package com.condominio.persistence.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,11 +14,8 @@ import org.springframework.stereotype.Service;
 @NoArgsConstructor
 @Builder
 @Entity
-public class Arrendatario extends Persona {
-    @OneToOne
-    private UserEntity user;
-    @Enumerated(EnumType.STRING)
-    private TipoDocumento tipoDocumento;
-    private String numeroDocumento;
-    private long telefono;
+public class Miembro extends Persona{
+    private Boolean estado;
+    @ManyToOne(targetEntity = Casa.class)
+    private Casa casa;
 }
