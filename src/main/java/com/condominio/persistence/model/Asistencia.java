@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Service
@@ -20,9 +21,10 @@ public class Asistencia {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Date fecha;
-    @ManyToOne
-    private Casa casa;
+    @OneToMany
+    private List<Casa> casas;
     @OneToOne
     private Asamblea asamblea;
     private Boolean estado;
+
 }
