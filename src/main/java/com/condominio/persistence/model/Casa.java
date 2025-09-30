@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 
 @Getter
 @Service
@@ -24,9 +23,4 @@ public class Casa {
     private Propietario propietario;
     @OneToOne
     private Arrendatario arrendatario;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<Miembro> miembros;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<Mascota> mascotas;
-
 }

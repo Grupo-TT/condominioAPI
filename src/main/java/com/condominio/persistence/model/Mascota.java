@@ -19,4 +19,6 @@ public class Mascota {
     private Long id;
     @Enumerated(EnumType.STRING)
     private TipoMascota tipoMascota;
+    @ManyToOne(targetEntity = Casa.class)
+    private Casa casa;
 }
