@@ -22,7 +22,7 @@ public class Obligacion {
     @Column
     private int monto;
 
-    private Date fechaLimite;
+    private LocalDate fechaLimite;
     private int diasGracias;
     private int diasMaxMora;
     private int tasaInteres;
