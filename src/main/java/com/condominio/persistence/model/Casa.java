@@ -23,4 +23,5 @@ public class Casa {
     private Propietario propietario;
     @OneToOne
     private Arrendatario arrendatario;
+
 }
