@@ -55,7 +55,7 @@ class PersonaServiceTest {
 
     @Test
     void save_ShouldReturnSuccessResult_WhenDataIsValid() {
-        // Arrange
+
         PersonaRegistroDTO dto = new PersonaRegistroDTO();
         dto.setEmail("test@example.com");
         dto.setNumeroDocumento(123L);
