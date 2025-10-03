@@ -22,7 +22,7 @@ public class PersonaController {
 
     }
 
-    @PostMapping("/prueba")
+    @PostMapping("/register")
     public ResponseEntity<SuccessResult<PersonaRegistroDTO>> createPersona(
             @RequestBody PersonaRegistroDTO personaRegistro) {
 
