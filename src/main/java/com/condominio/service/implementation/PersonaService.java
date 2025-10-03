@@ -79,7 +79,6 @@ public class PersonaService implements IPersonaService {
 
 
         Persona newPersona = modelMapper.map(persona, Persona.class);
-        System.out.println(newPersona);
         newPersona.setUser(userEntity);
         newPersona.setEstado(true);
         newPersona.setComiteConvivencia(false);
