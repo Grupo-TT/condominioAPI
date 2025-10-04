@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class Miembro {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long  id;
+    Long id;
     private Boolean estado;
     @ManyToOne(targetEntity = Casa.class)
     private Casa casa;

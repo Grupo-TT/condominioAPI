@@ -22,13 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PersonaService implements IPersonaService {
 
-
     private final IUserService userService;
     private final PersonaRepository personaRepository;
     private final ICasaService casaService;
     private final ModelMapper modelMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
-
 
     public PersonaService(IUserService userService,
                           PersonaRepository personaRepository,
@@ -42,15 +40,12 @@ public class PersonaService implements IPersonaService {
         this.casaService = casaService;
         this.modelMapper = modelMapper;
         this.applicationEventPublisher = applicationEventPublisher;
-
-
     }
 
     @Override
     public Boolean existsByNumeroDeDocumento(Long numeroDeDocumento) {
         return personaRepository.findByNumeroDocumento(numeroDeDocumento).isPresent();
     }
-
 
     @Override
     public boolean existsRoleInCasa(Long casaId, RoleEnum roleEnum) {
@@ -83,7 +78,6 @@ public class PersonaService implements IPersonaService {
                         HttpStatus.NOT_FOUND
                 ));
 
-
         Persona newPersona = modelMapper.map(persona, Persona.class);
         newPersona.setUser(userEntity);
         newPersona.setEstado(true);
@@ -94,6 +88,5 @@ public class PersonaService implements IPersonaService {
         applicationEventPublisher.publishEvent(new CreatedPersonaEvent(savedPersona));
         return new SuccessResult<>("Persona registrada correctamente", savedPersona);
     }
-
 
 }
