@@ -77,9 +77,7 @@ class UserServiceTest {
         when(userRepository.findUserEntityByEmail("missing@example.com")).thenReturn(null);
 
         // Act & Assert
-        assertThrows(UsernameNotFoundException.class, () -> {
-            userService.loadUserByUsername("missing@example.com");
-        });
+        assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername("missing@example.com"));
         verify(userRepository, times(1)).findUserEntityByEmail("missing@example.com");
     }
 
