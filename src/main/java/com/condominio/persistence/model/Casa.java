@@ -1,14 +1,12 @@
 package com.condominio.persistence.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 
 
 @Getter
+@Setter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,9 +17,5 @@ public class Casa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private int numeroCasa;
-    @ManyToOne
-    private Propietario propietario;
-    @OneToOne
-    private Arrendatario arrendatario;
 
 }

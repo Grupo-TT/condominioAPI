@@ -1,6 +1,7 @@
 package com.condominio.persistence.model;
 
 import jakarta.persistence.*;
+
 import lombok.*;
 
 import java.util.HashSet;
