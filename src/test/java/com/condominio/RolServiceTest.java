@@ -1,4 +1,4 @@
-package com.condominio.service;
+package com.condominio;
 
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
