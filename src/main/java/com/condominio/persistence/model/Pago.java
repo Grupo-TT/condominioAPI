@@ -1,4 +1,5 @@
 package com.condominio.persistence.model;
+
 import jakarta.persistence.*;
 import lombok.*;
 

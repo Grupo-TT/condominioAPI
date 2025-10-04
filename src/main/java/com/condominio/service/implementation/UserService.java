@@ -20,7 +20,6 @@ public class UserService implements IUserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
 
-
     public UserService(UserRepository userRepository,
                        BCryptPasswordEncoder passwordEncoder,
                        RoleRepository roleRepository) {
@@ -55,9 +54,7 @@ public class UserService implements IUserService {
 
         userRepository.save(userEntity);
 
-
         return userEntity;
-
     }
 
 }

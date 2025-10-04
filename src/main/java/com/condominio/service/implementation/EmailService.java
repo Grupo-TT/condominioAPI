@@ -14,7 +14,6 @@ import static com.condominio.util.constants.AppConstants.*;
 @Service
 public class EmailService {
 
-
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
