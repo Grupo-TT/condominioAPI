@@ -10,8 +10,10 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.ICasaService;
 import com.condominio.service.interfaces.IPersonaService;
 import com.condominio.service.interfaces.IUserService;
+import com.condominio.util.events.CreatedPersonaEvent;
 import com.condominio.util.exception.ApiException;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +27,21 @@ public class PersonaService implements IPersonaService {
     private final PersonaRepository personaRepository;
     private final ICasaService casaService;
     private final ModelMapper modelMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
 
     public PersonaService(IUserService userService,
                           PersonaRepository personaRepository,
                           ModelMapper modelMapper,
-                          ICasaService casaService
+                          ICasaService casaService,
+                          ApplicationEventPublisher applicationEventPublisher
+
     ) {
         this.userService = userService;
         this.personaRepository = personaRepository;
         this.casaService = casaService;
         this.modelMapper = modelMapper;
+        this.applicationEventPublisher = applicationEventPublisher;
 
 
     }
@@ -85,6 +91,7 @@ public class PersonaService implements IPersonaService {
         newPersona.setJunta(false);
         newPersona.setCasa(findCasa);
         Persona savedPersona = personaRepository.save(newPersona);
+        applicationEventPublisher.publishEvent(new CreatedPersonaEvent(savedPersona));
         return new SuccessResult<>("Persona registrada correctamente", savedPersona);
     }
 

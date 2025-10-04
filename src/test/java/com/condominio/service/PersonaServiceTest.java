@@ -10,14 +10,17 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.PersonaService;
 import com.condominio.service.interfaces.ICasaService;
 import com.condominio.service.interfaces.IUserService;
+import com.condominio.util.events.CreatedPersonaEvent;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +43,9 @@ class PersonaServiceTest {
 
     @InjectMocks
     private PersonaService personaService;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     private AutoCloseable closeable;
 
@@ -182,4 +188,51 @@ class PersonaServiceTest {
         verify(personaRepository).existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa());
         verify(casaService).findById(dto.getIdCasa());
     }
+
+    @Test
+    void save_ShouldPublishCreatedPersonaEvent_WhenPersonaIsSaved() {
+        // Arrange
+        PersonaRegistroDTO dto = new PersonaRegistroDTO();
+        dto.setEmail("event@example.com");
+        dto.setNumeroDocumento(456L);
+        dto.setRolEnCasa(RoleEnum.PROPIETARIO);
+        dto.setIdCasa(10L);
+
+        UserEntity mockUser = new UserEntity();
+        mockUser.setEmail(dto.getEmail());
+
+        Casa mockCasa = new Casa();
+        mockCasa.setId(dto.getIdCasa());
+        mockCasa.setNumeroCasa(20);
+
+        Persona mappedPersona = new Persona();
+        Persona savedPersona = new Persona();
+
+        when(userService.createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa()))
+                .thenReturn(mockUser);
+        when(personaRepository.findByNumeroDocumento(dto.getNumeroDocumento()))
+                .thenReturn(Optional.empty());
+        when(personaRepository.existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa()))
+                .thenReturn(false);
+        when(casaService.findById(dto.getIdCasa()))
+                .thenReturn(Optional.of(mockCasa));
+        when(modelMapper.map(dto, Persona.class))
+                .thenReturn(mappedPersona);
+        when(personaRepository.save(any(Persona.class)))
+                .thenReturn(savedPersona);
+
+
+        personaService.save(dto);
+
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+
+        verify(applicationEventPublisher).publishEvent(captor.capture());
+
+        Object captured = captor.getValue();
+        assertInstanceOf(CreatedPersonaEvent.class, captured);
+        assertEquals(savedPersona, ((CreatedPersonaEvent) captured).getPersona());
+
+    }
+
 }
