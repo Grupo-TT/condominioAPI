@@ -1,4 +1,4 @@
-package com.condominio.service;
+package com.condominio;
 
 import com.condominio.service.implementation.EmailService;
 import jakarta.mail.MessagingException;
@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thymeleaf.TemplateEngine;
@@ -16,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+
+@SpringBootTest
 @ExtendWith(MockitoExtension.class)
 class EmailServiceTest {
 
