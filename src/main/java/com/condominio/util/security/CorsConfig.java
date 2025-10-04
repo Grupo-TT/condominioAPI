@@ -1,4 +1,4 @@
-package com.condominio.util.configuration;
+package com.condominio.util.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
