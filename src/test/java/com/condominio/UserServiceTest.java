@@ -14,8 +14,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.Optional;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -43,6 +47,40 @@ class UserServiceTest {
     @AfterEach
     void tearDown() throws Exception {
         closeable.close();
+    }
+
+    @Test
+    void loadUserByUsername_shouldReturnUserDetails_whenUserExists() {
+        // Arrange
+        UserEntity userEntity = mock(UserEntity.class);
+        when(userEntity.getEmail()).thenReturn("test@example.com");
+        when(userEntity.getContrasenia()).thenReturn("encodedPassword");
+        when(userEntity.getRoles()).thenReturn(Set.of(mock(RoleEntity.class)));
+
+        when(userRepository.findUserEntityByEmail("test@example.com")).thenReturn(userEntity);
+
+        // Act
+        UserDetails userDetails = userService.loadUserByUsername("test@example.com");
+
+        // Assert
+        assertNotNull(userDetails, "UserDetails no debe ser nulo");
+        assertEquals("test@example.com", userDetails.getUsername());
+        assertEquals("encodedPassword", userDetails.getPassword());
+        // Al menos una autoridad presente (no comprobamos nombre exacto porque depende de tu mapeo).
+        assertFalse(userDetails.getAuthorities().isEmpty());
+        verify(userRepository, times(1)).findUserEntityByEmail("test@example.com");
+    }
+
+    @Test
+    void loadUserByUsername_shouldThrow_whenUserNotFound() {
+        // Arrange
+        when(userRepository.findUserEntityByEmail("missing@example.com")).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(UsernameNotFoundException.class, () -> {
+            userService.loadUserByUsername("missing@example.com");
+        });
+        verify(userRepository, times(1)).findUserEntityByEmail("missing@example.com");
     }
 
     @Test
