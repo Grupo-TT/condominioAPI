@@ -23,6 +23,12 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
             "JOIN u.roles r " +
             "WHERE p.casa.id = :casaId AND r.roleEnum = 'PROPIETARIO'")
     Optional<Persona> findPropietarioByCasaId(@Param("casaId") Long casaId);
+
+    @Query("SELECT p FROM Persona p " +
+            "JOIN p.user u " +
+            "JOIN u.roles r " +
+            "WHERE p.casa.id = :casaId AND r.roleEnum = 'ARRENDATARIO'")
+    Optional<Persona> findArrendatarioByCasaId(@Param("casaId") Long casaId);
 }
 
 
