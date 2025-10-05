@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MiembroRepository extends CrudRepository<Miembro, Long> {
+    int countByCasaId(Long IdCasa);
 }

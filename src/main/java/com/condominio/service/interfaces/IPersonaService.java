@@ -10,4 +10,5 @@ public interface IPersonaService {
     SuccessResult<Persona> save(PersonaRegistroDTO persona);
     boolean existsRoleInCasa(Long casaId, RoleEnum roleEnum);
 
+
 }

@@ -191,7 +191,7 @@ class PersonaServiceTest {
 
     @Test
     void save_ShouldPublishCreatedPersonaEvent_WhenPersonaIsSaved() {
-        // Arrange
+
         PersonaRegistroDTO dto = new PersonaRegistroDTO();
         dto.setEmail("event@example.com");
         dto.setNumeroDocumento(456L);
