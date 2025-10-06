@@ -7,25 +7,37 @@ import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.interfaces.IUserService;
 import com.condominio.util.exception.ApiException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Set;
 
+@RequiredArgsConstructor
 @Service
-public class UserService implements IUserService {
+public class UserService implements IUserService, UserDetailsService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
 
-    public UserService(UserRepository userRepository,
-                       BCryptPasswordEncoder passwordEncoder,
-                       RoleRepository roleRepository) {
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        UserEntity user = userRepository.findUserEntityByEmail(username);
 
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.roleRepository = roleRepository;
+        if (user == null) {
+            throw new UsernameNotFoundException("Usuario no encontrado");
+        }
+
+        return User.builder()
+                .username(user.getEmail())
+                .password(user.getContrasenia())
+                .roles(String.valueOf(user.getRoles()))
+                .build();
     }
 
     public Boolean existsByEmail(String email) {
