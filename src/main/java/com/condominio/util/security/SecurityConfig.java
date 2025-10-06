@@ -29,17 +29,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/login", "/auth/**", "/error").permitAll();
                     auth.anyRequest().authenticated();
-                    // auth.anyRequest().permitAll(); <-//Descomentar si se necesita para probar y comentar linea 28
                 })
                 .cors(cors -> {})
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .formLogin(form -> Customizer.withDefaults()) // Login Provisional para verificar autenticacion
+                .formLogin(form -> Customizer.withDefaults())
                 .logout(LogoutConfigurer::permitAll)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                //.httpBasic(Customizer.withDefaults()) //configuracion de Autenticacion basica mientras se implementa por completo JWT
                 .userDetailsService(userDetailsService)
                 .build();
     }

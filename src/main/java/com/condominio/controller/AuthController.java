@@ -28,7 +28,6 @@ public class AuthController {
             var auth = new UsernamePasswordAuthenticationToken(request.username(), request.password());
             authenticationManager.authenticate(auth);
 
-            // Si llegamos aquí, las credenciales son correctas
             String token = jwtUtil.generateToken(request.username());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (AuthenticationException ex) {
