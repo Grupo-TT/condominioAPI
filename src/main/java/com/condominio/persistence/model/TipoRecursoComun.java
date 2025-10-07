@@ -5,6 +5,7 @@ import lombok.*;
 import org.springframework.stereotype.Service;
 
 @Getter
+@Setter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,6 +16,8 @@ public class TipoRecursoComun {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
+    private String nombre;
     @Column
     private String descripcion;
 }

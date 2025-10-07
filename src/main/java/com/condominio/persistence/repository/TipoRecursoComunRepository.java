@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TipoRecursoComunRepository extends CrudRepository<TipoRecursoComun, Long> {
+
+    boolean existsByNombreIgnoreCase(String nombre);
+
 }
