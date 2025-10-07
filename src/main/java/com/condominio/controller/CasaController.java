@@ -27,6 +27,6 @@ public class CasaController {
     public SuccessResult<CasaCuentaDTO> obtenerEstadoCuenta(
             @PathVariable Long idCasa
             ) {
-        return casaService.EstadoDeCuenta(idCasa);
+        return casaService.estadoDeCuenta(idCasa);
     }
 }

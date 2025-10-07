@@ -25,8 +25,8 @@ public class MiembroService implements IMiembroService {
     private final MiembroRepository miembroRepository;
     private final PersonaRepository personaRepository;
     @Override
-    public int countByCasaId(Long IdCasa) {
-        return miembroRepository.countByCasaId(IdCasa);
+    public int countByCasaId(Long idCasa) {
+        return miembroRepository.countByCasaId(idCasa);
     }
 
     @Override

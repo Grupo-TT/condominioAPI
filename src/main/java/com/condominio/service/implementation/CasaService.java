@@ -45,7 +45,7 @@ public class CasaService implements ICasaService {
     }
 
     @Override
-    public SuccessResult<CasaCuentaDTO> EstadoDeCuenta(Long idCasa) {
+    public SuccessResult<CasaCuentaDTO> estadoDeCuenta(Long idCasa) {
 
         List<Obligacion> todasObligaciones = obligacionRepository.findByCasaId(idCasa);
 
