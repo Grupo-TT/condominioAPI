@@ -21,7 +21,7 @@ public class PersonaListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePersonaCreada(CreatedPersonaEvent event) throws MessagingException {
         Persona persona = event.getPersona();
-        emailService.enviarPasswordTemporal(persona.getUser().getEmail(), String.valueOf(persona.getNumeroDocumento()));
+        //emailService.enviarPasswordTemporal(persona.getUser().getEmail(), String.valueOf(persona.getNumeroDocumento()));
     }
 }
 
