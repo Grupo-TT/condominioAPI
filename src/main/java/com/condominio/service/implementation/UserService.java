@@ -34,10 +34,15 @@ public class UserService implements IUserService, UserDetailsService {
             throw new UsernameNotFoundException("Usuario no encontrado");
         }
 
+        String[] roles = user.getRoles()
+                .stream()
+                .map(roleEntity -> roleEntity.getRoleEnum().name())
+                .toArray(String[]::new);
+
         return User.builder()
                 .username(user.getEmail())
                 .password(user.getContrasenia())
-                .roles(String.valueOf(user.getRoles()))
+                .roles(roles)
                 .build();
     }
 
