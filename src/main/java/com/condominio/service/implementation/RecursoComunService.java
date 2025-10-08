@@ -35,23 +35,23 @@ public class RecursoComunService implements IRecursoComunService {
     }
 
     @Override
-    public SuccessResult<RecursoComun> save(RecursoComunDTO Recurso) {
-        if(recursoComunRepository.existsByNombreIgnoreCase(Recurso.getNombre())) {
+    public SuccessResult<RecursoComun> save(RecursoComunDTO recurso) {
+        if(recursoComunRepository.existsByNombreIgnoreCase(recurso.getNombre())) {
             throw new ApiException("El recurso comun ya existe", HttpStatus.CONFLICT);
         }
-        if (Recurso.getTipoRecursoComun() == null ||
-                Recurso.getTipoRecursoComun().getId() == null) {
+        if (recurso.getTipoRecursoComun() == null ||
+                recurso.getTipoRecursoComun().getId() == null) {
 
             throw new ApiException(
                     "Debe especificar un Tipo de recurso válido", HttpStatus.BAD_REQUEST);
         }
 
         TipoRecursoComun tipo = tipoRecursoComunRepository.
-                findById(Recurso.getTipoRecursoComun().getId())
+                findById(recurso.getTipoRecursoComun().getId())
                 .orElseThrow(() -> new ApiException(
                         "El Tipo de recurso no existe", HttpStatus.NOT_FOUND));
 
-        RecursoComun newRecurso = modelMapper.map(Recurso, RecursoComun.class);
+        RecursoComun newRecurso = modelMapper.map(recurso, RecursoComun.class);
         newRecurso.setTipoRecursoComun(tipo);
         recursoComunRepository.save(newRecurso);
 

@@ -10,5 +10,5 @@ import java.util.List;
 public interface IRecursoComunService {
 
     List<RecursoComun> findAll();
-    SuccessResult<RecursoComun> save(RecursoComunDTO Recurso);
+    SuccessResult<RecursoComun> save(RecursoComunDTO recurso);
 }
