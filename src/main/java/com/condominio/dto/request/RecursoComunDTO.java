@@ -14,5 +14,5 @@ public class RecursoComunDTO {
 
     private String nombre;
     private String descripcion;
-    private TipoRecursoComun recursoComun;
+    private TipoRecursoComun tipoRecursoComun;
 }

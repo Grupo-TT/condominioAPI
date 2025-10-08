@@ -22,5 +22,5 @@ public class RecursoComun {
 
     @ManyToOne(targetEntity = TipoRecursoComun.class)
     @JoinColumn(nullable = false)
-    private TipoRecursoComun recursoComun;
+    private TipoRecursoComun tipoRecursoComun;
 }

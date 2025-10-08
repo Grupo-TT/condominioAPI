@@ -3,6 +3,7 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.RecursoComunDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.RecursoComun;
+import com.condominio.persistence.model.TipoRecursoComun;
 import com.condominio.persistence.repository.RecursoComunRepository;
 import com.condominio.persistence.repository.TipoRecursoComunRepository;
 import com.condominio.service.interfaces.IRecursoComunService;
@@ -34,17 +35,26 @@ public class RecursoComunService implements IRecursoComunService {
     }
 
     @Override
-    public SuccessResult<RecursoComunDTO> save(RecursoComunDTO Recurso) {
+    public SuccessResult<RecursoComun> save(RecursoComunDTO Recurso) {
         if(recursoComunRepository.existsByNombreIgnoreCase(Recurso.getNombre())) {
             throw new ApiException("El recurso comun ya existe", HttpStatus.CONFLICT);
         }
-        if(!tipoRecursoComunRepository.existsById(Recurso.getRecursoComun().getId())){
+        if (Recurso.getTipoRecursoComun() == null ||
+                Recurso.getTipoRecursoComun().getId() == null) {
 
-            throw new ApiException("El Tipo de recurso no existe", HttpStatus.NOT_FOUND);
+            throw new ApiException(
+                    "Debe especificar un Tipo de recurso válido", HttpStatus.BAD_REQUEST);
         }
+
+        TipoRecursoComun tipo = tipoRecursoComunRepository.
+                findById(Recurso.getTipoRecursoComun().getId())
+                .orElseThrow(() -> new ApiException(
+                        "El Tipo de recurso no existe", HttpStatus.NOT_FOUND));
+
         RecursoComun newRecurso = modelMapper.map(Recurso, RecursoComun.class);
+        newRecurso.setTipoRecursoComun(tipo);
         recursoComunRepository.save(newRecurso);
 
-        return new SuccessResult<>("Recurso registrado correctamente", Recurso);
+        return new SuccessResult<>("Recurso registrado correctamente", newRecurso);
     }
 }

@@ -18,19 +18,19 @@ public class RecursoComunController {
 
     private final IRecursoComunService recursoComunService;
 
-    @GetMapping("/All/Recursos")
+    @GetMapping("/All")
     public ResponseEntity<SuccessResult<List<RecursoComun>>> findAll(){
         List<RecursoComun> recursos = recursoComunService.findAll();
         SuccessResult<List<RecursoComun>> response =
-                new SuccessResult<>("Recursos obtenidos exitosamente", recursos);
+                new SuccessResult<>("Recursos  comunes obtenidos exitosamente", recursos);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/Create")
-    public ResponseEntity<SuccessResult<RecursoComunDTO>> create(
+    public ResponseEntity<SuccessResult<RecursoComun>> create(
             @RequestBody RecursoComunDTO recursoComun) {
-        SuccessResult<RecursoComunDTO> result = recursoComunService.save(recursoComun);
+        SuccessResult<RecursoComun> result = recursoComunService.save(recursoComun);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 }

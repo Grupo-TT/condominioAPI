@@ -71,7 +71,7 @@ public class TipoRecursoComunServiceTest {
 
         ApiException exception = assertThrows(ApiException.class, () -> tipoRecursoComunService.save(dto));
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
         assertTrue(exception.getMessage().contains("ya se  encuentra registrado"));
         verify(tipoRecursoComunRepository, never()).save(any(TipoRecursoComun.class));
     }

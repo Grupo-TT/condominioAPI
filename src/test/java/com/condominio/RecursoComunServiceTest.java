@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -43,19 +45,28 @@ class RecursoComunServiceTest {
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
 
+        TipoRecursoComun tipo = new TipoRecursoComun();
+        tipo.setId(1L);
+        dto.setTipoRecursoComun(tipo);
+
         RecursoComun entidad = new RecursoComun();
         entidad.setNombre("Cancha");
         entidad.setDescripcion("Cancha de fútbol");
+        entidad.setTipoRecursoComun(tipo);
 
         when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
+        when(tipoRecursoComunRepository.findById(1L)).thenReturn(Optional.of(tipo));
         when(modelMapper.map(dto, RecursoComun.class)).thenReturn(entidad);
+        when(recursoComunRepository.save(any(RecursoComun.class))).thenReturn(entidad);
 
 
-        SuccessResult<RecursoComunDTO> result = recursoComunService.save(dto);
+        SuccessResult<RecursoComun> result = recursoComunService.save(dto);
 
 
         assertEquals("Recurso registrado correctamente", result.message());
-        assertEquals(dto.getNombre(), result.data().getNombre());
+        assertEquals("Cancha", result.data().getNombre());
+        assertEquals("Cancha de fútbol", result.data().getDescripcion());
+        assertEquals(1L, result.data().getTipoRecursoComun().getId());
         verify(recursoComunRepository, times(1)).save(any(RecursoComun.class));
     }
 
@@ -117,16 +128,16 @@ class RecursoComunServiceTest {
 
         TipoRecursoComun tipo = new TipoRecursoComun();
         tipo.setId(99L);
-        dto.setRecursoComun(tipo);
+        dto.setTipoRecursoComun(tipo);
 
         when(recursoComunRepository.existsByNombreIgnoreCase("Gimnasio")).thenReturn(false);
-        when(tipoRecursoComunRepository.existsById(99L)).thenReturn(false);
+        when(tipoRecursoComunRepository.findById(99L)).thenReturn(Optional.empty());
 
 
         ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        assertTrue(exception.getMessage().contains("Tipo de recurso no existe"));
+        assertTrue(exception.getMessage().contains("El Tipo de recurso no existe"));
 
         verify(recursoComunRepository, never()).save(any());
     }
