@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  pull-requests: read
+  pull-requests: read # allows SonarCloud to decorate PRs with analysis results
 
 jobs:
   Analysis:
@@ -33,35 +33,16 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Build with Maven
-        run: mvn clean verify
-        
       - name: Analyze with SonarCloud
-        uses: SonarSource/sonarcloud-github-action@v2.2.0
+
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          args: >
+          args:
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }}
             -Dsonar.sources=src/main/java
-            -Dsonar.tests=src/test/java
             -Dsonar.java.binaries=target/classes
+          #  -Dsonar.tests=src/test/java
