@@ -83,12 +83,20 @@ jobs:
             DB_NAME_CONDOMINIO="${{ secrets.DB_NAME_CONDOMINIO }}" \
             USER_DB_CONDOMINIO="${{ secrets.USER_DB_CONDOMINIO }}" \
             PASSWORD_DB_CONDOMINIO="${{ secrets.PASSWORD_DB_CONDOMINIO }}" \
+            EMAIL_CONDOMINIO="${{ secrets.EMAIL_CONDOMINIO }}" \
+            EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
+            JWT_EXPIRATION_TIME="${{ secrets.JWT_EXPIRATION_TIME }}" \
+            JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
             docker-compose pull && \
             GITHUB_REPOSITORY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]') \
             DB_HOST_CONDOMINIO="${{ secrets.DB_HOST_CONDOMINIO }}" \
             DB_NAME_CONDOMINIO="${{ secrets.DB_NAME_CONDOMINIO }}" \
             USER_DB_CONDOMINIO="${{ secrets.USER_DB_CONDOMINIO }}" \
             PASSWORD_DB_CONDOMINIO="${{ secrets.PASSWORD_DB_CONDOMINIO }}" \
+            EMAIL_CONDOMINIO="${{ secrets.EMAIL_CONDOMINIO }}" \
+            EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
+            JWT_EXPIRATION_TIME="${{ secrets.JWT_EXPIRATION_TIME }}" \
+            JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
             docker-compose up -d
             
             # Verificar
