@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Recurso")
+@RequestMapping("/Tipo/Recurso")
 @RequiredArgsConstructor
 public class TipoRecursoComunController {
 
@@ -24,7 +24,7 @@ public class TipoRecursoComunController {
         List<TipoRecursoComun> recursos = tipoRecursoComunService.findAll();
 
         SuccessResult<List<TipoRecursoComun>> response =
-                new SuccessResult<>("Recursos obtenidos exitosamente", recursos);
+                new SuccessResult<>("Tipos de Recursos obtenidos exitosamente", recursos);
 
         return ResponseEntity.ok(response);
     }

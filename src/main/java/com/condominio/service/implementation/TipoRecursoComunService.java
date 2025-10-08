@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +23,7 @@ public class TipoRecursoComunService implements ITipoRecursoComun {
     public SuccessResult<TipoRecursoComunDTO> save(TipoRecursoComunDTO tipoRecurso) {
         if(tipoRecursoComunRepository.existsByNombreIgnoreCase(tipoRecurso.getNombre())){
             throw new ApiException("El Tipo de recurso comun " +
-                    "ya se  encuentra registrado", HttpStatus.BAD_REQUEST);
+                    "ya se  encuentra registrado", HttpStatus.CONFLICT);
         }
         TipoRecursoComun newTipoRecurso = modelMapper.map(tipoRecurso, TipoRecursoComun.class);
         tipoRecursoComunRepository.save(newTipoRecurso);

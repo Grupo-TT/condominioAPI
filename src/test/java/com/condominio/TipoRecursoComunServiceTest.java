@@ -25,7 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 
 @ExtendWith(MockitoExtension.class)
-public class TipoRecursoComunTest {
+public class TipoRecursoComunServiceTest {
     @Mock
     private TipoRecursoComunRepository tipoRecursoComunRepository;
 
