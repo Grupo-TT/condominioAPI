@@ -27,7 +27,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, UserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthFilter)  throws Exception{
         return httpSecurity
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/login", "/auth/**", "/error").permitAll();
+                    auth.requestMatchers("/login", "/auth/**", "/error").permitAll()
+                    .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .cors(cors -> {})
