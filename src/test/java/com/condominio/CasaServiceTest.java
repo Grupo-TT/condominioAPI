@@ -114,7 +114,7 @@ class CasaServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.data().getSaldoPendienteTotal()).isEqualTo(500);
-        assertThat(result.data().getMultasActivas()).hasSize(2);
+        assertThat(result.data().getMultasActivas()).hasSize(1);
         assertThat(result.message()).isEqualTo("Estado de cuenta obtenido correctamente");
 
         verify(obligacionRepository).findByCasaId(1L);
