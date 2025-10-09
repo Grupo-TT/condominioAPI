@@ -1,6 +1,7 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.response.EstadoCuentaDTO;
+import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoPago;
@@ -34,6 +35,19 @@ public class ObligacionService  implements IObligacionService {
         Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                 orElse(null);
 
+        PersonaSimpleDTO propietarioDTO = null;
+        if (propietario != null) {
+            String nombreCompleto = String.format("%s %s",
+                    propietario.getPrimerNombre(),
+                    propietario.getPrimerApellido()
+            ).trim().replaceAll(" +", " ");
+            propietarioDTO = PersonaSimpleDTO.builder()
+                    .nombreCompleto(propietario.getPrimerNombre())
+                    .correo(propietario.getUser().getEmail())
+                    .telefono(propietario.getTelefono())
+                    .build();
+        }
+
         List<Obligacion> todasObligaciones = obligacionRepository.findByCasaId(idCasa);
 
         List<Obligacion> obligacionesPendientes = todasObligaciones.stream()
@@ -46,7 +60,7 @@ public class ObligacionService  implements IObligacionService {
 
         EstadoCuentaDTO dto = EstadoCuentaDTO.builder()
                 .numeroCasa(casa.getNumeroCasa())
-                .propietario(propietario)
+                .propietario(propietarioDTO)
                 .saldoPendienteTotal(saldoPendienteTotal)
                 .deudasActivas(obligacionesPendientes)
                 .build();
