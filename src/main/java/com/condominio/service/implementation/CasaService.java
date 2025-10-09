@@ -49,14 +49,17 @@ public class CasaService implements ICasaService {
 
         List<Obligacion> todasObligaciones = obligacionRepository.findByCasaId(idCasa);
 
-        Long saldoPendienteTotal = todasObligaciones.stream()
+        List<Obligacion> obligacionesPendientes = todasObligaciones.stream()
                 .filter(o -> o.getEstadoPago() == EstadoPago.PENDIENTE)
+                .toList();
+
+        Long saldoPendienteTotal = obligacionesPendientes.stream()
                 .mapToLong(Obligacion::getMonto)
                 .sum();
 
         CasaCuentaDTO dto = CasaCuentaDTO.builder()
                 .saldoPendienteTotal(saldoPendienteTotal)
-                .multasActivas(todasObligaciones)
+                .multasActivas(obligacionesPendientes)
                 .build();
         return new SuccessResult<>("Estado de cuenta obtenido correctamente",dto);
     }
@@ -85,6 +88,8 @@ public class CasaService implements ICasaService {
         }).toList();
         return new SuccessResult<>("Casas obtenidas correctamente", dtos);
     }
+
+
 
 }
 
