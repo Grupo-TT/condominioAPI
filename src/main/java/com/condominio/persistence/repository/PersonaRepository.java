@@ -2,6 +2,7 @@ package com.condominio.persistence.repository;
 
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEnum;
+import com.condominio.persistence.model.UserEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +30,8 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
             "JOIN u.roles r " +
             "WHERE p.casa.id = :casaId AND r.roleEnum = 'ARRENDATARIO'")
     Optional<Persona> findArrendatarioByCasaId(@Param("casaId") Long casaId);
+
+    Persona findPersonaByUser(UserEntity user);
 }
 
 
