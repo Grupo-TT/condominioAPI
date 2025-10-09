@@ -1,10 +1,11 @@
 package com.condominio.util.security;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@Getter
 public class JwtProperties {
 
     @Value("${JWT_SECRET_KEY}")
@@ -14,9 +15,4 @@ public class JwtProperties {
     @Value("${JWT_REFRESH_EXPIRATION}")
     private long refreshExpiration;
 
-    public String getSecret() { return secret; }
-
-    public long getExpiration() { return expiration; }
-
-    public long getRefreshExpiration() { return refreshExpiration; }
 }
