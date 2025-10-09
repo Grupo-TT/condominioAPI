@@ -11,6 +11,4 @@ import java.util.List;
 public interface ObligacionRepository extends CrudRepository<Obligacion, Long> {
 
     List<Obligacion> findByCasaId(Long casaId);
-
-    List<Obligacion> findAllByCasa(Casa casa);
 }

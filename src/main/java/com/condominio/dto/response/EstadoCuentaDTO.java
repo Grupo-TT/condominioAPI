@@ -1,7 +1,9 @@
 package com.condominio.dto.response;
 
 import com.condominio.persistence.model.Obligacion;
+
 import java.util.List;
+
 import lombok.Builder;
 import lombok.Data;
 

@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ObligacionService  implements IObligacionService {
+public class ObligacionService implements IObligacionService {
 
     private final ObligacionRepository obligacionRepository;
     private final CasaRepository casaRepository;
@@ -42,7 +42,7 @@ public class ObligacionService  implements IObligacionService {
                     propietario.getPrimerApellido()
             ).trim().replaceAll(" +", " ");
             propietarioDTO = PersonaSimpleDTO.builder()
-                    .nombreCompleto(propietario.getPrimerNombre())
+                    .nombreCompleto(nombreCompleto)
                     .correo(propietario.getUser().getEmail())
                     .telefono(propietario.getTelefono())
                     .build();
@@ -64,17 +64,7 @@ public class ObligacionService  implements IObligacionService {
                 .saldoPendienteTotal(saldoPendienteTotal)
                 .deudasActivas(obligacionesPendientes)
                 .build();
-        return new SuccessResult<>("Estado de cuenta obtenido correctamente",dto);
-    }
-
-    @Override
-    public List<Obligacion> findAllObligaciones() {
-        return (List<Obligacion>) obligacionRepository.findAll();
-    }
-
-    @Override
-    public List<Obligacion> findByCasaId(Long idCasa) {
-        return obligacionRepository.findByCasaId(idCasa);
+        return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
     }
 
 }

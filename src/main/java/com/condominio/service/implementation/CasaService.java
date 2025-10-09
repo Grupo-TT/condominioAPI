@@ -32,7 +32,6 @@ public class CasaService implements ICasaService {
     private final ObligacionRepository obligacionRepository;
 
 
-
     @Override
     public Optional<Casa> findById(Long id) {
         return casaRepository.findById(id);
@@ -61,16 +60,16 @@ public class CasaService implements ICasaService {
                 .saldoPendienteTotal(saldoPendienteTotal)
                 .multasActivas(obligacionesPendientes)
                 .build();
-        return new SuccessResult<>("Estado de cuenta obtenido correctamente",dto);
+        return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
     }
 
-    public SuccessResult<List<CasaInfoDTO>> obtenerCasas(){
+    public SuccessResult<List<CasaInfoDTO>> obtenerCasas() {
         List<Casa> casas = casaRepository.findAll();
-        if(casas.isEmpty()){
+        if (casas.isEmpty()) {
             throw new ApiException("No hay casas registradas " +
                     "en el sistema", HttpStatus.BAD_REQUEST);
         }
-        List<CasaInfoDTO> dtos =casas.stream().map(casa -> {
+        List<CasaInfoDTO> dtos = casas.stream().map(casa -> {
 
             Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                     orElse(null);
@@ -88,7 +87,6 @@ public class CasaService implements ICasaService {
         }).toList();
         return new SuccessResult<>("Casas obtenidas correctamente", dtos);
     }
-
 
 
 }
