@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface IMiembroService {
 
-    int countByCasaId(Long IdCasa);
+    int countByCasaId(Long idCasa);
     SuccessResult<List<MiembrosDTO>> obtenerMiembrosPorCasa(Long idCasa);
 }

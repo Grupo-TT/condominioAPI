@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface MiembroRepository extends CrudRepository<Miembro, Long> {
-    int countByCasaId(Long IdCasa);
+    int countByCasaId(Long idCasa);
     List<Miembro> findByCasaIdAndEstadoTrue(Long casaId);
 }

@@ -11,7 +11,7 @@ public class MascotaService implements IMascotaService {
 
     private final MascotaRepository mascotaRepository;
     @Override
-    public int countByCasaId(Long IdCasa) {
-        return mascotaRepository.countByCasaId(IdCasa);
+    public int countByCasaId(Long idCasa) {
+        return mascotaRepository.countByCasaId(idCasa);
     }
 }

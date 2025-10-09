@@ -109,7 +109,7 @@ class CasaServiceTest {
                 .thenReturn(List.of(obligacion1, obligacion2));
 
 
-        SuccessResult<CasaCuentaDTO> result = casaService.EstadoDeCuenta(1L);
+        SuccessResult<CasaCuentaDTO> result = casaService.estadoDeCuenta(1L);
 
 
         assertThat(result).isNotNull();

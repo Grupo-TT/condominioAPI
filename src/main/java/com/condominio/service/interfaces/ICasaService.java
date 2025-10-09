@@ -13,7 +13,7 @@ public interface ICasaService {
     Optional<Casa> findById(Long id);
 
     void save(Casa casa);
-    SuccessResult<CasaCuentaDTO> EstadoDeCuenta(Long idCasa);
+    SuccessResult<CasaCuentaDTO> estadoDeCuenta(Long idCasa);
     SuccessResult<List<CasaInfoDTO>> obtenerCasas();
 
 
