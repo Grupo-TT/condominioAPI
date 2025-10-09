@@ -35,7 +35,7 @@ public class AuthController {
             Authentication auth = authenticationManager.authenticate(authToken);
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-            String token = jwtUtil.generateToken(userDetails);
+            String token = jwtUtil.generateAccessToken(userDetails);
 
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (Exception ex) {
