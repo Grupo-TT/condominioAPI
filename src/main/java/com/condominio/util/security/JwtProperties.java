@@ -11,7 +11,7 @@ public class JwtProperties {
     private String secret;
     @Value("${JWT_EXPIRATION_TIME}")
     private long expiration;
-    @Value("${JWT_REFRESH_EXPIRATION_TIME}")
+    @Value("${JWT_REFRESH_EXPIRATION}")
     private long refreshExpiration;
 
     public String getSecret() { return secret; }
