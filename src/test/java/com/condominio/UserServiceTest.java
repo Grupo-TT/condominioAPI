@@ -58,23 +58,26 @@ class UserServiceTest {
     void loadUserByUsername_shouldReturnUserDetails_whenUserExists() {
         // Arrange
         UserEntity userEntity = mock(UserEntity.class);
-        when(userEntity.getEmail()).thenReturn("test@example.com");
+        when(userEntity.getEmail()).thenReturn("test@gmail.com");
         when(userEntity.getContrasenia()).thenReturn("encodedPassword");
-        when(userEntity.getRoles()).thenReturn(Set.of(mock(RoleEntity.class)));
 
-        when(userRepository.findUserEntityByEmail("test@example.com")).thenReturn(userEntity);
+        RoleEntity roleMock = mock(RoleEntity.class);
+        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN); // <-- evita el NPE
+
+        when(userEntity.getRoles()).thenReturn(Set.of(roleMock));
+        when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
 
         // Act
-        UserDetails userDetails = userService.loadUserByUsername("test@example.com");
+        UserDetails userDetails = userService.loadUserByUsername("test@gmail.com");
 
         // Assert
-        assertNotNull(userDetails, "UserDetails no debe ser nulo");
-        assertEquals("test@example.com", userDetails.getUsername());
+        assertNotNull(userDetails);
+        assertEquals("test@gmail.com", userDetails.getUsername());
         assertEquals("encodedPassword", userDetails.getPassword());
-        // Al menos una autoridad presente (no comprobamos nombre exacto porque depende de tu mapeo).
         assertFalse(userDetails.getAuthorities().isEmpty());
-        verify(userRepository, times(1)).findUserEntityByEmail("test@example.com");
+        verify(userRepository, times(1)).findUserEntityByEmail("test@gmail.com");
     }
+
 
     @Test
     void loadUserByUsername_shouldThrow_whenUserNotFound() {
