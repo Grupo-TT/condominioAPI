@@ -1,13 +1,11 @@
 package com.condominio.persistence.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 
 @Getter
+@Setter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,6 +20,7 @@ public class Miembro {
     private Casa casa;
 
     private String nombre;
+    private Long numeroDocumento;
     private Long telefono;
     private String parentesco;
 
