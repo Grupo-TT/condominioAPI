@@ -1,8 +1,10 @@
 package com.condominio;
 
+import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.implementation.UserService;
@@ -33,6 +35,9 @@ class UserServiceTest {
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Mock
+    private PersonaRepository personaRepository;
 
     @InjectMocks
     private UserService userService;
@@ -132,4 +137,79 @@ class UserServiceTest {
         verify(roleRepository).findByRoleEnum(RoleEnum.PROPIETARIO);
         verify(passwordEncoder).encode(String.valueOf(documento));
     }
+
+    @Test
+    void findByEmail_shouldReturnUser_whenExists() {
+        // Arrange
+        String email = "existe@example.com";
+        UserEntity user = new UserEntity();
+        user.setId(10L);
+        user.setEmail(email);
+
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(user);
+
+        // Act
+        UserEntity result = userService.findByEmail(email);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(email, result.getEmail());
+        assertSame(user, result);
+        verify(userRepository, times(1)).findUserEntityByEmail(email);
+    }
+
+    @Test
+    void findByEmail_shouldReturnNull_whenNotFound() {
+        // Arrange
+        String email = "noexiste@example.com";
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(null);
+
+        // Act
+        UserEntity result = userService.findByEmail(email);
+
+        // Assert
+        assertNull(result);
+        verify(userRepository, times(1)).findUserEntityByEmail(email);
+    }
+
+    @Test
+    void findPersonaByUser_shouldReturnPersona_whenExists() {
+        // Arrange
+        UserEntity user = new UserEntity();
+        user.setId(20L);
+        user.setEmail("persona@example.com");
+
+        Persona persona = new Persona();
+        persona.setId(200L);
+        persona.setPrimerNombre("María");
+        persona.setUser(user);
+
+        when(personaRepository.findPersonaByUser(user)).thenReturn(persona);
+
+        // Act
+        Persona result = userService.findPersonaByUser(user);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("María", result.getPrimerNombre());
+        assertEquals(user, result.getUser());
+        verify(personaRepository, times(1)).findPersonaByUser(user);
+    }
+
+    @Test
+    void findPersonaByUser_shouldReturnNull_whenNotFound() {
+        // Arrange
+        UserEntity user = new UserEntity();
+        user.setId(21L);
+
+        when(personaRepository.findPersonaByUser(user)).thenReturn(null);
+
+        // Act
+        Persona result = userService.findPersonaByUser(user);
+
+        // Assert
+        assertNull(result);
+        verify(personaRepository, times(1)).findPersonaByUser(user);
+    }
+
 }
