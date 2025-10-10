@@ -193,5 +193,82 @@ class RecursoComunServiceTest {
         verify(tipoRecursoComunRepository).findById(2L);
         verify(recursoComunRepository).save(any(RecursoComun.class));
     }
+
+    @Test
+    void testUpdate_ThrowsConflictWhenAnotherResourceHasSameName() {
+        Long id = 1L;
+
+
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Piscina");
+        dto.setDescripcion("Piscina olímpica");
+        TipoRecursoComun tipo = new TipoRecursoComun();
+        tipo.setId(2L);
+        dto.setTipoRecursoComun(tipo);
+
+
+        RecursoComun oldRecurso = new RecursoComun();
+        oldRecurso.setId(id);
+        oldRecurso.setNombre("Cancha");
+        oldRecurso.setDescripcion("Cancha de fútbol");
+        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+
+
+        RecursoComun other = new RecursoComun();
+        other.setId(99L);
+        other.setNombre("Piscina");
+        other.setDescripcion("Piscina comunitaria");
+
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
+        when(recursoComunRepository.findByNombreIgnoreCase("Piscina")).thenReturn(Optional.of(other));
+
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.update(id, dto));
+        assertEquals("Ya existe un recurso con ese nombre", ex.getMessage());
+
+
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
+        verifyNoInteractions(tipoRecursoComunRepository);
+        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
+    }
+    @Test
+    void testSave_ThrowsException_WhenTipoRecursoIsNull() {
+        // DTO sin tipo de recurso
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Cancha");
+        dto.setDescripcion("Cancha de fútbol");
+        dto.setTipoRecursoComun(null);
+
+        when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+
+        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
+        verify(tipoRecursoComunRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void testSave_ThrowsException_WhenTipoRecursoIdIsNull() {
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Cancha");
+        dto.setDescripcion("Cancha de fútbol");
+        dto.setTipoRecursoComun(new TipoRecursoComun());
+
+        when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+
+        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
+        verify(tipoRecursoComunRepository, never()).findById(anyLong());
+    }
 }
 
