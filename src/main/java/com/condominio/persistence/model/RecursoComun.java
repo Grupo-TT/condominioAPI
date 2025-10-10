@@ -1,13 +1,11 @@
 package com.condominio.persistence.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 
 @Getter
+@Setter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,5 +22,5 @@ public class RecursoComun {
 
     @ManyToOne(targetEntity = TipoRecursoComun.class)
     @JoinColumn(nullable = false)
-    private TipoRecursoComun recursoComun;
+    private TipoRecursoComun tipoRecursoComun;
 }
