@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -26,8 +27,9 @@ public class JwtUtil {
 
     public JwtUtil(JwtProperties jwtProperties) {
         this.key = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
-        this.accessTokenValidityMillis = jwtProperties.getExpiration();
-        this.refreshTokenValidityMillis = jwtProperties.getRefreshExpiration();
+        this.accessTokenValidityMillis = Duration.ofHours(jwtProperties.getExpiration()).toMillis();
+        this.refreshTokenValidityMillis = Duration.ofHours(jwtProperties.getRefreshExpiration()).toMillis();
+
     }
 
     public String generateAccessToken(UserDetails user) {
@@ -42,6 +44,8 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
         claims.put("type", "access");
+        claims.put("iatReadable", formatDate(now));
+        claims.put("expReadable", formatDate(expiry));
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -50,6 +54,7 @@ public class JwtUtil {
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
+                .setHeaderParam("typ", "JWT")
                 .compact();
     }
 
@@ -59,6 +64,8 @@ public class JwtUtil {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "refresh");
+        claims.put("iatReadable", formatDate(now));
+        claims.put("expReadable", formatDate(expiry));
 
 
         return Jwts.builder()
@@ -68,6 +75,7 @@ public class JwtUtil {
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
+                .setHeaderParam("typ", "JWT")
                 .compact();
     }
 
@@ -118,12 +126,12 @@ public class JwtUtil {
         }
     }
 
-    public long getAccessTokenValiditySeconds() {
-        return accessTokenValidityMillis / 1000;
+    public double getAccessTokenValidityHours() {
+        return accessTokenValidityMillis / 3600000.0; // 1000*60*60 = 3_600_000
     }
 
-    public long getRefreshTokenValiditySeconds() {
-        return refreshTokenValidityMillis / 1000;
+    public double getRefreshTokenValidityHours() {
+        return refreshTokenValidityMillis / 3600000.0;
     }
 
     private String formatDate(Date date) {
