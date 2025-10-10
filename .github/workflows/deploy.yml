@@ -87,6 +87,7 @@ jobs:
             EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
             JWT_EXPIRATION_TIME="${{ secrets.JWT_EXPIRATION_TIME }}" \
             JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
+            JWT_REFRESH_EXPIRATION="${{ secrets.JWT_REFRESH_EXPIRATION }}" \
             docker-compose pull && \
             GITHUB_REPOSITORY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]') \
             DB_HOST_CONDOMINIO="${{ secrets.DB_HOST_CONDOMINIO }}" \
