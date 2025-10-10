@@ -60,9 +60,13 @@ class UserServiceTest {
         UserEntity userEntity = mock(UserEntity.class);
         when(userEntity.getEmail()).thenReturn("test@gmail.com");
         when(userEntity.getContrasenia()).thenReturn("encodedPassword");
+        when(userEntity.isEnabled()).thenReturn(true);
+        when(userEntity.isAccountNoExpired()).thenReturn(true);
+        when(userEntity.isAccountNoLocked()).thenReturn(true);
+        when(userEntity.isCredentialNoExpired()).thenReturn(true);
 
         RoleEntity roleMock = mock(RoleEntity.class);
-        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN); // <-- evita el NPE
+        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN);
 
         when(userEntity.getRoles()).thenReturn(Set.of(roleMock));
         when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
