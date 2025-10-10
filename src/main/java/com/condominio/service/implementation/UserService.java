@@ -1,8 +1,10 @@
 package com.condominio.service.implementation;
 
+import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.interfaces.IUserService;
@@ -24,6 +26,7 @@ public class UserService implements IUserService, UserDetailsService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final PersonaRepository personaRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -33,10 +36,19 @@ public class UserService implements IUserService, UserDetailsService {
             throw new UsernameNotFoundException("Usuario no encontrado");
         }
 
+        String[] roles = user.getRoles()
+                .stream()
+                .map(roleEntity -> roleEntity.getRoleEnum().name())
+                .toArray(String[]::new);
+
         return User.builder()
                 .username(user.getEmail())
                 .password(user.getContrasenia())
-                .roles(String.valueOf(user.getRoles()))
+                .roles(roles)
+                .disabled(!user.isEnabled())
+                .accountExpired(!user.isAccountNoExpired())
+                .accountLocked(!user.isAccountNoLocked())
+                .credentialsExpired(!user.isCredentialNoExpired())
                 .build();
     }
 
@@ -66,6 +78,14 @@ public class UserService implements IUserService, UserDetailsService {
         userRepository.save(userEntity);
 
         return userEntity;
+    }
+
+    public UserEntity findByEmail(String email) {
+        return userRepository.findUserEntityByEmail(email);
+    }
+
+    public Persona findPersonaByUser(UserEntity user) {
+        return personaRepository.findPersonaByUser(user);
     }
 
 }
