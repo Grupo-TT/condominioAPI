@@ -86,6 +86,41 @@ class UserServiceTest {
         verify(userRepository, times(1)).findUserEntityByEmail("test@gmail.com");
     }
 
+    @Test
+    void loadUserByUsername_shouldReturnUserDetails_withAllFlagsFalse_toCoverNegations() {
+        // Arrange
+        UserEntity userEntity = mock(UserEntity.class);
+        when(userEntity.getEmail()).thenReturn("test2@gmail.com");
+        when(userEntity.getContrasenia()).thenReturn("encodedPassword2");
+
+        when(userEntity.isEnabled()).thenReturn(false);
+        when(userEntity.isAccountNoExpired()).thenReturn(false);
+        when(userEntity.isAccountNoLocked()).thenReturn(false);
+        when(userEntity.isCredentialNoExpired()).thenReturn(false);
+
+        RoleEntity roleMock = mock(RoleEntity.class);
+        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN);
+
+        when(userEntity.getRoles()).thenReturn(Set.of(roleMock));
+        when(userRepository.findUserEntityByEmail("test2@gmail.com")).thenReturn(userEntity);
+
+        // Act
+        UserDetails userDetails = userService.loadUserByUsername("test2@gmail.com");
+
+        // Assert
+        assertNotNull(userDetails);
+        assertEquals("test2@gmail.com", userDetails.getUsername());
+        assertEquals("encodedPassword2", userDetails.getPassword());
+        assertFalse(userDetails.isEnabled());
+        assertFalse(userDetails.isAccountNonExpired());
+        assertFalse(userDetails.isAccountNonLocked());
+        assertFalse(userDetails.isCredentialsNonExpired());
+
+        assertTrue(userDetails.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+        verify(userRepository, times(1)).findUserEntityByEmail("test2@gmail.com");
+    }
+
 
     @Test
     void loadUserByUsername_shouldThrow_whenUserNotFound() {
