@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,5 +57,35 @@ public class RecursoComunService implements IRecursoComunService {
         recursoComunRepository.save(newRecurso);
 
         return new SuccessResult<>("Recurso registrado correctamente", newRecurso);
+    }
+
+    @Override
+    public SuccessResult<RecursoComun> update(Long id, RecursoComunDTO recurso) {
+            RecursoComun oldRecurso = recursoComunRepository.findById(id)
+                    .orElseThrow(() -> new ApiException(
+                            "El   recurso no existe", HttpStatus.NOT_FOUND));
+
+        Optional<RecursoComun> recursoConMismoNombre =
+                recursoComunRepository.findByNombreIgnoreCase(recurso.getNombre());
+
+        if (recursoConMismoNombre.isPresent()
+                && !recursoConMismoNombre.get().getId().equals(id)) {
+            throw new ApiException(
+                    "Ya existe un recurso con ese nombre",
+                    HttpStatus.CONFLICT);
+        }
+        TipoRecursoComun tipo = tipoRecursoComunRepository.findById(
+                recurso.getTipoRecursoComun().getId()
+        ).orElseThrow(() -> new ApiException(
+                "No existe el tipo de recurso", HttpStatus.NOT_FOUND));
+
+
+        oldRecurso.setNombre(recurso.getNombre());
+        oldRecurso.setDescripcion(recurso.getDescripcion());
+        oldRecurso.setTipoRecursoComun(tipo);
+
+        RecursoComun actualizado = recursoComunRepository.save(oldRecurso);
+
+        return new SuccessResult<>("Recurso modificado exitosamente", actualizado);
     }
 }

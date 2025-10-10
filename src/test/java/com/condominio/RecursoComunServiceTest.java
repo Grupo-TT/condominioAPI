@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -140,6 +141,57 @@ class RecursoComunServiceTest {
         assertTrue(exception.getMessage().contains("El Tipo de recurso no existe"));
 
         verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdate_Success() {
+        Long id = 1L;
+
+
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Piscina");
+        dto.setDescripcion("Piscina olímpica");
+        TipoRecursoComun tipo = new TipoRecursoComun();
+        tipo.setId(2L);
+        dto.setTipoRecursoComun(tipo);
+
+
+        RecursoComun oldRecurso = new RecursoComun();
+        oldRecurso.setId(id);
+        oldRecurso.setNombre("Cancha");
+        oldRecurso.setDescripcion("Cancha de fútbol");
+        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+
+
+        TipoRecursoComun tipoEncontrado = new TipoRecursoComun();
+        tipoEncontrado.setId(2L);
+        tipoEncontrado.setNombre("Zona húmeda");
+        tipoEncontrado.setDescripcion("Área de piscina y jacuzzi");
+
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
+        when(recursoComunRepository.findByNombreIgnoreCase("Piscina")).thenReturn(Optional.empty());
+        when(tipoRecursoComunRepository.findById(2L)).thenReturn(Optional.of(tipoEncontrado));
+        when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+
+        SuccessResult<RecursoComun> result = recursoComunService.update(id, dto);
+
+
+        assertNotNull(result);
+        assertEquals("Recurso modificado exitosamente", result.message());
+        assertEquals("Piscina", result.data().getNombre());
+        assertEquals("Piscina olímpica", result.data().getDescripcion());
+        assertNotNull(result.data().getTipoRecursoComun());
+        assertEquals(2L, result.data().getTipoRecursoComun().getId());
+        assertEquals("Zona húmeda", result.data().getTipoRecursoComun().getNombre());
+        assertEquals("Área de piscina y jacuzzi", result.data().getTipoRecursoComun().getDescripcion());
+
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
+        verify(tipoRecursoComunRepository).findById(2L);
+        verify(recursoComunRepository).save(any(RecursoComun.class));
     }
 }
 
