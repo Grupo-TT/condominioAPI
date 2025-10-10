@@ -96,6 +96,7 @@ jobs:
             EMAIL_CONDOMINIO="${{ secrets.EMAIL_CONDOMINIO }}" \
             EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}" \
             JWT_EXPIRATION_TIME="${{ secrets.JWT_EXPIRATION_TIME }}" \
+            JWT_REFRESH_EXPIRATION="${{ secrets.JWT_REFRESH_EXPIRATION }}" \
             JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
             docker-compose up -d
             
