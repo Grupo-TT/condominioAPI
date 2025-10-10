@@ -78,6 +78,10 @@ class UserServiceTest {
         assertNotNull(userDetails);
         assertEquals("test@gmail.com", userDetails.getUsername());
         assertEquals("encodedPassword", userDetails.getPassword());
+        assertTrue(userDetails.isEnabled());
+        assertTrue(userDetails.isAccountNonExpired());
+        assertTrue(userDetails.isAccountNonLocked());
+        assertTrue(userDetails.isCredentialsNonExpired());
         assertFalse(userDetails.getAuthorities().isEmpty());
         verify(userRepository, times(1)).findUserEntityByEmail("test@gmail.com");
     }
