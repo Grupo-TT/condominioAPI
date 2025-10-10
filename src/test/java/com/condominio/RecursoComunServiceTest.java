@@ -236,7 +236,7 @@ class RecursoComunServiceTest {
     }
     @Test
     void testSave_ThrowsException_WhenTipoRecursoIsNull() {
-        // DTO sin tipo de recurso
+
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
