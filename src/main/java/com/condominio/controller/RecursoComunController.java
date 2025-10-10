@@ -33,4 +33,13 @@ public class RecursoComunController {
         SuccessResult<RecursoComun> result = recursoComunService.save(recursoComun);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<SuccessResult<RecursoComun>> edit(
+            @PathVariable Long id,
+            @RequestBody RecursoComunDTO recursoComun) {
+
+        SuccessResult<RecursoComun> result = recursoComunService.update(id, recursoComun);
+        return ResponseEntity.ok(result);
+
+    }
 }

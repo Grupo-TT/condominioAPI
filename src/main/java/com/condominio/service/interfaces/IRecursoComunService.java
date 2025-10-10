@@ -11,4 +11,5 @@ public interface IRecursoComunService {
 
     List<RecursoComun> findAll();
     SuccessResult<RecursoComun> save(RecursoComunDTO recurso);
+    SuccessResult<RecursoComun> update(Long id,RecursoComunDTO recurso);
 }
