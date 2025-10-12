@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("Miembros")
+@RequestMapping("miembros")
 @RequiredArgsConstructor
 public class MiembroController {
 
     private final MiembroService miembroService;
 
-    @GetMapping("/ViewMembers/{idCasa}")
+    @GetMapping("/view-members/{idCasa}")
     public SuccessResult<List<MiembrosDTO>> obtenerMiembrosPorCasa(@PathVariable Long idCasa) {
 
         return miembroService.obtenerMiembrosPorCasa(idCasa);

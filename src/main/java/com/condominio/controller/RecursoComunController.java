@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Recurso")
+@RequestMapping("/recurso")
 @RequiredArgsConstructor
 public class RecursoComunController {
 
     private final IRecursoComunService recursoComunService;
 
-    @GetMapping("/All")
+    @GetMapping("/all")
     public ResponseEntity<SuccessResult<List<RecursoComun>>> findAll(){
         List<RecursoComun> recursos = recursoComunService.findAll();
         SuccessResult<List<RecursoComun>> response =
