@@ -27,7 +27,7 @@ public class RecursoComunController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/Create")
+    @PostMapping("/create")
     public ResponseEntity<SuccessResult<RecursoComun>> create(
             @RequestBody RecursoComunDTO recursoComun) {
         SuccessResult<RecursoComun> result = recursoComunService.save(recursoComun);
