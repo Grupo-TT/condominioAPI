@@ -3,6 +3,7 @@ package com.condominio;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.condominio.dto.response.CasaCuentaDTO;
 import com.condominio.dto.response.CasaInfoDTO;
+import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
@@ -123,11 +124,22 @@ class CasaServiceTest {
     @Test
     void testObtenerCasas_WhenCasasExist() {
 
+        Casa casa = new Casa();
+        casa.setId(1L);
+        casa.setNumeroCasa(101);
+
         when(casaRepository.findAll()).thenReturn(List.of(casa));
+
 
         Persona propietario = new Persona();
         propietario.setId(1L);
         propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@example.com");
+        propietario.setUser(user);
+        propietario.setTelefono(123456789L);
 
         when(personaRepository.findPropietarioByCasaId(1L))
                 .thenReturn(Optional.of(propietario));
@@ -140,13 +152,20 @@ class CasaServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.data()).hasSize(1);
-        CasaInfoDTO dto = result.data().getFirst();
 
+        CasaInfoDTO dto = result.data().getFirst();
         assertThat(dto.getNumeroCasa()).isEqualTo(101);
-        assertThat(dto.getPropietario()).isEqualTo(propietario);
         assertThat(dto.getCantidadMiembros()).isEqualTo(2);
         assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+
+        PersonaSimpleDTO propietarioDTO = dto.getPropietario();
+        assertThat(propietarioDTO).isNotNull();
+        assertThat(propietarioDTO.getNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(propietarioDTO.getTelefono()).isEqualTo(123456789L);
+        assertThat(propietarioDTO.getCorreo()).isEqualTo("juan@example.com");
+
         assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
+
 
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);

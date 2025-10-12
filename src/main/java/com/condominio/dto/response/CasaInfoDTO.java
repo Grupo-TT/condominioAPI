@@ -10,7 +10,7 @@ import lombok.*;
 public class CasaInfoDTO {
 
     private int numeroCasa;
-    private Persona propietario;
+    private PersonaSimpleDTO propietario;
     private int cantidadMiembros;
     private int cantidadMascotas;
 }
