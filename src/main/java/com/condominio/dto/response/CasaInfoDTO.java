@@ -1,6 +1,5 @@
 package com.condominio.dto.response;
 
-import com.condominio.persistence.model.Persona;
 import lombok.*;
 
 @Getter
