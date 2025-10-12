@@ -124,11 +124,11 @@ class CasaServiceTest {
     @Test
     void testObtenerCasas_WhenCasasExist() {
 
-        Casa casa = new Casa();
-        casa.setId(1L);
-        casa.setNumeroCasa(101);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
 
-        when(casaRepository.findAll()).thenReturn(List.of(casa));
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
 
 
         Persona propietario = new Persona();
@@ -178,5 +178,56 @@ class CasaServiceTest {
         when(casaRepository.findAll()).thenReturn(List.of());
 
         assertThrows(RuntimeException.class, () -> casaService.obtenerCasas());
+    }
+    @Test
+    void testObtenerCasas_ShouldBuildPersonaSimpleDTO_WhenPropietarioExists() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+        casa.setNumeroCasa(101);
+
+        when(casaRepository.findAll()).thenReturn(List.of(casa));
+
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+        propietario.setTelefono(123456789L);
+
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@example.com");
+        propietario.setUser(user);
+
+        when(personaRepository.findPropietarioByCasaId(1L))
+                .thenReturn(Optional.of(propietario));
+        when(miembroService.countByCasaId(1L)).thenReturn(2);
+        when(mascotaService.countByCasaId(1L)).thenReturn(1);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+
+        CasaInfoDTO dto = result.data().getFirst();
+
+
+        PersonaSimpleDTO propietarioDTO = dto.getPropietario();
+        assertThat(propietarioDTO).isNotNull();
+        assertThat(propietarioDTO.getNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(propietarioDTO.getTelefono()).isEqualTo(123456789L);
+        assertThat(propietarioDTO.getCorreo()).isEqualTo("juan@example.com");
+
+
+        assertThat(dto.getNumeroCasa()).isEqualTo(101);
+        assertThat(dto.getCantidadMiembros()).isEqualTo(2);
+        assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+        assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
+
+
+        verify(casaRepository).findAll();
+        verify(personaRepository).findPropietarioByCasaId(1L);
+        verify(miembroService).countByCasaId(1L);
+        verify(mascotaService).countByCasaId(1L);
     }
 }
