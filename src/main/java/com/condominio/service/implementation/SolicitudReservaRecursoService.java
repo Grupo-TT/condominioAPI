@@ -25,18 +25,16 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     private final PersonaRepository personaRepository;
 
 
-    public  SuccessResult<List<SolicitudReservaRecursoDTO>> findPendientes(){
+    public  SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado){
 
-        List<SolicitudReservaRecurso> pendientes =
-                solicitudReservaRecursoRepository.findByEstadoSolicitud(
-                        EstadoSolicitud.PENDIENTE);
+        List<SolicitudReservaRecurso> solicitudes =
+                solicitudReservaRecursoRepository.findByEstadoSolicitud(estado);
 
-        if (pendientes.isEmpty()) {
-            throw new ApiException("No hay solicitudes pendientes", HttpStatus.NOT_FOUND);
+        if (solicitudes.isEmpty()) {
+            throw new ApiException("No hay solicitudes con estado: " + estado, HttpStatus.NOT_FOUND);
         }
 
-        List<SolicitudReservaRecursoDTO> dtos = pendientes.stream().map(solicitud -> {
-
+        List<SolicitudReservaRecursoDTO> dtos = solicitudes.stream().map(solicitud -> {
             SolicitudReservaRecursoDTO dto = modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class);
 
             Long casaId = solicitud.getCasa().getId();
@@ -46,6 +44,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
                                     "No se encontro un solicitante (arrendatario o propietario) para la casa con ID " + casaId,
                                     HttpStatus.BAD_REQUEST
                             )));
+
             dto.setSolicitante(PersonaSimpleDTO.builder()
                     .nombreCompleto(solicitante.getNombreCompleto())
                     .telefono(solicitante.getTelefono())
@@ -55,6 +54,6 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             return dto;
         }).toList();
 
-        return new SuccessResult<>("Solicitudes pendientes obtenidas correctamente", dtos);
+        return new SuccessResult<>("Solicitudes " + estado.name().toLowerCase() + " obtenidas correctamente", dtos);
     }
 }

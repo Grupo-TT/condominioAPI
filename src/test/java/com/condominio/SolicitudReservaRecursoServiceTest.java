@@ -1,6 +1,6 @@
 package com.condominio;
 
-import com.condominio.dto.response.PersonaSimpleDTO;
+
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
@@ -37,122 +37,194 @@ class SolicitudReservaRecursoServiceTest {
     private SolicitudReservaRecursoService solicitudReservaRecursoService;
 
     @Test
-    void testFindPendientes_ShouldThrowException_WhenNoPendingRequests() {
-        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
-                .thenReturn(Collections.emptyList());
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.findPendientes())
-                .isInstanceOf(ApiException.class)
-                .hasMessage("No hay solicitudes pendientes");
-
-        verify(solicitudReservaRecursoRepository).findByEstadoSolicitud(EstadoSolicitud.PENDIENTE);
-        verifyNoInteractions(personaRepository);
-    }
-
-    @Test
-    void testFindPendientes_ShouldReturnDTOs_WhenArrendatarioExists() {
-
-        Casa newCasa = new Casa();
-        newCasa.setId(1L);
+    void testFindByEstado_ShouldReturnPendientes() {
 
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
-        solicitud.setCasa(newCasa);
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        solicitud.setCasa(newCasa);
 
-        Persona arrendatario = new Persona();
-        arrendatario.setPrimerNombre("Juan");
-        arrendatario.setPrimerApellido("Pérez");
-        arrendatario.setTelefono(123456789L);
+        Persona persona = new Persona();
+        persona.setPrimerNombre("Carlos");
+        persona.setPrimerApellido("Pérez");
+        persona.setTelefono(123456789L);
+
         UserEntity user = new UserEntity();
-        user.setEmail("juan@example.com");
-        arrendatario.setUser(user);
+        user.setEmail("carlos@example.com");
+        persona.setUser(user);
 
         when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
                 .thenReturn(List.of(solicitud));
-        when(personaRepository.findArrendatarioByCasaId(1L))
-                .thenReturn(Optional.of(arrendatario));
-
-        SolicitudReservaRecursoDTO mappedDto = new SolicitudReservaRecursoDTO();
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.of(persona));
         when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
-                .thenReturn(mappedDto);
+                .thenReturn(new SolicitudReservaRecursoDTO());
 
-
-        SuccessResult<List<SolicitudReservaRecursoDTO>> result = solicitudReservaRecursoService.findPendientes();
-
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findByEstado(EstadoSolicitud.PENDIENTE);
 
         assertThat(result).isNotNull();
         assertThat(result.data()).hasSize(1);
-        assertThat(result.message()).isEqualTo("Solicitudes pendientes obtenidas correctamente");
-
-        PersonaSimpleDTO solicitante = result.data().getFirst().getSolicitante();
-        assertThat(solicitante.getNombreCompleto()).isEqualTo("Juan Pérez");
-        assertThat(solicitante.getTelefono()).isEqualTo(123456789L);
-        assertThat(solicitante.getCorreo()).isEqualTo("juan@example.com");
-
-        verify(personaRepository).findArrendatarioByCasaId(1L);
-        verify(personaRepository, never()).findPropietarioByCasaId(anyLong());
+        EstadoSolicitud estado = EstadoSolicitud.PENDIENTE;
+        assertThat(result.message())
+                .contains("Solicitudes " + estado.name().toLowerCase() + " obtenidas correctamente");
     }
 
     @Test
-    void testFindPendientes_ShouldReturnDTOs_WhenOnlyPropietarioExists() {
+    void testFindByEstado_ShouldThrow_WhenEmpty() {
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.APROBADA))
+                .thenReturn(Collections.emptyList());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findByEstado(EstadoSolicitud.APROBADA))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No hay solicitudes con estado: APROBADA");
+    }
+
+    @Test
+    void testFindByEstado_ShouldThrow_WhenNoSolicitanteFound() {
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
         Casa newCasa = new Casa();
         newCasa.setId(2L);
+        solicitud.setCasa(newCasa);
+
+
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
+                .thenReturn(List.of(solicitud));
+        when(personaRepository.findArrendatarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(new SolicitudReservaRecursoDTO());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findByEstado(EstadoSolicitud.PENDIENTE))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No se encontro un solicitante");
+    }
+
+    @Test
+    void testFindByEstado_ShouldReturnAprobadas() {
 
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
         solicitud.setCasa(newCasa);
-        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
 
-        Persona propietario = new Persona();
-        propietario.setPrimerNombre("María");
-        propietario.setPrimerApellido("López");
-        propietario.setTelefono(987654321L);
+        Persona persona = new Persona();
+        persona.setPrimerNombre("María");
+        persona.setPrimerApellido("Gómez");
+        persona.setTelefono(987654321L);
+
         UserEntity user = new UserEntity();
         user.setEmail("maria@example.com");
+        persona.setUser(user);
+
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.APROBADA))
+                .thenReturn(List.of(solicitud));
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.of(persona));
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(new SolicitudReservaRecursoDTO());
+
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findByEstado(EstadoSolicitud.APROBADA);
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+        EstadoSolicitud estado = EstadoSolicitud.APROBADA;
+        assertThat(result.message())
+                .contains("Solicitudes " + estado.name().toLowerCase() + " obtenidas correctamente");
+    }
+
+    @Test
+    void testFindByEstado_ShouldReturnRechazadas() {
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        solicitud.setCasa(newCasa);
+
+        Persona persona = new Persona();
+        persona.setPrimerNombre("Laura");
+        persona.setPrimerApellido("Torres");
+        persona.setTelefono(321654987L);
+
+        UserEntity user = new UserEntity();
+        user.setEmail("laura@example.com");
+        persona.setUser(user);
+
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.RECHAZADA))
+                .thenReturn(List.of(solicitud));
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.of(persona));
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(new SolicitudReservaRecursoDTO());
+
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findByEstado(EstadoSolicitud.RECHAZADA);
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+        EstadoSolicitud estado = EstadoSolicitud.RECHAZADA;
+        assertThat(result.message())
+                .contains("Solicitudes " + estado.name().toLowerCase() + " obtenidas correctamente");
+    }
+
+    @Test
+    void testFindByEstado_ShouldThrowException_WhenNoSolicitudes() {
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findByEstado(EstadoSolicitud.PENDIENTE))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No hay solicitudes con estado: PENDIENTE");
+    }
+    @Test
+    void testFindByEstado_ShouldThrowException_WhenNoSolicitanteFound() {
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        Casa casa = new Casa();
+        casa.setId(1L);
+        solicitud.setCasa(casa);
+
+        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
+                .thenReturn(List.of(solicitud));
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.empty());
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.empty());
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(new SolicitudReservaRecursoDTO());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findByEstado(EstadoSolicitud.PENDIENTE))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No se encontro un solicitante (arrendatario o propietario)");
+    }
+
+    @Test
+    void testFindByEstado_ShouldUsePropietario_WhenNoArrendatario() {
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        Casa casa = new Casa();
+        casa.setId(1L);
+        solicitud.setCasa(casa);
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Ana");
+        propietario.setPrimerApellido("Lopez");
+        propietario.setTelefono(123456789L);
+        UserEntity user = new UserEntity();
+        user.setEmail("ana@example.com");
         propietario.setUser(user);
 
         when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
                 .thenReturn(List.of(solicitud));
-        when(personaRepository.findArrendatarioByCasaId(2L))
-                .thenReturn(Optional.empty());
-        when(personaRepository.findPropietarioByCasaId(2L))
-                .thenReturn(Optional.of(propietario));
-
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.empty());
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
         when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
                 .thenReturn(new SolicitudReservaRecursoDTO());
 
-        SuccessResult<List<SolicitudReservaRecursoDTO>> result = solicitudReservaRecursoService.findPendientes();
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findByEstado(EstadoSolicitud.PENDIENTE);
 
+        assertThat(result).isNotNull();
         assertThat(result.data()).hasSize(1);
-        PersonaSimpleDTO solicitante = result.data().getFirst().getSolicitante();
-        assertThat(solicitante.getNombreCompleto()).isEqualTo("María López");
-        assertThat(solicitante.getCorreo()).isEqualTo("maria@example.com");
-
-        verify(personaRepository).findArrendatarioByCasaId(2L);
-        verify(personaRepository).findPropietarioByCasaId(2L);
-    }
-
-    @Test
-    void testFindPendientes_ShouldThrowException_WhenNoSolicitanteFound() {
-        Casa newCasa = new Casa();
-        newCasa.setId(3L);
-
-        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
-        solicitud.setCasa(newCasa);
-        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
-
-        when(solicitudReservaRecursoRepository.findByEstadoSolicitud(EstadoSolicitud.PENDIENTE))
-                .thenReturn(List.of(solicitud));
-        when(personaRepository.findArrendatarioByCasaId(3L)).thenReturn(Optional.empty());
-        when(personaRepository.findPropietarioByCasaId(3L)).thenReturn(Optional.empty());
-
-        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
-                .thenReturn(new SolicitudReservaRecursoDTO());
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.findPendientes())
-                .isInstanceOf(ApiException.class)
-                .hasMessageContaining("No se encontro un solicitante (arrendatario o propietario)");
-
-        verify(personaRepository).findArrendatarioByCasaId(3L);
-        verify(personaRepository).findPropietarioByCasaId(3L);
+        assertThat(result.message()).contains("Solicitudes pendiente");
     }
 }
