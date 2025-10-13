@@ -1,13 +1,11 @@
 package com.condominio.util.configuration;
 
+import com.condominio.dto.request.AsambleaDTO;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.RecursoComunDTO;
 import com.condominio.dto.request.TipoRecursoComunDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.RecursoComun;
-import com.condominio.persistence.model.SolicitudReservaRecurso;
-import com.condominio.persistence.model.TipoRecursoComun;
+import com.condominio.persistence.model.*;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.context.annotation.Bean;
@@ -54,7 +52,13 @@ public class AppConfig {
                 skip(destination.getSolicitante());
             }
         });
+        modelMapper.addMappings(new PropertyMap<AsambleaDTO, Asamblea>() {
+            @Override
+            protected void configure() {
 
+                skip(destination.getId());
+            }
+        });
         return modelMapper;
     }
 }
