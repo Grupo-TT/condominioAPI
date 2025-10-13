@@ -13,12 +13,12 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("Casa")
+@RequestMapping("casa")
 public class CasaController {
 
     private final ICasaService casaService;
 
-    @GetMapping("/All")
+    @GetMapping("/all")
     public SuccessResult<List<CasaInfoDTO>>  listarCasas() {
         return casaService.obtenerCasas();
     }
