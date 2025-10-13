@@ -1,8 +1,10 @@
 package com.condominio;
 
+import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.implementation.UserService;
@@ -34,6 +36,9 @@ class UserServiceTest {
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Mock
+    private PersonaRepository personaRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -53,23 +58,69 @@ class UserServiceTest {
     void loadUserByUsername_shouldReturnUserDetails_whenUserExists() {
         // Arrange
         UserEntity userEntity = mock(UserEntity.class);
-        when(userEntity.getEmail()).thenReturn("test@example.com");
+        when(userEntity.getEmail()).thenReturn("test@gmail.com");
         when(userEntity.getContrasenia()).thenReturn("encodedPassword");
-        when(userEntity.getRoles()).thenReturn(Set.of(mock(RoleEntity.class)));
+        when(userEntity.isEnabled()).thenReturn(true);
+        when(userEntity.isAccountNoExpired()).thenReturn(true);
+        when(userEntity.isAccountNoLocked()).thenReturn(true);
+        when(userEntity.isCredentialNoExpired()).thenReturn(true);
 
-        when(userRepository.findUserEntityByEmail("test@example.com")).thenReturn(userEntity);
+        RoleEntity roleMock = mock(RoleEntity.class);
+        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN);
+
+        when(userEntity.getRoles()).thenReturn(Set.of(roleMock));
+        when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
 
         // Act
-        UserDetails userDetails = userService.loadUserByUsername("test@example.com");
+        UserDetails userDetails = userService.loadUserByUsername("test@gmail.com");
 
         // Assert
-        assertNotNull(userDetails, "UserDetails no debe ser nulo");
-        assertEquals("test@example.com", userDetails.getUsername());
+        assertNotNull(userDetails);
+        assertEquals("test@gmail.com", userDetails.getUsername());
         assertEquals("encodedPassword", userDetails.getPassword());
-        // Al menos una autoridad presente (no comprobamos nombre exacto porque depende de tu mapeo).
+        assertTrue(userDetails.isEnabled());
+        assertTrue(userDetails.isAccountNonExpired());
+        assertTrue(userDetails.isAccountNonLocked());
+        assertTrue(userDetails.isCredentialsNonExpired());
         assertFalse(userDetails.getAuthorities().isEmpty());
-        verify(userRepository, times(1)).findUserEntityByEmail("test@example.com");
+        verify(userRepository, times(1)).findUserEntityByEmail("test@gmail.com");
     }
+
+    @Test
+    void loadUserByUsername_shouldReturnUserDetails_withAllFlagsFalse_toCoverNegations() {
+        // Arrange
+        UserEntity userEntity = mock(UserEntity.class);
+        when(userEntity.getEmail()).thenReturn("test2@gmail.com");
+        when(userEntity.getContrasenia()).thenReturn("encodedPassword2");
+
+        when(userEntity.isEnabled()).thenReturn(false);
+        when(userEntity.isAccountNoExpired()).thenReturn(false);
+        when(userEntity.isAccountNoLocked()).thenReturn(false);
+        when(userEntity.isCredentialNoExpired()).thenReturn(false);
+
+        RoleEntity roleMock = mock(RoleEntity.class);
+        when(roleMock.getRoleEnum()).thenReturn(RoleEnum.ADMIN);
+
+        when(userEntity.getRoles()).thenReturn(Set.of(roleMock));
+        when(userRepository.findUserEntityByEmail("test2@gmail.com")).thenReturn(userEntity);
+
+        // Act
+        UserDetails userDetails = userService.loadUserByUsername("test2@gmail.com");
+
+        // Assert
+        assertNotNull(userDetails);
+        assertEquals("test2@gmail.com", userDetails.getUsername());
+        assertEquals("encodedPassword2", userDetails.getPassword());
+        assertFalse(userDetails.isEnabled());
+        assertFalse(userDetails.isAccountNonExpired());
+        assertFalse(userDetails.isAccountNonLocked());
+        assertFalse(userDetails.isCredentialsNonExpired());
+
+        assertTrue(userDetails.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+        verify(userRepository, times(1)).findUserEntityByEmail("test2@gmail.com");
+    }
+
 
     @Test
     void loadUserByUsername_shouldThrow_whenUserNotFound() {
@@ -132,4 +183,79 @@ class UserServiceTest {
         verify(roleRepository).findByRoleEnum(RoleEnum.PROPIETARIO);
         verify(passwordEncoder).encode(String.valueOf(documento));
     }
+
+    @Test
+    void findByEmail_shouldReturnUser_whenExists() {
+        // Arrange
+        String email = "existe@example.com";
+        UserEntity user = new UserEntity();
+        user.setId(10L);
+        user.setEmail(email);
+
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(user);
+
+        // Act
+        UserEntity result = userService.findByEmail(email);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(email, result.getEmail());
+        assertSame(user, result);
+        verify(userRepository, times(1)).findUserEntityByEmail(email);
+    }
+
+    @Test
+    void findByEmail_shouldReturnNull_whenNotFound() {
+        // Arrange
+        String email = "noexiste@example.com";
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(null);
+
+        // Act
+        UserEntity result = userService.findByEmail(email);
+
+        // Assert
+        assertNull(result);
+        verify(userRepository, times(1)).findUserEntityByEmail(email);
+    }
+
+    @Test
+    void findPersonaByUser_shouldReturnPersona_whenExists() {
+        // Arrange
+        UserEntity user = new UserEntity();
+        user.setId(20L);
+        user.setEmail("persona@example.com");
+
+        Persona persona = new Persona();
+        persona.setId(200L);
+        persona.setPrimerNombre("María");
+        persona.setUser(user);
+
+        when(personaRepository.findPersonaByUser(user)).thenReturn(persona);
+
+        // Act
+        Persona result = userService.findPersonaByUser(user);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("María", result.getPrimerNombre());
+        assertEquals(user, result.getUser());
+        verify(personaRepository, times(1)).findPersonaByUser(user);
+    }
+
+    @Test
+    void findPersonaByUser_shouldReturnNull_whenNotFound() {
+        // Arrange
+        UserEntity user = new UserEntity();
+        user.setId(21L);
+
+        when(personaRepository.findPersonaByUser(user)).thenReturn(null);
+
+        // Act
+        Persona result = userService.findPersonaByUser(user);
+
+        // Assert
+        assertNull(result);
+        verify(personaRepository, times(1)).findPersonaByUser(user);
+    }
+
 }

@@ -9,5 +9,6 @@ public interface IUserService {
 
     Boolean existsByEmail(String email);
     UserEntity createUser(String email, Long numeroDeDocumento, RoleEnum rolEnum);
+    UserEntity findByEmail(String email);
 }
 
