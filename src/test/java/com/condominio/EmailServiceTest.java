@@ -109,6 +109,13 @@ class EmailServiceTest {
         doReturn("<html>Mock HTML</html>")
                 .when(spyService)
                 .generarHtmlInvitacionAsamblea("Reunión", fecha, hora);
+
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        spyService.enviarInvitacionAsamblea("user@correo.com", "Reunión", fecha, hora);
+
+        verify(mailSender).send(mensaje);
     }
     
     void testEnviarPago_mockeado() throws MessagingException {
@@ -129,9 +136,12 @@ class EmailServiceTest {
         MimeMessage mensaje = mock(MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mensaje);
 
-        spyService.enviarInvitacionAsamblea("user@correo.com", "Reunión", fecha, hora);
+        // Act
+        spyEmailService.enviarPago("usuario@correo.com", obligacionDTO);
 
+        // Assert
         verify(mailSender).send(mensaje);
+        verify(spyEmailService).generarHtmlPagoConThymeleaf(obligacionDTO);
     }
 
     @Test
@@ -164,13 +174,6 @@ class EmailServiceTest {
 
         verify(spyService, times(2))
                 .enviarInvitacionAsamblea(anyString(), anyString(), any(Date.class), any(LocalTime.class));
-    }
-        // Act
-        spyEmailService.enviarPago("usuario@correo.com", obligacionDTO);
-
-        // Assert
-        verify(mailSender).send(mensaje);
-        verify(spyEmailService).generarHtmlPagoConThymeleaf(obligacionDTO);
     }
 
     @Test
