@@ -1,5 +1,6 @@
 package com.condominio;
 
+import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.service.implementation.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -12,6 +13,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -69,6 +73,57 @@ class EmailServiceTest {
         assertNotNull(html);
         assertTrue(html.contains(password));
         assertTrue(html.contains("http://localhost:8080"));
+    }
+
+    @Test
+    void testEnviarPago_mockeado() throws MessagingException {
+        // Arrange
+        EmailService spyEmailService = spy(emailService);
+
+        ObligacionDTO obligacionDTO = new ObligacionDTO();
+        obligacionDTO.setMotivo("Pago de administración");
+        obligacionDTO.setCasa(15);
+        obligacionDTO.setMonto(150000);
+        obligacionDTO.setFechaPago(LocalDate.now());
+
+        // Simula que el HTML se genera correctamente
+        doReturn("<html>Mock HTML Pago</html>")
+                .when(spyEmailService)
+                .generarHtmlPagoConThymeleaf(obligacionDTO);
+
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        // Act
+        spyEmailService.enviarPago("usuario@correo.com", obligacionDTO);
+
+        // Assert
+        verify(mailSender).send(mensaje);
+        verify(spyEmailService).generarHtmlPagoConThymeleaf(obligacionDTO);
+    }
+
+    @Test
+    void testGenerarHtmlPagoConThymeleaf_mockeado() {
+        // Arrange
+        ObligacionDTO obligacionDTO = new ObligacionDTO();
+        obligacionDTO.setMotivo("Pago de mantenimiento");
+        obligacionDTO.setCasa(8);
+        obligacionDTO.setMonto(250000);
+        obligacionDTO.setFechaPago(LocalDate.of(2025, 10, 13));
+
+        when(templateEngine.process(anyString(), any(Context.class)))
+                .thenReturn("<html>Motivo: Pago de mantenimiento<br>Casa: 8<br>Monto: $250.000<br>Fecha: 2025-10-13</html>");
+
+        // Act
+        String html = emailService.generarHtmlPagoConThymeleaf(obligacionDTO);
+
+        // Assert
+        assertNotNull(html);
+        assertTrue(html.contains(obligacionDTO.getMotivo()));
+        assertTrue(html.contains(String.valueOf(obligacionDTO.getCasa())));
+        assertTrue(html.contains("$250.000"));
+        assertTrue(html.contains(obligacionDTO.getFechaPago().toString()));
+        verify(templateEngine, times(1)).process(anyString(), any(Context.class));
     }
 
 }
