@@ -109,6 +109,8 @@ class EmailServiceTest {
         doReturn("<html>Mock HTML</html>")
                 .when(spyService)
                 .generarHtmlInvitacionAsamblea("Reunión", fecha, hora);
+    }
+    
     void testEnviarPago_mockeado() throws MessagingException {
         // Arrange
         EmailService spyEmailService = spy(emailService);
