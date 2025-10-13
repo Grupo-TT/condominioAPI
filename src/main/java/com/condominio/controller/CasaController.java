@@ -23,7 +23,7 @@ public class CasaController {
         return casaService.obtenerCasas();
     }
 
-    @GetMapping("/{idCasa}/estado-cuenta/")
+    @GetMapping("/{idCasa}/estado-cuenta")
     public SuccessResult<CasaCuentaDTO> obtenerEstadoCuenta(
             @PathVariable Long idCasa
             ) {

@@ -3,6 +3,10 @@ package com.condominio.persistence.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Data
 @Getter
 @Setter
@@ -29,4 +33,11 @@ public class Persona {
     private Boolean comiteConvivencia;
     @ManyToOne
     private Casa casa;
+
+    public String getNombreCompleto() {
+        return Stream.of(primerNombre, segundoNombre, primerApellido, segundoApellido)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.joining(" "));
+    }
 }

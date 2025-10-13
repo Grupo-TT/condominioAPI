@@ -3,6 +3,7 @@ package com.condominio;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.condominio.dto.response.CasaCuentaDTO;
 import com.condominio.dto.response.CasaInfoDTO;
+import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
@@ -123,11 +124,22 @@ class CasaServiceTest {
     @Test
     void testObtenerCasas_WhenCasasExist() {
 
-        when(casaRepository.findAll()).thenReturn(List.of(casa));
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
+
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
 
         Persona propietario = new Persona();
         propietario.setId(1L);
         propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@example.com");
+        propietario.setUser(user);
+        propietario.setTelefono(123456789L);
 
         when(personaRepository.findPropietarioByCasaId(1L))
                 .thenReturn(Optional.of(propietario));
@@ -140,13 +152,20 @@ class CasaServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.data()).hasSize(1);
-        CasaInfoDTO dto = result.data().getFirst();
 
+        CasaInfoDTO dto = result.data().getFirst();
         assertThat(dto.getNumeroCasa()).isEqualTo(101);
-        assertThat(dto.getPropietario()).isEqualTo(propietario);
         assertThat(dto.getCantidadMiembros()).isEqualTo(2);
         assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+
+        PersonaSimpleDTO propietarioDTO = dto.getPropietario();
+        assertThat(propietarioDTO).isNotNull();
+        assertThat(propietarioDTO.getNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(propietarioDTO.getTelefono()).isEqualTo(123456789L);
+        assertThat(propietarioDTO.getCorreo()).isEqualTo("juan@example.com");
+
         assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
+
 
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);
@@ -160,4 +179,94 @@ class CasaServiceTest {
 
         assertThrows(RuntimeException.class, () -> casaService.obtenerCasas());
     }
+    @Test
+    void testObtenerCasas_ShouldBuildPersonaSimpleDTO_WhenPropietarioExists() {
+
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
+
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+        propietario.setTelefono(123456789L);
+
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@example.com");
+        propietario.setUser(user);
+
+        when(personaRepository.findPropietarioByCasaId(1L))
+                .thenReturn(Optional.of(propietario));
+        when(miembroService.countByCasaId(1L)).thenReturn(2);
+        when(mascotaService.countByCasaId(1L)).thenReturn(1);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+
+        CasaInfoDTO dto = result.data().getFirst();
+
+
+        PersonaSimpleDTO propietarioDTO = dto.getPropietario();
+        assertThat(propietarioDTO).isNotNull();
+        assertThat(propietarioDTO.getNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(propietarioDTO.getTelefono()).isEqualTo(123456789L);
+        assertThat(propietarioDTO.getCorreo()).isEqualTo("juan@example.com");
+
+
+        assertThat(dto.getNumeroCasa()).isEqualTo(101);
+        assertThat(dto.getCantidadMiembros()).isEqualTo(2);
+        assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+        assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
+
+
+        verify(casaRepository).findAll();
+        verify(personaRepository).findPropietarioByCasaId(1L);
+        verify(miembroService).countByCasaId(1L);
+        verify(mascotaService).countByCasaId(1L);
+    }
+
+    @Test
+    void testObtenerCasas_ShouldReturnNullPropietario_WhenNoPropietarioExists() {
+
+        Casa newCasa = new Casa();
+        newCasa.setId(2L);
+        newCasa.setNumeroCasa(202);
+
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
+
+        when(personaRepository.findPropietarioByCasaId(2L))
+                .thenReturn(Optional.empty());
+        when(miembroService.countByCasaId(2L)).thenReturn(3);
+        when(mascotaService.countByCasaId(2L)).thenReturn(0);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+
+        CasaInfoDTO dto = result.data().getFirst();
+
+
+        assertThat(dto.getPropietario()).isNull();
+
+
+        assertThat(dto.getNumeroCasa()).isEqualTo(202);
+        assertThat(dto.getCantidadMiembros()).isEqualTo(3);
+        assertThat(dto.getCantidadMascotas()).isEqualTo(0);
+        assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
+
+
+        verify(casaRepository).findAll();
+        verify(personaRepository).findPropietarioByCasaId(2L);
+        verify(miembroService).countByCasaId(2L);
+        verify(mascotaService).countByCasaId(2L);
+    }
+
 }

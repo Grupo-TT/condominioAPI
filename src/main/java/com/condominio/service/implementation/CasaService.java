@@ -2,6 +2,7 @@ package com.condominio.service.implementation;
 
 import com.condominio.dto.response.CasaCuentaDTO;
 import com.condominio.dto.response.CasaInfoDTO;
+import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoPago;
@@ -76,10 +77,18 @@ public class CasaService implements ICasaService {
             int cantidadMiembros = miembroService.countByCasaId(casa.getId());
             int cantidadMascotas = mascotaService.countByCasaId(casa.getId());
 
+            PersonaSimpleDTO propietarioDTO = null;
+            if (propietario != null) {
+                propietarioDTO = PersonaSimpleDTO.builder()
+                        .nombreCompleto(propietario.getNombreCompleto())
+                        .telefono(propietario.getTelefono())
+                        .correo(propietario.getUser().getEmail())
+                        .build();
+            }
 
             CasaInfoDTO dto = new CasaInfoDTO();
             dto.setNumeroCasa(casa.getNumeroCasa());
-            dto.setPropietario(propietario);
+            dto.setPropietario(propietarioDTO);
             dto.setCantidadMiembros(cantidadMiembros);
             dto.setCantidadMascotas(cantidadMascotas);
 
