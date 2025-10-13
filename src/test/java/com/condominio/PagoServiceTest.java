@@ -1,8 +1,6 @@
 package com.condominio;
 
-import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.PagoDTO;
-import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PagoDetalleRepository;
@@ -80,7 +78,6 @@ class PagoServiceTest {
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
 
-        SuccessResult<ObligacionDTO> result = pagoService.registrarPago(pagoDTO);
 
 
         // Verificaciones de persistencia
