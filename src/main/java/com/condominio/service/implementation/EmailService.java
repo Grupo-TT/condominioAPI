@@ -61,6 +61,8 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
         helper.setTo(destinatario);
         helper.setSubject("Invitación a la Asamblea: " + nombreAsamblea);
+    }
+    
     public void enviarPago(String destinatario, ObligacionDTO obligacionDTO) throws MessagingException {
         String htmlContent = generarHtmlPagoConThymeleaf(obligacionDTO);
 
@@ -70,6 +72,15 @@ public class EmailService {
         helper.setSubject(EMAIL_PAGO_SUBJECT);
         helper.setText(htmlContent, true);
         mailSender.send(mimeMessage);
+    }
+    
+    public String generarHtmlPagoConThymeleaf(ObligacionDTO obligacionDTO){
+        Context context = new Context();
+        context.setVariable("motivo", obligacionDTO.getMotivo());
+        context.setVariable("casa", obligacionDTO.getCasa());
+        context.setVariable("monto", obligacionDTO.getMonto());
+        context.setVariable("fechaPago", obligacionDTO.getFechaPago());
+        return templateEngine.process(PAGO_HTML, context);
     }
 
     @Async("mailTaskExecutor")
@@ -88,6 +99,7 @@ public class EmailService {
             }
         });
     }
+    
     public String generarHtmlInvitacionAsamblea(String nombreAsamblea, Date fecha, LocalTime hora) {
         Context context = new Context();
         context.setVariable("nombreAsamblea", nombreAsamblea);
@@ -97,13 +109,6 @@ public class EmailService {
 
         context.setVariable("hora", hora.format(DateTimeFormatter.ofPattern("HH:mm")));
         return templateEngine.process("email/invitacion-asamblea", context);
-    public String generarHtmlPagoConThymeleaf(ObligacionDTO obligacionDTO){
-        Context context = new Context();
-        context.setVariable("motivo", obligacionDTO.getMotivo());
-        context.setVariable("casa", obligacionDTO.getCasa());
-        context.setVariable("monto", obligacionDTO.getMonto());
-        context.setVariable("fechaPago", obligacionDTO.getFechaPago());
-        return templateEngine.process(PAGO_HTML, context);
     }
 
 }
