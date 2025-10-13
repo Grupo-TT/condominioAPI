@@ -18,7 +18,7 @@ public class SolicitudReservaRecursoController {
     private final ISolicitudReservaRecursoService solicitudReservaService;
 
 
-    @GetMapping("/pendientes")
+    @GetMapping("/reservas")
     public SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(
             @RequestParam("estado")EstadoSolicitud estado
             ){
