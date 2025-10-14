@@ -1,6 +1,7 @@
 package com.condominio.controller;
 
 import com.condominio.dto.response.CasaCuentaDTO;
+import com.condominio.dto.response.CasaDeudoraDTO;
 import com.condominio.dto.response.CasaInfoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.service.interfaces.ICasaService;
@@ -28,5 +29,10 @@ public class CasaController {
             @PathVariable Long idCasa
             ) {
         return casaService.estadoDeCuenta(idCasa);
+    }
+
+    @GetMapping("/por-cobrar")
+    public SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar() {
+        return casaService.obtenerCasasConObligacionesPorCobrar();
     }
 }
