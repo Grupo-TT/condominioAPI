@@ -270,101 +270,75 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void findById_shouldReturnOptional_whenExists() {
-
-        Long id = 1L;
-        RecursoComun recurso = new RecursoComun();
-        recurso.setId(id);
-
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-
-        Optional<RecursoComun> result = recursoComunService.findById(id);
-
-        assertTrue(result.isPresent());
-        assertEquals(id, result.get().getId());
-        verify(recursoComunRepository, times(1)).findById(id);
-    }
-
-    @Test
-    void findById_shouldReturnEmpty_whenNotExists() {
-
-        Long id = 2L;
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
-
-        Optional<RecursoComun> result = recursoComunService.findById(id);
-
-        assertTrue(result.isEmpty());
-        verify(recursoComunRepository, times(1)).findById(id);
-    }
-
-    @Test
     void habilitar_shouldSetEstadoTrue_andSave_whenResourceExists() {
 
-        Long id = 10L;
+        Long id = 1L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
         recurso.setEstadoRecurso(false);
 
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-        when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recursoComunRepository.save(any(RecursoComun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
 
         assertNotNull(result);
         assertEquals("Recurso habilitado exitosamente", result.message());
-        assertNotNull(result.data());
         assertTrue(result.data().isEstadoRecurso(), "El recurso debe quedar habilitado (true)");
 
-        ArgumentCaptor<RecursoComun> captor = ArgumentCaptor.forClass(RecursoComun.class);
-        verify(recursoComunRepository, times(1)).save(captor.capture());
-        assertTrue(captor.getValue().isEstadoRecurso());
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
     }
 
     @Test
     void deshabilitar_shouldSetEstadoFalse_andSave_whenResourceExists() {
 
-        Long id = 11L;
+        Long id = 2L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
         recurso.setEstadoRecurso(true);
 
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-        when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recursoComunRepository.save(any(RecursoComun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act
         SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
 
-        // Assert
         assertNotNull(result);
         assertEquals("Recurso deshabilitado exitosamente", result.message());
-        assertNotNull(result.data());
         assertFalse(result.data().isEstadoRecurso(), "El recurso debe quedar deshabilitado (false)");
 
-        ArgumentCaptor<RecursoComun> captor = ArgumentCaptor.forClass(RecursoComun.class);
-        verify(recursoComunRepository, times(1)).save(captor.capture());
-        assertFalse(captor.getValue().isEstadoRecurso());
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
     }
 
     @Test
-    void habilitar_shouldThrowNoSuchElementException_whenResourceNotFound() {
+    void habilitar_shouldThrowApiException_whenResourceNotFound() {
 
-        Long id = 20L;
+        Long id = 3L;
         when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class, () -> recursoComunService.habilitar(id));
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
+
+        assertEquals("El recurso no existe", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any());
     }
 
     @Test
-    void deshabilitar_shouldThrowNoSuchElementException_whenResourceNotFound() {
+    void deshabilitar_shouldThrowApiException_whenResourceNotFound() {
 
-        Long id = 21L;
+        Long id = 4L;
         when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class, () -> recursoComunService.deshabilitar(id));
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
+
+        assertEquals("El recurso no existe", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any());
     }
-
-
 }
 
