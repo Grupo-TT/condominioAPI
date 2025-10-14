@@ -317,18 +317,18 @@ class CasaServiceTest {
 
     @Test
     void testObtenerCasasConObligacionesPorCobrar_WhenNoPropietario_ShouldReturnNullPropietario() {
-        Casa casa = new Casa();
-        casa.setId(2L);
-        casa.setNumeroCasa(202);
+        Casa newCasa = new Casa();
+        newCasa.setId(2L);
+        newCasa.setNumeroCasa(202);
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(20L);
         obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
         obligacion.setMotivo("Mantenimiento");
         obligacion.setMonto(30000);
-        obligacion.setCasa(casa);
+        obligacion.setCasa(newCasa);
 
-        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(casa));
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
         when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.POR_COBRAR))
                 .thenReturn(List.of(obligacion));
