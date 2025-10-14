@@ -42,4 +42,19 @@ public class RecursoComunController {
         return ResponseEntity.ok(result);
 
     }
+
+    @PutMapping("/enable/{id}")
+    public ResponseEntity<SuccessResult<RecursoComun>> habilitar(
+            @PathVariable Long id) {
+        SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/disable/{id}")
+    public ResponseEntity<SuccessResult<RecursoComun>> deshabilitar(
+            @PathVariable Long id) {
+        SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
+        return ResponseEntity.ok(result);
+    }
+
 }
