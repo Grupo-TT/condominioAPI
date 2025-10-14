@@ -91,24 +91,24 @@ public class RecursoComunService implements IRecursoComunService {
 
     @Override
     public SuccessResult<RecursoComun> habilitar(Long id) {
-        Optional<RecursoComun> recurso = findById(id);
-        recurso.ifPresent(r -> { r.setEstadoRecurso(true);
-        recursoComunRepository.save(r);
-        });
+        RecursoComun recurso = recursoComunRepository.findById(id)
+                .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        return new SuccessResult<>("Recurso habilitado exitosamente", recurso.get());
+        recurso.setEstadoRecurso(true);
+        RecursoComun actualizado = recursoComunRepository.save(recurso);
 
+        return new SuccessResult<>("Recurso habilitado exitosamente", actualizado);
     }
 
     @Override
     public SuccessResult<RecursoComun> deshabilitar(Long id) {
-        Optional<RecursoComun> recurso = findById(id);
-        recurso.ifPresent(r -> { r.setEstadoRecurso(false);
-        recursoComunRepository.save(r);
-        });
+        RecursoComun recurso = recursoComunRepository.findById(id)
+                .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        return new SuccessResult<>("Recurso deshabilitado exitosamente", recurso.get());
+        recurso.setEstadoRecurso(false);
+        RecursoComun actualizado = recursoComunRepository.save(recurso);
+
+        return new SuccessResult<>("Recurso deshabilitado exitosamente", actualizado);
     }
 
-    public Optional<RecursoComun> findById(Long id) {return recursoComunRepository.findById(id);}
 }
