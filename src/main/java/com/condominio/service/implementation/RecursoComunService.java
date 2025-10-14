@@ -94,10 +94,15 @@ public class RecursoComunService implements IRecursoComunService {
         RecursoComun recurso = recursoComunRepository.findById(id)
                 .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        recurso.setEstadoRecurso(true);
-        RecursoComun actualizado = recursoComunRepository.save(recurso);
+        if (recurso.isEstadoRecurso()) {
+            throw new ApiException("El recurso ya está habilitado", HttpStatus.BAD_REQUEST);
+        } else {
 
-        return new SuccessResult<>("Recurso habilitado exitosamente", actualizado);
+            recurso.setEstadoRecurso(true);
+            RecursoComun actualizado = recursoComunRepository.save(recurso);
+
+            return new SuccessResult<>("Recurso habilitado exitosamente", actualizado);
+            }
     }
 
     @Override
@@ -105,10 +110,15 @@ public class RecursoComunService implements IRecursoComunService {
         RecursoComun recurso = recursoComunRepository.findById(id)
                 .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        recurso.setEstadoRecurso(false);
-        RecursoComun actualizado = recursoComunRepository.save(recurso);
+        if (!recurso.isEstadoRecurso()) {
+            throw new ApiException("El recurso ya está deshabilitado", HttpStatus.BAD_REQUEST);
+        } else {
 
-        return new SuccessResult<>("Recurso deshabilitado exitosamente", actualizado);
+            recurso.setEstadoRecurso(false);
+            RecursoComun actualizado = recursoComunRepository.save(recurso);
+
+            return new SuccessResult<>("Recurso deshabilitado exitosamente", actualizado);
+            }
     }
 
 }
