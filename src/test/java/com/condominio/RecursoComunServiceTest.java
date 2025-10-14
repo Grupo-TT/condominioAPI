@@ -339,5 +339,41 @@ class RecursoComunServiceTest {
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any());
     }
+
+    @Test
+    void habilitar_shouldThrowApiException_whenAlreadyEnabled() {
+
+        Long id = 2L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(true);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
+        assertEquals("El recurso ya está habilitado", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void deshabilitar_shouldThrowApiException_whenAlreadyDisabled() {
+
+        Long id = 11L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(false);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
+        assertEquals("El recurso ya está deshabilitado", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
 }
 
