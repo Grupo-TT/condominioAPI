@@ -10,16 +10,14 @@ import com.condominio.service.implementation.RecursoComunService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -270,5 +268,112 @@ class RecursoComunServiceTest {
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
         verify(tipoRecursoComunRepository, never()).findById(anyLong());
     }
+
+    @Test
+    void findById_shouldReturnOptional_whenExists() {
+        // Arrange
+        Long id = 1L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        // Act
+        Optional<RecursoComun> result = recursoComunService.findById(id);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(id, result.get().getId());
+        verify(recursoComunRepository, times(1)).findById(id);
+    }
+
+    @Test
+    void findById_shouldReturnEmpty_whenNotExists() {
+        // Arrange
+        Long id = 2L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<RecursoComun> result = recursoComunService.findById(id);
+
+        // Assert
+        assertTrue(result.isEmpty());
+        verify(recursoComunRepository, times(1)).findById(id);
+    }
+
+    @Test
+    void habilitar_shouldSetEstadoTrue_andSave_whenResourceExists() {
+        // Arrange
+        Long id = 10L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(false);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Recurso habilitado exitosamente", result.message());
+        assertNotNull(result.data());
+        assertTrue(result.data().isEstadoRecurso(), "El recurso debe quedar habilitado (true)");
+
+        // Verificamos que se llamó save con el recurso ya modificado
+        ArgumentCaptor<RecursoComun> captor = ArgumentCaptor.forClass(RecursoComun.class);
+        verify(recursoComunRepository, times(1)).save(captor.capture());
+        assertTrue(captor.getValue().isEstadoRecurso());
+    }
+
+    @Test
+    void deshabilitar_shouldSetEstadoFalse_andSave_whenResourceExists() {
+        // Arrange
+        Long id = 11L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(true);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Recurso deshabilitado exitosamente", result.message());
+        assertNotNull(result.data());
+        assertFalse(result.data().isEstadoRecurso(), "El recurso debe quedar deshabilitado (false)");
+
+        ArgumentCaptor<RecursoComun> captor = ArgumentCaptor.forClass(RecursoComun.class);
+        verify(recursoComunRepository, times(1)).save(captor.capture());
+        assertFalse(captor.getValue().isEstadoRecurso());
+    }
+
+    @Test
+    void habilitar_shouldThrowNoSuchElementException_whenResourceNotFound() {
+        // Arrange
+        Long id = 20L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class, () -> recursoComunService.habilitar(id));
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void deshabilitar_shouldThrowNoSuchElementException_whenResourceNotFound() {
+        // Arrange
+        Long id = 21L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class, () -> recursoComunService.deshabilitar(id));
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+
 }
 
