@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(HttpServletRequest req) {
         return ResponseEntity
                 .status(403)
                 .body(Map.of("timestamp", OffsetDateTime.now().toString(),
