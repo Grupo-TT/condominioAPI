@@ -5,7 +5,6 @@ import com.condominio.dto.response.CasaDeudoraDTO;
 import com.condominio.dto.response.CasaInfoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.service.interfaces.ICasaService;
-import jakarta.annotation.security.RolesAllowed;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
