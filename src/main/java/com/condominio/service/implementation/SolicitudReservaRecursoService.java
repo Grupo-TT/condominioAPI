@@ -56,4 +56,36 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
         return new SuccessResult<>("Solicitudes " + estado.name().toLowerCase() + " obtenidas correctamente", dtos);
     }
+
+    @Override
+    public SuccessResult<SolicitudReservaRecursoDTO> aprobar(Long id) {
+        SolicitudReservaRecurso solicitud = validarSolicitud(id);
+
+        solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        SolicitudReservaRecurso aprobada = solicitudReservaRecursoRepository.save(solicitud);
+        return new SuccessResult<>("Reserva aprobada correctamente", modelMapper.map(aprobada, SolicitudReservaRecursoDTO.class));
+    }
+
+    @Override
+    public SuccessResult<SolicitudReservaRecursoDTO> rechazar(Long id) {
+        SolicitudReservaRecurso solicitud = validarSolicitud(id);
+
+        solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
+        SolicitudReservaRecurso rechazada = solicitudReservaRecursoRepository.save(solicitud);
+        return new SuccessResult<>("Reserva rechazada correctamente", modelMapper.map(rechazada, SolicitudReservaRecursoDTO.class));
+    }
+
+    private SolicitudReservaRecurso validarSolicitud(Long id) {
+        SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
+                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+
+        if (solicitud.getEstadoSolicitud() != EstadoSolicitud.PENDIENTE) {
+            throw new ApiException("Solo se pueden gestionar reservas pendientes", HttpStatus.BAD_REQUEST);
+        }
+
+        if(!solicitud.getRecursoComun().isEstadoRecurso()){
+            throw new ApiException("No se puede aprobar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
+        }
+        return solicitud;
+    }
 }

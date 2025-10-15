@@ -5,10 +5,8 @@ import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -24,5 +22,15 @@ public class SolicitudReservaRecursoController {
             ){
 
         return solicitudReservaService.findByEstado(estado);
+    }
+
+    @PutMapping("/approve/{id}")
+    public SuccessResult<SolicitudReservaRecursoDTO> aprobar(@PathVariable Long id){
+        return solicitudReservaService.aprobar(id);
+    }
+
+    @PutMapping("/reject/{id}")
+    public SuccessResult<SolicitudReservaRecursoDTO> rechazar(@PathVariable Long id){
+        return solicitudReservaService.rechazar(id);
     }
 }
