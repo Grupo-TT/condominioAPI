@@ -16,10 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -269,6 +266,114 @@ class RecursoComunServiceTest {
 
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
         verify(tipoRecursoComunRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void habilitar_shouldSetEstadoTrue_andSave_whenResourceExists() {
+
+        Long id = 1L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(false);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(any(RecursoComun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
+
+        assertNotNull(result);
+        assertEquals("Recurso habilitado exitosamente", result.message());
+        assertTrue(result.data().isEstadoRecurso(), "El recurso debe quedar habilitado (true)");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+    }
+
+    @Test
+    void deshabilitar_shouldSetEstadoFalse_andSave_whenResourceExists() {
+
+        Long id = 2L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(true);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(any(RecursoComun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
+
+        assertNotNull(result);
+        assertEquals("Recurso deshabilitado exitosamente", result.message());
+        assertFalse(result.data().isEstadoRecurso(), "El recurso debe quedar deshabilitado (false)");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+    }
+
+    @Test
+    void habilitar_shouldThrowApiException_whenResourceNotFound() {
+
+        Long id = 3L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
+
+        assertEquals("El recurso no existe", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void deshabilitar_shouldThrowApiException_whenResourceNotFound() {
+
+        Long id = 4L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
+
+        assertEquals("El recurso no existe", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void habilitar_shouldThrowApiException_whenAlreadyEnabled() {
+
+        Long id = 2L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(true);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
+        assertEquals("El recurso ya está habilitado", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void deshabilitar_shouldThrowApiException_whenAlreadyDisabled() {
+
+        Long id = 11L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setEstadoRecurso(false);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
+        assertEquals("El recurso ya está deshabilitado", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
     }
 }
 
