@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Invitación a Asamblea</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Figtree, sans-serif; color: #333333 !important; background-color: #f7f7f7;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td style="padding: 20px 0;">
+            <table align="center" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                <!-- Header -->
+                <tr>
+                    <td style="background-color: #622599; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Invitación a Asamblea</h1>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 30px;">
+                        <p style="margin-top: 0; font-size: 16px; color: #333333 !important;">Hola estimado(a) usuario</p>
+
+                        <p style="font-size: 16px; line-height: 1.5;color: #333333 !important;">Se le invita a participar en la siguiente asamblea:</p>
+
+                        <div style="background-color: #f5f5f5; border-left: 4px solid #622599; padding: 15px; margin: 25px 0;">
+                            <p style="margin: 0; font-size: 16px; font-weight: bold;">Detalles de la Asamblea</p>
+                            <p style="margin: 10px 0 0; font-size: 16px;"><strong>Nombre:</strong> <span th:text="${nombreAsamblea}"></span></p>
+                            <p style="margin: 10px 0 0; font-size: 16px;"><strong>Fecha:</strong> <span th:text="${fecha}"></span></p>
+                            <p style="margin: 10px 0 0; font-size: 16px;"><strong>Hora:</strong> <span th:text="${hora}"></span></p>
+                        </div>
+
+                        <p style="font-size: 16px; line-height: 1.5; color: #333333 !important;">Su participación es muy importante.</p>
+
+                        <p style="font-size: 16px; margin-bottom: 0;color: #333333 !important;">Atentamente,<br>Administracion</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #f5f5f5; padding: 20px; text-align: center; font-size: 14px; color: #666666; border-radius: 0 0 8px 8px;">
+                        <p style="margin: 0;">&copy; 2025 Flor del campo - Todos los derechos reservados.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
