@@ -1,10 +1,8 @@
 package com.condominio;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import com.condominio.dto.response.CasaCuentaDTO;
-import com.condominio.dto.response.CasaInfoDTO;
-import com.condominio.dto.response.PersonaSimpleDTO;
-import com.condominio.dto.response.SuccessResult;
+
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
@@ -12,6 +10,7 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.CasaService;
 import com.condominio.service.implementation.MascotaService;
 import com.condominio.service.implementation.MiembroService;
+import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -267,6 +266,89 @@ class CasaServiceTest {
         verify(personaRepository).findPropietarioByCasaId(2L);
         verify(miembroService).countByCasaId(2L);
         verify(mascotaService).countByCasaId(2L);
+    }
+
+    @Test
+    void testObtenerCasasConObligacionesPorCobrar_WhenCasasExist() {
+        Casa casa = new Casa();
+        casa.setId(1L);
+        casa.setNumeroCasa(101);
+
+        UserEntity user = new UserEntity();
+        user.setEmail("propietario@mail.com");
+
+        Persona propietario = new Persona();
+        propietario.setId(1L);
+        propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+        propietario.setTelefono(3123456789L);
+        propietario.setUser(user);
+
+        Obligacion obligacion = new Obligacion();
+        obligacion.setId(10L);
+        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setMotivo("Cuota de administración");
+        obligacion.setMonto(50000);
+        obligacion.setCasa(casa);
+
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(casa));
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
+        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR))
+                .thenReturn(List.of(obligacion));
+
+        SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+        assertThat(result.message()).isEqualTo("Casas con obligaciones por cobrar obtenidas correctamente");
+
+        CasaDeudoraDTO dto = result.data().getFirst();
+        assertThat(dto.getNumeroCasa()).isEqualTo(101);
+        assertThat(dto.getSaldoPendiente()).isEqualTo(50000);
+        assertThat(dto.getPropietario().getNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(dto.getPropietario().getCorreo()).isEqualTo("propietario@mail.com");
+        assertThat(dto.getObligacionesPendientes()).hasSize(1);
+        assertThat(dto.getObligacionesPendientes().getFirst().getMotivo()).isEqualTo("Cuota de administración");
+
+        verify(casaRepository).findCasasConObligacionesPorCobrar();
+        verify(personaRepository).findPropietarioByCasaId(1L);
+        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR);
+    }
+
+    @Test
+    void testObtenerCasasConObligacionesPorCobrar_WhenNoPropietario_ShouldReturnNullPropietario() {
+        Casa newCasa = new Casa();
+        newCasa.setId(2L);
+        newCasa.setNumeroCasa(202);
+
+        Obligacion obligacion = new Obligacion();
+        obligacion.setId(20L);
+        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setMotivo("Mantenimiento");
+        obligacion.setMonto(30000);
+        obligacion.setCasa(newCasa);
+
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
+        when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.POR_COBRAR))
+                .thenReturn(List.of(obligacion));
+
+        SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
+
+        assertThat(result).isNotNull();
+        CasaDeudoraDTO dto = result.data().getFirst();
+        assertThat(dto.getPropietario()).isNull();
+        assertThat(dto.getSaldoPendiente()).isEqualTo(30000);
+        assertThat(dto.getObligacionesPendientes()).hasSize(1);
+    }
+
+    @Test
+    void testObtenerCasasConObligacionesPorCobrar_WhenNoCasasExist_ShouldThrowApiException() {
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of());
+
+        assertThrows(ApiException.class, () -> casaService.obtenerCasasConObligacionesPorCobrar());
+
+        verify(casaRepository).findCasasConObligacionesPorCobrar();
     }
 
 }
