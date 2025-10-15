@@ -8,6 +8,7 @@ import com.condominio.service.interfaces.ITipoRecursoComun;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class TipoRecursoComunController {
     private final ITipoRecursoComun tipoRecursoComunService;
 
     @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN','PROPIETARIO','ARRIENDATARIO')")
     public ResponseEntity<SuccessResult<List<TipoRecursoComun>>> findAll() {
         List<TipoRecursoComun> recursos = tipoRecursoComunService.findAll();
 
@@ -30,6 +32,7 @@ public class TipoRecursoComunController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResult<TipoRecursoComunDTO>> create(
             @RequestBody TipoRecursoComunDTO tipoRecurso) {
 
