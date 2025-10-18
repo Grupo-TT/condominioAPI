@@ -20,7 +20,7 @@ public class MiembroController {
     private final MiembroService miembroService;
 
     @GetMapping("/view-members/{idCasa}")
-    @PreAuthorize("hasAnyRole('ADMIN','PROPIETARIO','ARRIENDATARIO')")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<List<MiembrosDTO>> obtenerMiembrosPorCasa(@PathVariable Long idCasa) {
 
         return miembroService.obtenerMiembrosPorCasa(idCasa);

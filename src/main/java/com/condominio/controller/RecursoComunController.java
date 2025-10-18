@@ -20,7 +20,7 @@ public class RecursoComunController {
     private final IRecursoComunService recursoComunService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN','PROPIETARIO','ARRIENDATARIO')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResult<List<RecursoComun>>> findAll(){
         List<RecursoComun> recursos = recursoComunService.findAll();
         SuccessResult<List<RecursoComun>> response =

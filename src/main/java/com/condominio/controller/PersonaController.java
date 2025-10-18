@@ -24,7 +24,7 @@ public class PersonaController {
     }
 
     @PostMapping("/register")
-    @PreAuthorize("hasAnyRole('ADMIN','PROPIETARIO')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResult<PersonaRegistroDTO>> createPersona(
             @RequestBody PersonaRegistroDTO personaRegistro) {
 

@@ -21,12 +21,13 @@ public class CasaController {
     private final ICasaService casaService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN','PROPIETARIO','ARRIENDATARIO')")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<List<CasaInfoDTO>>  listarCasas() {
         return casaService.obtenerCasas();
     }
 
     @GetMapping("/{idCasa}/estado-cuenta")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<CasaCuentaDTO> obtenerEstadoCuenta(
             @PathVariable Long idCasa
             ) {
