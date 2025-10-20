@@ -76,4 +76,25 @@ class PdfServiceTest {
         assertNotNull(pdfBytes);
         assertTrue(pdfBytes.length > 0);
     }
+    @Test
+    void convertirLogoABase64_CuandoIOExceptionDevuelveNull() {
+
+        Object result = ReflectionTestUtils.invokeMethod(pdfService,
+                "convertirLogoABase64", "ruta/inexistente.png");
+
+        assertNull(result);
+    }
+    @Test
+    void generarPdf_CuandoThymeleafFalla_LanzaIOException() {
+
+        when(templateEngine.process(anyString(), any(Context.class)))
+                .thenThrow(new RuntimeException("Error Thymeleaf"));
+
+        IOException exception = assertThrows(IOException.class, () ->
+                pdfService.generarPdf("Carlos", 2L, "2025-10-21")
+        );
+
+        assertTrue(exception.getMessage().contains("Error procesando la plantilla Thymeleaf"));
+    }
+
 }
