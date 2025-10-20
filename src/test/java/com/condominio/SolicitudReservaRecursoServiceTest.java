@@ -15,6 +15,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -377,6 +380,105 @@ class SolicitudReservaRecursoServiceTest {
         assertThatThrownBy(() -> solicitudReservaRecursoService.rechazar(id))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("No se puede aprobar una reserva de un recurso deshabilitado");
+    }
+
+    @Test
+    void eliminar_shouldDeleteWhenApproved_andDateBeforeYesterday() {
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setId(1L);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        solicitud.setFechaSolicitud(LocalDate.now().minusDays(2));
+
+        when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+        when(modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class))
+                .thenReturn(new SolicitudReservaRecursoDTO());
+
+        SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.eliminar(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Reserva eliminada exitosamente");
+        verify(solicitudReservaRecursoRepository).findById(1L);
+        verify(solicitudReservaRecursoRepository).delete(solicitud);
+    }
+
+    @Test
+    void eliminar_shouldThrowNotFound_whenMissing() {
+
+        when(solicitudReservaRecursoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(99L))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("No se ha encontrado la solicitud")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(99L);
+        verify(solicitudReservaRecursoRepository, never()).delete(any());
+    }
+
+    @Test
+    void eliminar_shouldThrowBadRequest_ifNotApproved() {
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setId(2L);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.now().minusDays(2));
+
+        when(solicitudReservaRecursoRepository.findById(2L)).thenReturn(Optional.of(solicitud));
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(2L))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Solo se pueden eliminar reservas aprobadas")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(2L);
+        verify(solicitudReservaRecursoRepository, never()).delete(any());
+    }
+
+    @Test
+    void eliminar_shouldThrowBadRequest_ifDateNotBeforeYesterday() {
+
+        SolicitudReservaRecurso solicitudAyer = new SolicitudReservaRecurso();
+        solicitudAyer.setId(3L);
+        solicitudAyer.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        solicitudAyer.setFechaSolicitud(LocalDate.now().minusDays(1));
+
+        when(solicitudReservaRecursoRepository.findById(3L)).thenReturn(Optional.of(solicitudAyer));
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(3L))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Solo se permiten borrar reservas posteriores a la fecha de ayer")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(3L);
+        verify(solicitudReservaRecursoRepository, never()).delete(any());
+
+        SolicitudReservaRecurso solicitudHoy = new SolicitudReservaRecurso();
+        solicitudHoy.setId(4L);
+        solicitudHoy.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        solicitudHoy.setFechaSolicitud(LocalDate.now());
+
+        when(solicitudReservaRecursoRepository.findById(4L)).thenReturn(Optional.of(solicitudHoy));
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(4L))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Solo se permiten borrar reservas posteriores a la fecha de ayer")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(4L);
+        verify(solicitudReservaRecursoRepository, never()).delete(any());
     }
 }
 
