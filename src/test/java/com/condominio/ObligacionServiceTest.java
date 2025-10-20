@@ -1,5 +1,7 @@
 package com.condominio;
 
+import com.condominio.dto.request.MultaActualizacionDTO;
+import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.response.EstadoCuentaDTO;
 import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -39,6 +42,7 @@ class ObligacionServiceTest {
 
     private Casa casa;
     private Persona propietario;
+    private Obligacion obligacion;
     private UserEntity user;
     private AutoCloseable closeable;
 
@@ -52,6 +56,16 @@ class ObligacionServiceTest {
 
         user = new UserEntity();
         user.setEmail("propietario@mail.com");
+
+        obligacion = Obligacion.builder()
+                .id(1L)
+                .monto(20000)
+                .motivo("Anterior")
+                .casa(casa)
+                .tipoObligacion(TipoObligacion.MULTA)
+                .tipoPago(TipoPago.DINERO)
+                .estadoPago(EstadoPago.POR_COBRAR)
+                .build();
 
         propietario = new Persona();
         propietario.setId(1L);
@@ -118,5 +132,92 @@ class ObligacionServiceTest {
         verify(casaRepository).findById(99L);
         verifyNoInteractions(personaRepository);
         verifyNoInteractions(obligacionRepository);
+    }
+    @Test
+    void save_DebeGuardarMultaCuandoCasaExiste() {
+        MultaRegistroDTO dto = new MultaRegistroDTO(1L, 20000, "Basura mal dispuesta");
+
+        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
+        when(obligacionRepository.save(any(Obligacion.class))).thenReturn(obligacion);
+
+        SuccessResult<Obligacion> result = obligacionService.save(dto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Multa registrada correctamente");
+        assertThat(result.data().getTipoObligacion()).isEqualTo(TipoObligacion.MULTA);
+        assertThat(result.data().getTipoPago()).isEqualTo(TipoPago.DINERO);
+        verify(casaRepository).findById(1L);
+        verify(obligacionRepository).save(any(Obligacion.class));
+    }
+
+    @Test
+    void save_DebeFallarCuandoCasaNoExiste() {
+        MultaRegistroDTO dto = new MultaRegistroDTO(99L, 15000, "Basura mal dispuesta");
+
+        when(casaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> obligacionService.save(dto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Casa no encontrada con ID: 99");
+
+        verify(obligacionRepository, never()).save(any());
+    }
+
+    @Test
+    void update_DebeActualizarMultaCorrectamente() {
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Pago tardío", TipoPago.DINERO);
+
+        when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
+        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
+        when(obligacionRepository.save(any(Obligacion.class))).thenReturn(obligacion);
+
+        SuccessResult<Obligacion> result = obligacionService.update(1L, dto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Multa actualizada correctamente");
+        assertThat(result.data().getTipoPago()).isEqualTo(TipoPago.DINERO);
+        verify(obligacionRepository).save(any(Obligacion.class));
+    }
+
+    @Test
+    void update_DebeFallarSiMultaNoExiste() {
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Pago tardío", TipoPago.DINERO);
+
+        when(obligacionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> obligacionService.update(1L, dto))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("La multa no existe");
+
+        verify(casaRepository, never()).findById(any());
+        verify(obligacionRepository, never()).save(any());
+    }
+
+    @Test
+    void update_DebeFallarSiCasaNoExiste() {
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(99L, 30000, "Pago tardío", TipoPago.DINERO);
+
+        when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
+        when(casaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> obligacionService.update(1L, dto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Casa no encontrada con ID: 99");
+
+        verify(obligacionRepository, never()).save(any());
+    }
+
+    @Test
+    void update_NoDebeCambiarTipoPagoSiNoSeEnvia() {
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 50000, "Pago tardío", null);
+
+        when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
+        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
+        when(obligacionRepository.save(any(Obligacion.class))).thenReturn(obligacion);
+
+        obligacionService.update(1L, dto);
+
+        // Verificamos que el tipo de pago original (DINERO) se conserve
+        assertThat(obligacion.getTipoPago()).isEqualTo(TipoPago.DINERO);
     }
 }
