@@ -12,6 +12,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class ObligacionDTO {
+
+    private Long id;
     private String estado;
     private String motivo;
     private int casa;

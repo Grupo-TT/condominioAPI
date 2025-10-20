@@ -122,6 +122,7 @@ public class CasaService implements ICasaService {
 
             List<ObligacionDTO> obligacionesDTO = pendientes.stream()
                     .map(o -> ObligacionDTO.builder()
+                            .id((o.getId()))
                             .estado(o.getEstadoPago().name())
                             .motivo(o.getMotivo())
                             .casa(o.getCasa().getNumeroCasa())
