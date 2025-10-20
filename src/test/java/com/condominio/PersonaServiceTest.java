@@ -234,5 +234,57 @@ class PersonaServiceTest {
         assertEquals(savedPersona, ((CreatedPersonaEvent) captured).getPersona());
 
     }
+    @Test
+    void obtenerSolicitantePorCasa_debeRetornarArrendatarioSiExiste() {
 
+        Persona arrendatario = new Persona();
+        when(personaRepository.findArrendatarioByCasaId(1L))
+                .thenReturn(Optional.of(arrendatario));
+
+
+        Persona result = personaService.obtenerSolicitantePorCasa(1L);
+
+
+        assertNotNull(result);
+        assertEquals(arrendatario, result);
+        verify(personaRepository).findArrendatarioByCasaId(1L);
+        verify(personaRepository, never()).findPropietarioByCasaId(anyLong());
+    }
+    @Test
+    void obtenerSolicitantePorCasa_debeRetornarPropietarioSiNoHayArrendatario() {
+
+        Persona propietario = new Persona();
+        when(personaRepository.findArrendatarioByCasaId(2L))
+                .thenReturn(Optional.empty());
+        when(personaRepository.findPropietarioByCasaId(2L))
+                .thenReturn(Optional.of(propietario));
+
+
+        Persona result = personaService.obtenerSolicitantePorCasa(2L);
+
+
+        assertNotNull(result);
+        assertEquals(propietario, result);
+        verify(personaRepository).findArrendatarioByCasaId(2L);
+        verify(personaRepository).findPropietarioByCasaId(2L);
+    }
+    @Test
+    void obtenerSolicitantePorCasa_debeLanzarExcepcionSiNoExisteSolicitante() {
+
+        Long idCasa = 3L;
+        when(personaRepository.findArrendatarioByCasaId(idCasa))
+                .thenReturn(Optional.empty());
+        when(personaRepository.findPropietarioByCasaId(idCasa))
+                .thenReturn(Optional.empty());
+
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> personaService.obtenerSolicitantePorCasa(idCasa));
+
+
+        assertTrue(ex.getMessage().contains("No se encontró un solicitante"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(personaRepository).findArrendatarioByCasaId(idCasa);
+        verify(personaRepository).findPropietarioByCasaId(idCasa);
+    }
 }

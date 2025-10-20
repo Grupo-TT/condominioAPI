@@ -91,4 +91,13 @@ public class PersonaService implements IPersonaService {
         return new SuccessResult<>("Persona registrada correctamente", savedPersona);
     }
 
+    public Persona obtenerSolicitantePorCasa(Long idCasa) {
+        return personaRepository.findArrendatarioByCasaId(idCasa)
+                .orElseGet(() -> personaRepository.findPropietarioByCasaId(idCasa)
+                        .orElseThrow(() -> new ApiException(
+                                "No se encontró un solicitante (arrendatario o propietario) para la casa con ID " + idCasa,
+                                HttpStatus.BAD_REQUEST
+                        )));
+    }
+
 }

@@ -2,6 +2,8 @@ package com.condominio.service.implementation;
 
 
 import com.condominio.dto.response.ObligacionDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
@@ -17,6 +19,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;
@@ -63,4 +66,28 @@ public class EmailService {
         return templateEngine.process(PAGO_HTML, context);
     }
 
+    @Async("mailTaskExecutor")
+    public void enviarPazYSalvo(String destinatario, byte[] pdfBytes, String nombreArchivo) throws MessagingException {
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+        helper.setTo(destinatario);
+        helper.setSubject("Paz y Salvo - Condominio");
+        helper.setText("Los administradores del condominio flor del campo han generado " +
+                        "tu  paz y salvo.",
+                false);
+
+
+        helper.addAttachment(nombreArchivo, new org.springframework.core.io.ByteArrayResource(pdfBytes));
+
+        try {
+            mailSender.send(mimeMessage);
+            log.info("Correo enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
+        }
+    }
 }

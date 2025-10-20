@@ -16,8 +16,7 @@ import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
@@ -126,4 +125,23 @@ class EmailServiceTest {
         verify(templateEngine, times(1)).process(anyString(), any(Context.class));
     }
 
+    @Test
+    void testEnviarPazYSalvo_mockeado() {
+
+        EmailService spyEmailService = spy(emailService);
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        byte[] pdfBytes = "dummy pdf bytes".getBytes();
+        String destinatario = "usuario@correo.com";
+        String nombreArchivo = "paz_y_salvo.pdf";
+
+
+        assertDoesNotThrow(() ->
+                spyEmailService.enviarPazYSalvo(destinatario, pdfBytes, nombreArchivo)
+        );
+
+        verify(mailSender).createMimeMessage();
+        verify(mailSender).send(mensaje);
+    }
 }
