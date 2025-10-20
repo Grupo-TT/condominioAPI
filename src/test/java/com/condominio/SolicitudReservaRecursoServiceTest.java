@@ -18,6 +18,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -479,6 +480,138 @@ class SolicitudReservaRecursoServiceTest {
 
         verify(solicitudReservaRecursoRepository).findById(4L);
         verify(solicitudReservaRecursoRepository, never()).delete(any());
+    }
+
+    @Test
+    void update_shouldModifyAndSave_whenValid() {
+
+        Long id = 1L;
+
+        SolicitudReservaRecurso existing = new SolicitudReservaRecurso();
+        existing.setId(id);
+        existing.setFechaSolicitud(LocalDate.now().plusDays(2));
+        existing.setHoraInicio(LocalTime.of(10,0));
+        existing.setHoraFin(LocalTime.of(12,0));
+        existing.setNumeroInvitados(5);
+
+        when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        dto.setFechaSolicitud(LocalDate.now().plusDays(3));
+        dto.setHoraInicio(LocalTime.of(14, 0));
+        dto.setHoraFin(LocalTime.of(16, 0));
+        dto.setNumeroInvitados(8);
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setEstadoRecurso(true);
+        dto.setRecursoComun(recurso);
+
+        SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
+        saved.setId(id);
+        saved.setFechaSolicitud(dto.getFechaSolicitud());
+        saved.setHoraInicio(dto.getHoraInicio());
+        saved.setHoraFin(dto.getHoraFin());
+        saved.setNumeroInvitados(dto.getNumeroInvitados());
+
+        when(solicitudReservaRecursoRepository.save(any(SolicitudReservaRecurso.class))).thenReturn(saved);
+        when(modelMapper.map(saved, SolicitudReservaRecursoDTO.class)).thenReturn(dto);
+
+        SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.update(id, dto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Reserva modificada exitosamente");
+        assertThat(result.data()).isNotNull();
+        assertThat(result.data()).isEqualTo(dto);
+
+        ArgumentCaptor<SolicitudReservaRecurso> captor = ArgumentCaptor.forClass(SolicitudReservaRecurso.class);
+        verify(solicitudReservaRecursoRepository).save(captor.capture());
+        SolicitudReservaRecurso arg = captor.getValue();
+
+        assertThat(arg.getFechaSolicitud()).isEqualTo(dto.getFechaSolicitud());
+        assertThat(arg.getHoraInicio()).isEqualTo(dto.getHoraInicio());
+        assertThat(arg.getHoraFin()).isEqualTo(dto.getHoraFin());
+        assertThat(arg.getNumeroInvitados()).isEqualTo(dto.getNumeroInvitados());
+
+        verify(solicitudReservaRecursoRepository).findById(id);
+        verify(modelMapper).map(saved, SolicitudReservaRecursoDTO.class);
+    }
+
+    @Test
+    void update_shouldThrowNotFound_whenSolicitudMissing() {
+
+        Long id = 99L;
+        when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.empty());
+
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.update(id, dto))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("No se ha encontrado la solicitud")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(id);
+        verifyNoMoreInteractions(solicitudReservaRecursoRepository);
+    }
+
+    @Test
+    void update_shouldThrowBadRequest_whenRecursoDisabled() {
+
+        Long id = 2L;
+        SolicitudReservaRecurso existing = new SolicitudReservaRecurso();
+        existing.setId(id);
+
+        when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        RecursoComun recurso = new RecursoComun();
+        recurso.setEstadoRecurso(false);
+        dto.setRecursoComun(recurso);
+        dto.setFechaSolicitud(LocalDate.now().plusDays(1));
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.update(id, dto))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("No se puede modificar una reserva de un recurso deshabilitado.")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(id);
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void update_shouldThrowBadRequest_whenFechaAntesDeHoy() {
+
+        Long id = 3L;
+        SolicitudReservaRecurso existing = new SolicitudReservaRecurso();
+        existing.setId(id);
+
+        when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        RecursoComun recurso = new RecursoComun();
+        recurso.setEstadoRecurso(true); // enabled
+        dto.setRecursoComun(recurso);
+
+        dto.setFechaSolicitud(LocalDate.now().minusDays(1)); // fecha anterior a hoy -> invalid
+        dto.setHoraInicio(LocalTime.of(10, 0));
+        dto.setHoraFin(LocalTime.of(11, 0));
+        dto.setNumeroInvitados(2);
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.update(id, dto))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Por favor, ingresa una fecha y hora validas")
+                .satisfies(ex -> {
+                    ApiException ae = (ApiException) ex;
+                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        verify(solicitudReservaRecursoRepository).findById(id);
+        verify(solicitudReservaRecursoRepository, never()).save(any());
     }
 }
 
