@@ -81,7 +81,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> eliminar(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
-                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if(solicitud.getEstadoSolicitud() != EstadoSolicitud.APROBADA) {
             throw new ApiException("Solo se pueden eliminar reservas aprobadas", HttpStatus.BAD_REQUEST);
