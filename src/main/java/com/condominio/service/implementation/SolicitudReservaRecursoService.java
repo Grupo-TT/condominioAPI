@@ -22,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoService {
 
+    private static final String SOLICITUD_NOT_FOUND = "No se ha encontrado la solicitud";
     private final SolicitudReservaRecursoRepository solicitudReservaRecursoRepository;
     private final ModelMapper modelMapper;
     private final PersonaRepository personaRepository;
@@ -97,7 +98,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> update(Long id, SolicitudReservaRecursoDTO solicitud) {
         SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
-                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if(!solicitud.getRecursoComun().isEstadoRecurso()) {
             throw new ApiException("No se puede modificar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
@@ -119,7 +120,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
-                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if (solicitud.getEstadoSolicitud() != EstadoSolicitud.PENDIENTE) {
             throw new ApiException("Solo se pueden gestionar reservas pendientes", HttpStatus.BAD_REQUEST);
