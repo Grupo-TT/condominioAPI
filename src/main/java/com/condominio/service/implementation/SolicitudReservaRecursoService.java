@@ -94,6 +94,29 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         return new SuccessResult<>("Reserva eliminada exitosamente", modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class));
     }
 
+    @Override
+    public SuccessResult<SolicitudReservaRecursoDTO> update(Long id, SolicitudReservaRecursoDTO solicitud) {
+        SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
+                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+
+        if(!solicitud.getRecursoComun().isEstadoRecurso()) {
+            throw new ApiException("No se puede modificar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
+        }
+
+        if(solicitud.getFechaSolicitud().isBefore(LocalDate.now())) {
+            throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
+        }
+
+        oldSolicitud.setFechaSolicitud(solicitud.getFechaSolicitud());
+        oldSolicitud.setHoraInicio(solicitud.getHoraInicio());
+        oldSolicitud.setHoraFin(solicitud.getHoraFin());
+        oldSolicitud.setNumeroInvitados(solicitud.getNumeroInvitados());
+
+        SolicitudReservaRecurso actualizada = solicitudReservaRecursoRepository.save(oldSolicitud);
+
+        return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaRecursoDTO.class));
+    }
+
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
