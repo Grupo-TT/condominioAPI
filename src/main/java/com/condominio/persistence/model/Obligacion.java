@@ -3,7 +3,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -35,6 +34,9 @@ public class Obligacion {
 
     @Enumerated(EnumType.STRING)
     private TipoPago tipoPago;
+
+    @Enumerated(EnumType.STRING)
+    private TipoObligacion tipoObligacion;
 
     @Enumerated(EnumType.STRING)
     private EstadoPago estadoPago;
