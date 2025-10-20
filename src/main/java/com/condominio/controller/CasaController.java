@@ -6,6 +6,7 @@ import com.condominio.dto.response.CasaInfoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.service.interfaces.ICasaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,11 +21,13 @@ public class CasaController {
     private final ICasaService casaService;
 
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<List<CasaInfoDTO>>  listarCasas() {
         return casaService.obtenerCasas();
     }
 
     @GetMapping("/{idCasa}/estado-cuenta")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<CasaCuentaDTO> obtenerEstadoCuenta(
             @PathVariable Long idCasa
             ) {
@@ -32,6 +35,7 @@ public class CasaController {
     }
 
     @GetMapping("/por-cobrar")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar() {
         return casaService.obtenerCasasConObligacionesPorCobrar();
     }
