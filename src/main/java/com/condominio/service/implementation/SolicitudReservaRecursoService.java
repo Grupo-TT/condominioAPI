@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -59,7 +61,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> aprobar(Long id) {
-        SolicitudReservaRecurso solicitud = validarSolicitud(id);
+        SolicitudReservaRecurso solicitud = validarSolicitudPendiente(id);
 
         solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
         SolicitudReservaRecurso aprobada = solicitudReservaRecursoRepository.save(solicitud);
@@ -68,14 +70,31 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> rechazar(Long id) {
-        SolicitudReservaRecurso solicitud = validarSolicitud(id);
+        SolicitudReservaRecurso solicitud = validarSolicitudPendiente(id);
 
         solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
         SolicitudReservaRecurso rechazada = solicitudReservaRecursoRepository.save(solicitud);
         return new SuccessResult<>("Reserva rechazada correctamente", modelMapper.map(rechazada, SolicitudReservaRecursoDTO.class));
     }
 
-    private SolicitudReservaRecurso validarSolicitud(Long id) {
+    @Override
+    public SuccessResult<SolicitudReservaRecursoDTO> eliminar(Long id) {
+        SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
+                .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
+
+        if(solicitud.getEstadoSolicitud() != EstadoSolicitud.APROBADA) {
+            throw new ApiException("Solo se pueden eliminar reservas aprobadas", HttpStatus.BAD_REQUEST);
+        }
+
+        if(!solicitud.getFechaSolicitud().isBefore(LocalDate.now().minusDays(1))) {
+            throw new ApiException("Solo se permiten borrar reservas posteriores a la fecha de ayer", HttpStatus.BAD_REQUEST);
+        }
+
+        solicitudReservaRecursoRepository.delete(solicitud);
+        return new SuccessResult<>("Reserva eliminada exitosamente", modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class));
+    }
+
+    private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException("No se ha encontrado la solicitud", HttpStatus.NOT_FOUND));
 

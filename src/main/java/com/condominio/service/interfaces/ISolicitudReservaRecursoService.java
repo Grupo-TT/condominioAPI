@@ -11,4 +11,5 @@ public interface ISolicitudReservaRecursoService {
     SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado);
     SuccessResult<SolicitudReservaRecursoDTO> aprobar(Long id);
     SuccessResult<SolicitudReservaRecursoDTO> rechazar(Long id);
+    SuccessResult<SolicitudReservaRecursoDTO> eliminar(Long id);
 }
