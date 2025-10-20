@@ -19,6 +19,8 @@ public class RecursoComun {
     private String nombre;
     @Column
     private String descripcion;
+    @Column
+    private boolean estadoRecurso;
 
     @ManyToOne(targetEntity = TipoRecursoComun.class)
     @JoinColumn(nullable = false)

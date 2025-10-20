@@ -1,8 +1,6 @@
 package com.condominio.service.implementation;
 
-import com.condominio.dto.response.CasaCuentaDTO;
-import com.condominio.dto.response.CasaInfoDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoPago;
 import com.condominio.persistence.model.Obligacion;
@@ -76,10 +74,18 @@ public class CasaService implements ICasaService {
             int cantidadMiembros = miembroService.countByCasaId(casa.getId());
             int cantidadMascotas = mascotaService.countByCasaId(casa.getId());
 
+            PersonaSimpleDTO propietarioDTO = null;
+            if (propietario != null) {
+                propietarioDTO = PersonaSimpleDTO.builder()
+                        .nombreCompleto(propietario.getNombreCompleto())
+                        .telefono(propietario.getTelefono())
+                        .correo(propietario.getUser().getEmail())
+                        .build();
+            }
 
             CasaInfoDTO dto = new CasaInfoDTO();
             dto.setNumeroCasa(casa.getNumeroCasa());
-            dto.setPropietario(propietario);
+            dto.setPropietario(propietarioDTO);
             dto.setCantidadMiembros(cantidadMiembros);
             dto.setCantidadMascotas(cantidadMascotas);
 
@@ -88,6 +94,52 @@ public class CasaService implements ICasaService {
         return new SuccessResult<>("Casas obtenidas correctamente", dtos);
     }
 
+    public SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar() {
+        List<Casa> casas = casaRepository.findCasasConObligacionesPorCobrar();
+        if (casas.isEmpty()) {
+            throw new ApiException("No hay casas con obligaciones por cobrar", HttpStatus.BAD_REQUEST);
+        }
+
+        List<CasaDeudoraDTO> dtos = casas.stream().map(casa -> {
+            Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId())
+                    .orElse(null);
+
+            PersonaSimpleDTO propietarioDTO = null;
+            if (propietario != null) {
+                propietarioDTO = PersonaSimpleDTO.builder()
+                        .nombreCompleto(propietario.getNombreCompleto())
+                        .telefono(propietario.getTelefono())
+                        .correo(propietario.getUser().getEmail())
+                        .build();
+            }
+
+            List<Obligacion> pendientes = obligacionRepository
+                    .findByCasaIdAndEstadoPago(casa.getId(), EstadoPago.POR_COBRAR);
+
+            int saldoPendiente = pendientes.stream()
+                    .mapToInt(Obligacion::getMonto)
+                    .sum();
+
+            List<ObligacionDTO> obligacionesDTO = pendientes.stream()
+                    .map(o -> ObligacionDTO.builder()
+                            .estado(o.getEstadoPago().name())
+                            .motivo(o.getMotivo())
+                            .casa(o.getCasa().getNumeroCasa())
+                            .monto(o.getMonto())
+                            .build())
+                    .toList();
+
+            CasaDeudoraDTO dto = new CasaDeudoraDTO();
+            dto.setNumeroCasa(casa.getNumeroCasa());
+            dto.setPropietario(propietarioDTO);
+            dto.setSaldoPendiente(saldoPendiente);
+            dto.setObligacionesPendientes(obligacionesDTO);
+
+            return dto;
+        }).toList();
+
+        return new SuccessResult<>("Casas con obligaciones por cobrar obtenidas correctamente", dtos);
+    }
 
 }
 

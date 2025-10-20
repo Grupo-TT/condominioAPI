@@ -5,6 +5,7 @@ import com.condominio.dto.response.SuccessResult;
 import com.condominio.service.interfaces.IPersonaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ public class PersonaController {
     }
 
     @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResult<PersonaRegistroDTO>> createPersona(
             @RequestBody PersonaRegistroDTO personaRegistro) {
 
