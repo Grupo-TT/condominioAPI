@@ -59,7 +59,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Override
     public UserEntity createUser(String email, Long numeroDeDocumento, RoleEnum rolEnum) {
-        if (existsByEmail(email)) {
+        if (existsByEmail(email)==true) {
             throw new ApiException("El email ya está registrado", HttpStatus.BAD_REQUEST);
         }
         RoleEntity role = roleRepository.findByRoleEnum(rolEnum)

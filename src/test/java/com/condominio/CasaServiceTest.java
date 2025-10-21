@@ -305,8 +305,8 @@ class CasaServiceTest {
 
     @Test
     void testObtenerCasas_CasaCompleta() {
-        Casa casa = new Casa(); casa.setId(1L); casa.setNumeroCasa(101);
-        when(casaRepository.findAll()).thenReturn(List.of(casa));
+        Casa newCasa = new Casa(); newCasa.setId(1L); newCasa.setNumeroCasa(101);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
 
         Persona propietario = new Persona();
         propietario.setPrimerNombre("Juan"); propietario.setPrimerApellido("Pérez");
@@ -339,8 +339,8 @@ class CasaServiceTest {
 
     @Test
     void testObtenerCasas_SinPropietarioNiArrendatario_ConDeuda() {
-        Casa casa = new Casa(); casa.setId(2L); casa.setNumeroCasa(202);
-        when(casaRepository.findAll()).thenReturn(List.of(casa));
+        Casa newCasa = new Casa(); newCasa.setId(2L); newCasa.setNumeroCasa(202);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
 
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
         when(personaRepository.findArrendatarioByCasaId(2L)).thenReturn(Optional.empty());
@@ -363,8 +363,8 @@ class CasaServiceTest {
 
     @Test
     void testObtenerCasas_PropietarioSinArrendatario_MascotasParciales() {
-        Casa casa = new Casa(); casa.setId(3L); casa.setNumeroCasa(303);
-        when(casaRepository.findAll()).thenReturn(List.of(casa));
+        Casa newCasa = new Casa(); newCasa.setId(3L); newCasa.setNumeroCasa(303);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
 
         Persona propietario = new Persona();
         propietario.setPrimerNombre("Ana"); propietario.setPrimerApellido("Lopez");
@@ -395,9 +395,9 @@ class CasaServiceTest {
 
     @Test
     void testObtenerCasasConObligacionesPorCobrar_WhenCasasExist() {
-        Casa casa = new Casa();
-        casa.setId(1L);
-        casa.setNumeroCasa(101);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
 
         UserEntity user = new UserEntity();
         user.setEmail("propietario@mail.com");
@@ -414,9 +414,9 @@ class CasaServiceTest {
         obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
         obligacion.setMotivo("Cuota de administración");
         obligacion.setMonto(50000);
-        obligacion.setCasa(casa);
+        obligacion.setCasa(newCasa);
 
-        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(casa));
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
         when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR))
                 .thenReturn(List.of(obligacion));
