@@ -26,6 +26,13 @@ public class ObligacionController {
         return obligacionService.estadoDeCuentaCasa(idCasa);
     }
 
+    @GetMapping("/paz-y-salvo/{idCasa}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> descargarPazYSalvo(@PathVariable Long idCasa) {
+        return obligacionService.generarPazYSalvo(idCasa);
+
+    }
+
     @PostMapping("/multa/create")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResult<Obligacion>> create(

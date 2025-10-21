@@ -9,6 +9,7 @@ public interface IPersonaService {
     Boolean existsByNumeroDeDocumento(Long numeroDeDocumento);
     SuccessResult<Persona> save(PersonaRegistroDTO persona);
     boolean existsRoleInCasa(Long casaId, RoleEnum roleEnum);
+    Persona obtenerSolicitantePorCasa(Long idCasa);
 
 
 }

@@ -3,12 +3,15 @@ package com.condominio.util.constants;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import lombok.AllArgsConstructor;
 
 
-@AllArgsConstructor
+
 
 public class AppConstants {
+
+    private AppConstants() {
+
+    }
 
     public static final String PASSWORD_HTML="email/password-temporal";
     public static final String LOGIN_URL="http://localhost:8080";

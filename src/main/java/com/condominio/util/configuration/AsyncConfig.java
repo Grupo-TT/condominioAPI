@@ -12,9 +12,9 @@ public class AsyncConfig {
     @Bean(name = "mailTaskExecutor")
     public ThreadPoolTaskExecutor mailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(3);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(25);
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(3);
+        executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("mail-sender-");
         executor.initialize();
         return executor;

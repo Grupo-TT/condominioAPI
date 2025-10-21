@@ -8,16 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
@@ -32,16 +31,17 @@ class EmailServiceTest {
     private TemplateEngine templateEngine;
 
     private EmailService emailService;
+    private MimeMessage mimeMessage;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         emailService = new EmailService(mailSender, templateEngine);
-
-        ReflectionTestUtils.setField(emailService, "mailSender", mailSender);
+        mimeMessage = mock(MimeMessage.class);
     }
 
     @Test
-    void testEnviarPasswordTemporal_mockeado() throws MessagingException {
+    void testEnviarPasswordTemporal_mockeado() throws MessagingException, InterruptedException {
 
         EmailService spyEmailService = spy(emailService);
 
@@ -55,6 +55,7 @@ class EmailServiceTest {
 
 
         spyEmailService.enviarPasswordTemporal("user@correo.com", "abc123");
+
 
 
         verify(mailSender).send(mensaje);
@@ -76,7 +77,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void testEnviarPago_mockeado() throws MessagingException {
+    void testEnviarPago_mockeado() throws MessagingException, InterruptedException {
         // Arrange
         EmailService spyEmailService = spy(emailService);
 
@@ -96,6 +97,8 @@ class EmailServiceTest {
 
         // Act
         spyEmailService.enviarPago("usuario@correo.com", obligacionDTO);
+
+
 
         // Assert
         verify(mailSender).send(mensaje);
@@ -124,6 +127,54 @@ class EmailServiceTest {
         assertTrue(html.contains("$250.000"));
         assertTrue(html.contains(obligacionDTO.getFechaPago().toString()));
         verify(templateEngine, times(1)).process(anyString(), any(Context.class));
+    }
+
+    @Test
+    void testEnviarPazYSalvo_mockeado() throws InterruptedException, MessagingException {
+
+        EmailService spyEmailService = spy(emailService);
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        byte[] pdfBytes = "dummy pdf bytes".getBytes();
+        String destinatario = "usuario@correo.com";
+        String nombreArchivo = "paz_y_salvo.pdf";
+
+        spyEmailService.enviarPazYSalvo(destinatario, pdfBytes, nombreArchivo);
+
+
+
+        verify(mailSender).createMimeMessage();
+        verify(mailSender).send(mensaje);
+    }
+    @Test
+    void enviarPazYSalvo_EnvioExitoso_NoLanzaExcepcion() throws Exception {
+        byte[] pdf = {1, 2, 3};
+        String destinatario = "test@example.com";
+        String nombreArchivo = "paz_y_salvo.pdf";
+
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        emailService.enviarPazYSalvo(destinatario, pdf, nombreArchivo);
+
+
+
+        verify(mailSender).send(mimeMessage);
+    }
+    @Test
+    void enviarPazYSalvo_FallaEnvio_EjecutaLogError() throws Exception {
+        byte[] pdf = {1, 2, 3};
+        String destinatario = "fail@example.com";
+        String nombreArchivo = "paz_y_salvo.pdf";
+
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new RuntimeException("Fallo al enviar")).when(mailSender).send(any(MimeMessage.class));
+
+        emailService.enviarPazYSalvo(destinatario, pdf, nombreArchivo);
+
+
+
+        verify(mailSender).send(mimeMessage);
     }
 
 }

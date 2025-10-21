@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
+import com.condominio.persistence.repository.MascotaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.CasaService;
@@ -40,6 +41,9 @@ class CasaServiceTest {
 
     @Mock
     private MascotaService mascotaService;
+
+    @Mock
+    private MascotaRepository  mascotaRepository;
 
     @InjectMocks
     private CasaService casaService;
@@ -123,6 +127,7 @@ class CasaServiceTest {
     @Test
     void testObtenerCasas_WhenCasasExist() {
 
+
         Casa newCasa = new Casa();
         newCasa.setId(1L);
         newCasa.setNumeroCasa(101);
@@ -131,7 +136,6 @@ class CasaServiceTest {
 
 
         Persona propietario = new Persona();
-        propietario.setId(1L);
         propietario.setPrimerNombre("Juan");
         propietario.setPrimerApellido("Pérez");
 
@@ -142,8 +146,24 @@ class CasaServiceTest {
 
         when(personaRepository.findPropietarioByCasaId(1L))
                 .thenReturn(Optional.of(propietario));
+
+
+        when(personaRepository.findArrendatarioByCasaId(1L))
+                .thenReturn(Optional.of(new Persona()));
+
+
         when(miembroService.countByCasaId(1L)).thenReturn(2);
-        when(mascotaService.countByCasaId(1L)).thenReturn(1);
+
+
+        when(mascotaRepository.contarPorTipo(1L))
+                .thenReturn(List.of(
+                        new MascotaCountDTO(TipoMascota.PERRO, 1L),
+                        new MascotaCountDTO(TipoMascota.GATO, 2L)
+                ));
+
+
+        when(obligacionRepository.existsByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE))
+                .thenReturn(false);
 
 
         SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
@@ -152,10 +172,9 @@ class CasaServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.data()).hasSize(1);
 
-        CasaInfoDTO dto = result.data().getFirst();
-        assertThat(dto.getNumeroCasa()).isEqualTo(101);
-        assertThat(dto.getCantidadMiembros()).isEqualTo(2);
-        assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+        CasaInfoDTO dto = result.data().getFirst()  ;
+        assertThat(dto).isNotNull();
+
 
         PersonaSimpleDTO propietarioDTO = dto.getPropietario();
         assertThat(propietarioDTO).isNotNull();
@@ -163,20 +182,36 @@ class CasaServiceTest {
         assertThat(propietarioDTO.getTelefono()).isEqualTo(123456789L);
         assertThat(propietarioDTO.getCorreo()).isEqualTo("juan@example.com");
 
+
+        assertThat(dto.getNumeroCasa()).isEqualTo(101);
+        assertThat(dto.getCantidadMiembros()).isEqualTo(2);
+
+
+        assertThat(dto.getMascotas()).containsEntry("TipoMascota.PERRO", 1);
+        assertThat(dto.getMascotas()).containsEntry("TipoMascota.GATO", 2);
+        assertThat(dto.getMascotas().getOrDefault("TipoMascota.OTRO", 0)).isEqualTo(0L);
+
+
+        assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.ARRENDADA);
+        assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.AL_DIA);
+
+
         assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
 
 
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);
+        verify(personaRepository).findArrendatarioByCasaId(1L);
         verify(miembroService).countByCasaId(1L);
-        verify(mascotaService).countByCasaId(1L);
+        verify(mascotaRepository).contarPorTipo(1L);
+        verify(obligacionRepository).existsByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE);
     }
 
     @Test
-    void testObtenerCasas_WhenNoCasasExist_ShouldThrowApiException() {
+    void testObtenerCasas_NoCasas_ShouldThrowApiException() {
         when(casaRepository.findAll()).thenReturn(List.of());
-
-        assertThrows(RuntimeException.class, () -> casaService.obtenerCasas());
+        assertThrows(ApiException.class, () -> casaService.obtenerCasas());
+        verify(casaRepository).findAll();
     }
     @Test
     void testObtenerCasas_ShouldBuildPersonaSimpleDTO_WhenPropietarioExists() {
@@ -269,10 +304,100 @@ class CasaServiceTest {
     }
 
     @Test
+    void testObtenerCasas_CasaCompleta() {
+        Casa newCasa = new Casa(); newCasa.setId(1L); newCasa.setNumeroCasa(101);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Juan"); propietario.setPrimerApellido("Pérez");
+        propietario.setTelefono(123L);
+        UserEntity user = new UserEntity(); user.setEmail("juan@example.com");
+        propietario.setUser(user);
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
+
+        when(personaRepository.findArrendatarioByCasaId(1L)).thenReturn(Optional.of(new Persona()));
+        when(miembroService.countByCasaId(1L)).thenReturn(2);
+
+        when(mascotaRepository.contarPorTipo(1L)).thenReturn(List.of(
+                new MascotaCountDTO(TipoMascota.PERRO, 1L),
+                new MascotaCountDTO(TipoMascota.GATO, 2L)
+        ));
+
+        when(obligacionRepository.existsByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE))
+                .thenReturn(false);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+        CasaInfoDTO dto = result.data().getFirst();
+
+        assertThat(dto.getPropietario()).isNotNull();
+        assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.ARRENDADA);
+        assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.AL_DIA);
+        assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(1);
+        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(2);
+        assertThat(dto.getMascotas().get("TipoMascota.OTRO")).isEqualTo(0);
+    }
+
+    @Test
+    void testObtenerCasas_SinPropietarioNiArrendatario_ConDeuda() {
+        Casa newCasa = new Casa(); newCasa.setId(2L); newCasa.setNumeroCasa(202);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
+        when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(personaRepository.findArrendatarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(miembroService.countByCasaId(2L)).thenReturn(0);
+
+        when(mascotaRepository.contarPorTipo(2L)).thenReturn(List.of());
+        when(obligacionRepository.existsByCasaIdAndEstadoPago(2L, EstadoPago.PENDIENTE))
+                .thenReturn(true);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+        CasaInfoDTO dto = result.data().getFirst();
+
+        assertThat(dto.getPropietario()).isNull();
+        assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.RESIDENCIAL);
+        assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.EN_MORA);
+        assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(0);
+        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(0);
+        assertThat(dto.getMascotas().get("TipoMascota.OTRO")).isEqualTo(0);
+    }
+
+    @Test
+    void testObtenerCasas_PropietarioSinArrendatario_MascotasParciales() {
+        Casa newCasa = new Casa(); newCasa.setId(3L); newCasa.setNumeroCasa(303);
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Ana"); propietario.setPrimerApellido("Lopez");
+        propietario.setTelefono(555L);
+        UserEntity user = new UserEntity(); user.setEmail("ana@example.com");
+        propietario.setUser(user);
+        when(personaRepository.findPropietarioByCasaId(3L)).thenReturn(Optional.of(propietario));
+
+        when(personaRepository.findArrendatarioByCasaId(3L)).thenReturn(Optional.empty());
+        when(miembroService.countByCasaId(3L)).thenReturn(1);
+
+        when(mascotaRepository.contarPorTipo(3L)).thenReturn(List.of(
+                new MascotaCountDTO(TipoMascota.GATO, 3L)
+        ));
+        when(obligacionRepository.existsByCasaIdAndEstadoPago(3L, EstadoPago.PENDIENTE))
+                .thenReturn(false);
+
+        SuccessResult<List<CasaInfoDTO>> result = casaService.obtenerCasas();
+        CasaInfoDTO dto = result.data().getFirst();
+
+        assertThat(dto.getPropietario()).isNotNull();
+        assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.RESIDENCIAL);
+        assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.AL_DIA);
+        assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(0);
+        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(3);
+        assertThat(dto.getMascotas().get("TipoMascota.OTRO")).isEqualTo(0);
+    }
+
+    @Test
     void testObtenerCasasConObligacionesPorCobrar_WhenCasasExist() {
-        Casa casa = new Casa();
-        casa.setId(1L);
-        casa.setNumeroCasa(101);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
 
         UserEntity user = new UserEntity();
         user.setEmail("propietario@mail.com");
@@ -289,9 +414,9 @@ class CasaServiceTest {
         obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
         obligacion.setMotivo("Cuota de administración");
         obligacion.setMonto(50000);
-        obligacion.setCasa(casa);
+        obligacion.setCasa(newCasa);
 
-        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(casa));
+        when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
         when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR))
                 .thenReturn(List.of(obligacion));
