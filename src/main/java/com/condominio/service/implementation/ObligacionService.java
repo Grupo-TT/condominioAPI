@@ -1,12 +1,12 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.MultaActualizacionDTO;
+import com.condominio.dto.request.MultaRegistroDTO;
+import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.response.EstadoCuentaDTO;
 import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.EstadoPago;
-import com.condominio.persistence.model.Obligacion;
-import com.condominio.persistence.model.Persona;
+import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PersonaRepository;
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -82,6 +83,51 @@ public class ObligacionService implements IObligacionService {
         return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
     }
 
+    @Override
+    @Transactional
+    public SuccessResult<Obligacion> save(MultaRegistroDTO multa) {
+        Casa casa = casaRepository.findById(multa.getIdCasa())
+                .orElseThrow(() -> new RuntimeException("Casa no encontrada con ID: " + multa.getIdCasa()));
+
+        Obligacion obligacion = Obligacion.builder()
+                .fechaGenerada(LocalDate.now())
+                .monto(multa.getMonto())
+                .motivo(multa.getMotivo())
+                .casa(casa)
+                .tipoObligacion(TipoObligacion.MULTA)
+                .tipoPago(TipoPago.DINERO)
+                .estadoPago(EstadoPago.POR_COBRAR)
+                .diasGracias(0)
+                .diasMaxMora(0)
+                .tasaInteres(0)
+                .interes(0)
+                .build();
+
+        Obligacion guardada = obligacionRepository.save(obligacion);
+
+        return new SuccessResult<>("Multa registrada correctamente", guardada);
+    }
+
+    @Override
+    public SuccessResult<Obligacion> update(Long id, MultaActualizacionDTO multa) {
+        Obligacion obligacion = obligacionRepository.findById(id)
+                .orElseThrow(() -> new ApiException("La multa no existe", HttpStatus.NOT_FOUND));
+
+        Casa casa = casaRepository.findById(multa.getIdCasa())
+                .orElseThrow(() -> new RuntimeException("Casa no encontrada con ID: " + multa.getIdCasa()));
+
+        obligacion.setMonto(multa.getMonto());
+        obligacion.setMotivo(multa.getMotivo());
+        obligacion.setCasa(casa);
+
+        if (multa.getTipoPago() != null) {
+            obligacion.setTipoPago(multa.getTipoPago());
+        }
+        obligacion.setTipoObligacion(TipoObligacion.MULTA);
+        Obligacion actualizada = obligacionRepository.save(obligacion);
+
+        return new SuccessResult<>("Multa actualizada correctamente", actualizada);
+    }
     public boolean estaAlDia(Long idCasa) {
 
         boolean tienePendientes = obligacionRepository.existsByCasaIdAndEstadoPago(idCasa, EstadoPago.PENDIENTE);

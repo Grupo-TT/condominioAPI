@@ -57,6 +57,7 @@ public class PagoService implements IPagoService {
                                 .build());
                 obligacionRepository.save(obligacion);
                 obligacionDTO = ObligacionDTO.builder()
+                        .id(obligacion.getId())
                         .casa(casa.getNumeroCasa())
                         .monto(obligacion.getMonto())
                         .motivo(obligacion.getMotivo())
