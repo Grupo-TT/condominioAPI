@@ -56,7 +56,7 @@ class EmailServiceTest {
 
         spyEmailService.enviarPasswordTemporal("user@correo.com", "abc123");
 
-        Thread.sleep(1000);
+
 
         verify(mailSender).send(mensaje);
     }
@@ -98,7 +98,7 @@ class EmailServiceTest {
         // Act
         spyEmailService.enviarPago("usuario@correo.com", obligacionDTO);
 
-        Thread.sleep(1000);
+
 
         // Assert
         verify(mailSender).send(mensaje);
@@ -142,7 +142,7 @@ class EmailServiceTest {
 
         spyEmailService.enviarPazYSalvo(destinatario, pdfBytes, nombreArchivo);
 
-        Thread.sleep(1000);
+
 
         verify(mailSender).createMimeMessage();
         verify(mailSender).send(mensaje);
@@ -157,7 +157,7 @@ class EmailServiceTest {
 
         emailService.enviarPazYSalvo(destinatario, pdf, nombreArchivo);
 
-        Thread.sleep(1000);
+
 
         verify(mailSender).send(mimeMessage);
     }
@@ -172,7 +172,7 @@ class EmailServiceTest {
 
         emailService.enviarPazYSalvo(destinatario, pdf, nombreArchivo);
 
-        Thread.sleep(1000);
+
 
         verify(mailSender).send(mimeMessage);
     }

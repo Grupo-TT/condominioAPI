@@ -155,9 +155,9 @@ class ObligacionServiceTest {
 
         Long idCasa = 1L;
         Persona persona = new Persona();
-        UserEntity user = new UserEntity();
-        user.setEmail("test@mail.com");
-        persona.setUser(user);
+        UserEntity newUser = new UserEntity();
+        newUser.setEmail("test@mail.com");
+        persona.setUser(newUser);
         persona.setPrimerNombre("Ana");
         persona.setPrimerApellido("Gómez");
 
@@ -198,9 +198,9 @@ class ObligacionServiceTest {
     void generarPazYSalvo_SiFallaGeneracionPdfDebeLanzarApiException() throws Exception {
         Long idCasa = 1L;
         Persona persona = new Persona();
-        UserEntity user = new UserEntity();
-        user.setEmail("fail@mail.com");
-        persona.setUser(user);
+        UserEntity newUser = new UserEntity();
+        newUser.setEmail("fail@mail.com");
+        persona.setUser(newUser);
         persona.setPrimerNombre("Carlos");
         persona.setPrimerApellido("Pérez");
 
@@ -221,9 +221,9 @@ class ObligacionServiceTest {
     void generarPazYSalvo_SiFallaEnvioCorreoNoLanzaExcepcion() throws Exception {
         Long idCasa = 1L;
         Persona persona = new Persona();
-        UserEntity user = new UserEntity();
-        user.setEmail("fail@mail.com");
-        persona.setUser(user);
+        UserEntity newUser = new UserEntity();
+        newUser.setEmail("fail@mail.com");
+        persona.setUser(newUser);
         persona.setPrimerNombre("Carlos");
         persona.setPrimerApellido("Pérez");
 
