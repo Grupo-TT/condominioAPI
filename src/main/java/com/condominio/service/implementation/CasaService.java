@@ -1,11 +1,9 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.response.*;
-import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.EstadoPago;
-import com.condominio.persistence.model.Obligacion;
-import com.condominio.persistence.model.Persona;
+import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
+import com.condominio.persistence.repository.MascotaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.ICasaService;
@@ -16,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -28,6 +28,7 @@ public class CasaService implements ICasaService {
     private final IMascotaService mascotaService;
     private final PersonaRepository personaRepository;
     private final ObligacionRepository obligacionRepository;
+    private final MascotaRepository mascotaRepository;
 
 
     @Override
@@ -83,11 +84,39 @@ public class CasaService implements ICasaService {
                         .build();
             }
 
+            Map<String, Integer> mascotasMap = new LinkedHashMap<>();
+            for (TipoMascota tipo : TipoMascota.values()) {
+                mascotasMap.put(tipo.toString(), 0);
+            }
+            List<MascotaCountDTO> conteos = mascotaRepository.contarPorTipo(casa.getId());
+            for (MascotaCountDTO c : conteos) {
+                mascotasMap.put(c.getTipo(), c.getCantidad().intValue());
+            }
+
+            UsoCasa usoCasa;
+            Optional<Persona> arrendatarioOpt = personaRepository.findArrendatarioByCasaId(casa.getId());
+            if (arrendatarioOpt.isPresent()) {
+                usoCasa = UsoCasa.ARRENDADA;
+
+            }else{
+                usoCasa = UsoCasa.RESIDENCIAL;
+            }
+            EstadoFinancieroCasa estadoFinancieroCasa;
+            if(obligacionRepository.existsByCasaIdAndEstadoPago(casa.getId(),EstadoPago.PENDIENTE)){
+
+                estadoFinancieroCasa= EstadoFinancieroCasa.EN_MORA;
+
+            }else{
+                estadoFinancieroCasa= EstadoFinancieroCasa.AL_DIA;
+            }
             CasaInfoDTO dto = new CasaInfoDTO();
             dto.setNumeroCasa(casa.getNumeroCasa());
             dto.setPropietario(propietarioDTO);
             dto.setCantidadMiembros(cantidadMiembros);
             dto.setCantidadMascotas(cantidadMascotas);
+            dto.setMascotas(mascotasMap);
+            dto.setUsoCasa(usoCasa);
+            dto.setEstadoFinancieroCasa(estadoFinancieroCasa);
 
             return dto;
         }).toList();
