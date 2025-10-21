@@ -37,4 +37,16 @@ public class SolicitudReservaRecursoController {
     public SuccessResult<SolicitudReservaRecursoDTO> rechazar(@PathVariable Long id){
         return solicitudReservaService.rechazar(id);
     }
+
+    @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<SolicitudReservaRecursoDTO> eliminar(@PathVariable Long id){
+        return solicitudReservaService.eliminar(id);
+    }
+
+    @PutMapping("/edit/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<SolicitudReservaRecursoDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaRecursoDTO solicitud){
+        return solicitudReservaService.update(id, solicitud);
+    }
 }
