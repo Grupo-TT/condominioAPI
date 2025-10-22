@@ -2,6 +2,7 @@ package com.condominio.dto.response;
 
 import com.condominio.persistence.model.Obligacion;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import lombok.Builder;
@@ -14,4 +15,5 @@ public class EstadoCuentaDTO {
     private PersonaSimpleDTO propietario;
     private Long saldoPendienteTotal;
     private List<Obligacion> deudasActivas;
+    private LocalDate ultimoPago;
 }
