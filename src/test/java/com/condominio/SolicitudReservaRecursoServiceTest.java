@@ -242,7 +242,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
 
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(true);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         solicitud.setRecursoComun(recurso);
 
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
@@ -282,7 +282,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setId(id);
         solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
         solicitud.setRecursoComun(new RecursoComun(){{
-            setEstadoRecurso(true);
+            setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         }});
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
@@ -299,7 +299,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setId(id);
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(false); // recurso deshabilitado
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);; // recurso deshabilitado
         solicitud.setRecursoComun(recurso);
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
@@ -318,7 +318,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
 
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(true);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         solicitud.setRecursoComun(recurso);
 
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
@@ -356,7 +356,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setId(id);
         solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
         solicitud.setRecursoComun(new RecursoComun(){{
-            setEstadoRecurso(true);
+            setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         }});
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
@@ -373,7 +373,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setId(id);
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(false);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
         solicitud.setRecursoComun(recurso);
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
@@ -503,7 +503,7 @@ class SolicitudReservaRecursoServiceTest {
         dto.setNumeroInvitados(8);
 
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(true);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         dto.setRecursoComun(recurso);
 
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
@@ -567,7 +567,7 @@ class SolicitudReservaRecursoServiceTest {
 
         SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(false);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
         dto.setRecursoComun(recurso);
         dto.setFechaSolicitud(LocalDate.now().plusDays(1));
 
@@ -594,7 +594,7 @@ class SolicitudReservaRecursoServiceTest {
 
         SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
         RecursoComun recurso = new RecursoComun();
-        recurso.setEstadoRecurso(true); // enabled
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE); // enabled
         dto.setRecursoComun(recurso);
 
         dto.setFechaSolicitud(LocalDate.now().minusDays(1)); // fecha anterior a hoy -> invalid

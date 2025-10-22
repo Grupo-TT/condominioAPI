@@ -2,6 +2,7 @@ package com.condominio.service.implementation;
 
 import com.condominio.dto.request.RecursoComunDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.TipoRecursoComun;
 import com.condominio.persistence.repository.RecursoComunRepository;
@@ -46,6 +47,9 @@ public class RecursoComunService implements IRecursoComunService {
             throw new ApiException(
                     "Debe especificar un Tipo de recurso válido", HttpStatus.BAD_REQUEST);
         }
+        if (recurso.getDisponibilidadRecurso() == null) {
+            throw new ApiException("Debe especificar una disponibilidad válida", HttpStatus.BAD_REQUEST);
+        }
 
         TipoRecursoComun tipo = tipoRecursoComunRepository.
                 findById(recurso.getTipoRecursoComun().getId())
@@ -83,6 +87,7 @@ public class RecursoComunService implements IRecursoComunService {
         oldRecurso.setNombre(recurso.getNombre());
         oldRecurso.setDescripcion(recurso.getDescripcion());
         oldRecurso.setTipoRecursoComun(tipo);
+        oldRecurso.setDisponibilidadRecurso(recurso.getDisponibilidadRecurso());
 
         RecursoComun actualizado = recursoComunRepository.save(oldRecurso);
 
@@ -94,11 +99,11 @@ public class RecursoComunService implements IRecursoComunService {
         RecursoComun recurso = recursoComunRepository.findById(id)
                 .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        if (recurso.isEstadoRecurso()) {
+        if (recurso.getDisponibilidadRecurso()== DisponibilidadRecurso.DISPONIBLE) {
             throw new ApiException("El recurso ya está habilitado", HttpStatus.BAD_REQUEST);
         } else {
 
-            recurso.setEstadoRecurso(true);
+            recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
             RecursoComun actualizado = recursoComunRepository.save(recurso);
 
             return new SuccessResult<>("Recurso habilitado exitosamente", actualizado);
@@ -110,11 +115,11 @@ public class RecursoComunService implements IRecursoComunService {
         RecursoComun recurso = recursoComunRepository.findById(id)
                 .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
 
-        if (!recurso.isEstadoRecurso()) {
+        if (recurso.getDisponibilidadRecurso()== DisponibilidadRecurso.NO_DISPONIBLE) {
             throw new ApiException("El recurso ya está deshabilitado", HttpStatus.BAD_REQUEST);
         } else {
 
-            recurso.setEstadoRecurso(false);
+            recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
             RecursoComun actualizado = recursoComunRepository.save(recurso);
 
             return new SuccessResult<>("Recurso deshabilitado exitosamente", actualizado);

@@ -3,6 +3,7 @@ package com.condominio.service.implementation;
 import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.SolicitudReservaRecurso;
@@ -100,7 +101,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if(!solicitud.getRecursoComun().isEstadoRecurso()) {
+        if(solicitud.getRecursoComun().getDisponibilidadRecurso()== DisponibilidadRecurso.NO_DISPONIBLE) {
             throw new ApiException("No se puede modificar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
         }
 
@@ -126,7 +127,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("Solo se pueden gestionar reservas pendientes", HttpStatus.BAD_REQUEST);
         }
 
-        if(!solicitud.getRecursoComun().isEstadoRecurso()){
+        if(solicitud.getRecursoComun().getDisponibilidadRecurso()== DisponibilidadRecurso.NO_DISPONIBLE){
             throw new ApiException("No se puede aprobar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
         }
         return solicitud;
