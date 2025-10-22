@@ -26,6 +26,8 @@ public class Obligacion {
     private int diasMaxMora;
     private int tasaInteres;
     private int interes;
+    @Column(columnDefinition = "int default 0")
+    private int montoPagado;
     private String motivo;
 
     @ManyToOne(targetEntity = Casa.class)

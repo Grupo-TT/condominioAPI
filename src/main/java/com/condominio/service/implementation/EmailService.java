@@ -62,6 +62,7 @@ public class EmailService {
         context.setVariable("motivo", obligacionDTO.getMotivo());
         context.setVariable("casa", obligacionDTO.getCasa());
         context.setVariable("monto", obligacionDTO.getMonto());
+        context.setVariable("saldo", obligacionDTO.getSaldo());
         context.setVariable("fechaPago", obligacionDTO.getFechaPago());
         return templateEngine.process(PAGO_HTML, context);
     }
