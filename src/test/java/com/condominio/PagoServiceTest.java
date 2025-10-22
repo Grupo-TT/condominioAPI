@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -120,5 +121,37 @@ class PagoServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
 
         verifyNoInteractions(pagoRepository, pagoDetalleRepository, eventPublisher);
+    }
+
+    @Test
+    void obtenerFechaUltimoPagoPorCasa_deberiaRetornarFechaCuandoExistePago() {
+        // given
+        Long idCasa = 1L;
+        LocalDate fechaEsperada = LocalDate.of(2025, 10, 22);
+        when(pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa))
+                .thenReturn(Optional.of(fechaEsperada));
+
+        // when
+        Optional<LocalDate> resultado = pagoService.obtenerFechaUltimoPagoPorCasa(idCasa);
+
+        // then
+        assertTrue(resultado.isPresent());
+        assertEquals(fechaEsperada, resultado.get());
+        verify(pagoDetalleRepository, times(1)).findFechaUltimoPagoByCasaId(idCasa);
+    }
+
+    @Test
+    void obtenerFechaUltimoPagoPorCasa_deberiaRetornarVacioCuandoNoHayPagos() {
+        // given
+        Long idCasa = 2L;
+        when(pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa))
+                .thenReturn(Optional.empty());
+
+        // when
+        Optional<LocalDate> resultado = pagoService.obtenerFechaUltimoPagoPorCasa(idCasa);
+
+        // then
+        assertTrue(resultado.isEmpty());
+        verify(pagoDetalleRepository, times(1)).findFechaUltimoPagoByCasaId(idCasa);
     }
 }

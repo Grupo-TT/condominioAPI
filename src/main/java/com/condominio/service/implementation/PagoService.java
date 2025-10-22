@@ -75,4 +75,7 @@ public class PagoService implements IPagoService {
         return new SuccessResult<>("Pago realizado correctamente", obligacionDTO);
     }
 
+    public Optional<LocalDate> obtenerFechaUltimoPagoPorCasa(Long idCasa) {
+        return pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa);
+    }
 }

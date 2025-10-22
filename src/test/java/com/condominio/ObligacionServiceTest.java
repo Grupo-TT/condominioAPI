@@ -81,7 +81,7 @@ class ObligacionServiceTest {
                 .casa(casa)
                 .tipoObligacion(TipoObligacion.MULTA)
                 .tipoPago(TipoPago.DINERO)
-                .estadoPago(EstadoPago.POR_COBRAR)
+                .estadoPago(EstadoPago.PENDIENTE)
                 .build();
 
         propietario = new Persona();

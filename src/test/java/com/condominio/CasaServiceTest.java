@@ -411,14 +411,14 @@ class CasaServiceTest {
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(10L);
-        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMotivo("Cuota de administración");
         obligacion.setMonto(50000);
         obligacion.setCasa(newCasa);
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
-        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR))
+        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
@@ -437,7 +437,7 @@ class CasaServiceTest {
 
         verify(casaRepository).findCasasConObligacionesPorCobrar();
         verify(personaRepository).findPropietarioByCasaId(1L);
-        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR);
+        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE);
     }
 
     @Test
@@ -448,14 +448,14 @@ class CasaServiceTest {
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(20L);
-        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMotivo("Mantenimiento");
         obligacion.setMonto(30000);
         obligacion.setCasa(newCasa);
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
-        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.POR_COBRAR))
+        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.PENDIENTE))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
