@@ -11,6 +11,7 @@ import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.IObligacionService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.service.interfaces.IPdfService;
 import com.condominio.service.interfaces.IPersonaService;
 import com.condominio.util.exception.ApiException;
@@ -38,6 +39,7 @@ public class ObligacionService implements IObligacionService {
     private final CasaRepository casaRepository;
     private final PersonaRepository personaRepository;
     private final IPersonaService personaService;
+    private final IPagoService pagoService;
     private final IPdfService pdfService;
     private  final  EmailService emailService;
     private static final Logger log = LoggerFactory.getLogger(ObligacionService.class);
@@ -79,6 +81,7 @@ public class ObligacionService implements IObligacionService {
                 .propietario(propietarioDTO)
                 .saldoPendienteTotal(saldoPendienteTotal)
                 .deudasActivas(obligacionesPendientes)
+                .ultimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(idCasa).orElse(null))
                 .build();
         return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
     }
@@ -96,7 +99,7 @@ public class ObligacionService implements IObligacionService {
                 .casa(casa)
                 .tipoObligacion(TipoObligacion.MULTA)
                 .tipoPago(TipoPago.DINERO)
-                .estadoPago(EstadoPago.POR_COBRAR)
+                .estadoPago(EstadoPago.PENDIENTE)
                 .diasGracias(0)
                 .diasMaxMora(0)
                 .tasaInteres(0)

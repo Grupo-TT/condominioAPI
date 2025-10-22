@@ -88,4 +88,7 @@ public class PagoService implements IPagoService {
                 .build();
     }
 
+    public Optional<LocalDate> obtenerFechaUltimoPagoPorCasa(Long idCasa) {
+        return pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa);
+    }
 }

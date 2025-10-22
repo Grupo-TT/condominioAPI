@@ -13,6 +13,7 @@ import com.condominio.service.implementation.EmailService;
 import com.condominio.service.implementation.ObligacionService;
 import com.condominio.service.implementation.PdfService;
 import com.condominio.service.implementation.PersonaService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.*;
@@ -55,6 +56,9 @@ class ObligacionServiceTest {
     private EmailService emailService;
 
     @Mock
+    private IPagoService pagoService;
+
+    @Mock
     private PersonaService personaService;
 
     private Casa casa;
@@ -81,7 +85,7 @@ class ObligacionServiceTest {
                 .casa(casa)
                 .tipoObligacion(TipoObligacion.MULTA)
                 .tipoPago(TipoPago.DINERO)
-                .estadoPago(EstadoPago.POR_COBRAR)
+                .estadoPago(EstadoPago.PENDIENTE)
                 .build();
 
         propietario = new Persona();
