@@ -299,7 +299,7 @@ class SolicitudReservaRecursoServiceTest {
         solicitud.setId(id);
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
         RecursoComun recurso = new RecursoComun();
-        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);; // recurso deshabilitado
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
         solicitud.setRecursoComun(recurso);
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
