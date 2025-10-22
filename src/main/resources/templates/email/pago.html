@@ -49,6 +49,10 @@
                                     <td th:text="|$${#numbers.formatInteger(monto, 3, 'POINT')}|">$150.000</td>
                                 </tr>
                                 <tr>
+                                    <td style="font-weight: bold;">Saldo:</td>
+                                    <td th:text="|$${#numbers.formatInteger(saldo, 3, 'POINT')}|">$150.000</td>
+                                </tr>
+                                <tr>
                                     <td style="font-weight: bold;">Fecha de Pago:</td>
                                     <td th:text="${fechaPago}">2025-10-13</td>
                                 </tr>

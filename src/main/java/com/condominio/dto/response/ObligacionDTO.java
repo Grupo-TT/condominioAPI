@@ -19,4 +19,5 @@ public class ObligacionDTO {
     private int casa;
     private int monto;
     private LocalDate fechaPago;
+    private int saldo;
 }
