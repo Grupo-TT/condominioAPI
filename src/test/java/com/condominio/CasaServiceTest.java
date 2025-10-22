@@ -11,6 +11,7 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.CasaService;
 import com.condominio.service.implementation.MascotaService;
 import com.condominio.service.implementation.MiembroService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ class CasaServiceTest {
 
     @Mock
     private MascotaRepository  mascotaRepository;
+
+    @Mock
+    private IPagoService pagoService;
 
     @InjectMocks
     private CasaService casaService;

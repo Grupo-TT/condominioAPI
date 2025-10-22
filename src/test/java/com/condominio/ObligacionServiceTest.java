@@ -13,6 +13,7 @@ import com.condominio.service.implementation.EmailService;
 import com.condominio.service.implementation.ObligacionService;
 import com.condominio.service.implementation.PdfService;
 import com.condominio.service.implementation.PersonaService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.*;
@@ -53,6 +54,9 @@ class ObligacionServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private IPagoService pagoService;
 
     @Mock
     private PersonaService personaService;
