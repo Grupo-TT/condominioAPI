@@ -21,8 +21,7 @@ public class RecursoComun {
     private String descripcion;
     @Column
     private boolean estadoRecurso;
-
-    @ManyToOne(targetEntity = TipoRecursoComun.class)
-    @JoinColumn(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_recurso_comun", nullable = false)
     private TipoRecursoComun tipoRecursoComun;
 }
