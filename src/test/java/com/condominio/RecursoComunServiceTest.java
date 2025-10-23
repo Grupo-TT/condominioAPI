@@ -5,7 +5,6 @@ import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.TipoRecursoComun;
 import com.condominio.persistence.repository.RecursoComunRepository;
-import com.condominio.persistence.repository.TipoRecursoComunRepository;
 import com.condominio.service.implementation.RecursoComunService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.Test;
@@ -30,9 +29,6 @@ class RecursoComunServiceTest {
     @Mock
     private ModelMapper modelMapper;
 
-    @Mock
-    private TipoRecursoComunRepository tipoRecursoComunRepository;
-
     @InjectMocks
     private RecursoComunService recursoComunService;
 
@@ -43,8 +39,7 @@ class RecursoComunServiceTest {
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
 
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(1L);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
         dto.setTipoRecursoComun(tipo);
 
         RecursoComun entidad = new RecursoComun();
@@ -53,7 +48,6 @@ class RecursoComunServiceTest {
         entidad.setTipoRecursoComun(tipo);
 
         when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
-        when(tipoRecursoComunRepository.findById(1L)).thenReturn(Optional.of(tipo));
         when(modelMapper.map(dto, RecursoComun.class)).thenReturn(entidad);
         when(recursoComunRepository.save(any(RecursoComun.class))).thenReturn(entidad);
 
@@ -64,7 +58,7 @@ class RecursoComunServiceTest {
         assertEquals("Recurso registrado correctamente", result.message());
         assertEquals("Cancha", result.data().getNombre());
         assertEquals("Cancha de fútbol", result.data().getDescripcion());
-        assertEquals(1L, result.data().getTipoRecursoComun().getId());
+        assertEquals(tipo, result.data().getTipoRecursoComun());
         verify(recursoComunRepository, times(1)).save(any(RecursoComun.class));
     }
 
@@ -118,29 +112,6 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void save_WhenTipoRecursoNoExiste_ShouldThrowApiException() {
-
-        RecursoComunDTO dto = new RecursoComunDTO();
-        dto.setNombre("Gimnasio");
-        dto.setDescripcion("Área de entrenamiento físico");
-
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(99L);
-        dto.setTipoRecursoComun(tipo);
-
-        when(recursoComunRepository.existsByNombreIgnoreCase("Gimnasio")).thenReturn(false);
-        when(tipoRecursoComunRepository.findById(99L)).thenReturn(Optional.empty());
-
-
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        assertTrue(exception.getMessage().contains("El Tipo de recurso no existe"));
-
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
     void testUpdate_Success() {
         Long id = 1L;
 
@@ -148,8 +119,7 @@ class RecursoComunServiceTest {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Piscina");
         dto.setDescripcion("Piscina olímpica");
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(2L);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
         dto.setTipoRecursoComun(tipo);
 
 
@@ -157,18 +127,14 @@ class RecursoComunServiceTest {
         oldRecurso.setId(id);
         oldRecurso.setNombre("Cancha");
         oldRecurso.setDescripcion("Cancha de fútbol");
-        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+        oldRecurso.setTipoRecursoComun(tipo);
 
 
-        TipoRecursoComun tipoEncontrado = new TipoRecursoComun();
-        tipoEncontrado.setId(2L);
-        tipoEncontrado.setNombre("Zona húmeda");
-        tipoEncontrado.setDescripcion("Área de piscina y jacuzzi");
+        TipoRecursoComun tipoEncontrado = TipoRecursoComun.ZONA;
 
 
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
         when(recursoComunRepository.findByNombreIgnoreCase("Piscina")).thenReturn(Optional.empty());
-        when(tipoRecursoComunRepository.findById(2L)).thenReturn(Optional.of(tipoEncontrado));
         when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 
@@ -180,14 +146,12 @@ class RecursoComunServiceTest {
         assertEquals("Piscina", result.data().getNombre());
         assertEquals("Piscina olímpica", result.data().getDescripcion());
         assertNotNull(result.data().getTipoRecursoComun());
-        assertEquals(2L, result.data().getTipoRecursoComun().getId());
-        assertEquals("Zona húmeda", result.data().getTipoRecursoComun().getNombre());
-        assertEquals("Área de piscina y jacuzzi", result.data().getTipoRecursoComun().getDescripcion());
+        assertEquals(tipoEncontrado, result.data().getTipoRecursoComun());
+
 
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
-        verify(tipoRecursoComunRepository).findById(2L);
         verify(recursoComunRepository).save(any(RecursoComun.class));
     }
 
@@ -199,8 +163,7 @@ class RecursoComunServiceTest {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Piscina");
         dto.setDescripcion("Piscina olímpica");
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(2L);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
         dto.setTipoRecursoComun(tipo);
 
 
@@ -208,7 +171,7 @@ class RecursoComunServiceTest {
         oldRecurso.setId(id);
         oldRecurso.setNombre("Cancha");
         oldRecurso.setDescripcion("Cancha de fútbol");
-        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+        oldRecurso.setTipoRecursoComun(tipo);
 
 
         RecursoComun other = new RecursoComun();
@@ -228,7 +191,6 @@ class RecursoComunServiceTest {
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
-        verifyNoInteractions(tipoRecursoComunRepository);
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
     }
     @Test
@@ -247,25 +209,6 @@ class RecursoComunServiceTest {
         assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
 
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
-        verify(tipoRecursoComunRepository, never()).findById(anyLong());
-    }
-
-    @Test
-    void testSave_ThrowsException_WhenTipoRecursoIdIsNull() {
-        RecursoComunDTO dto = new RecursoComunDTO();
-        dto.setNombre("Cancha");
-        dto.setDescripcion("Cancha de fútbol");
-        dto.setTipoRecursoComun(new TipoRecursoComun());
-
-        when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
-
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
-
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
-
-        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
-        verify(tipoRecursoComunRepository, never()).findById(anyLong());
     }
 
     @Test
