@@ -194,7 +194,7 @@ class RecursoComunServiceTest {
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
     }
     @Test
-    void testSave_ThrowsException_WhenTipoRecursoIsNull() {
+    void testUpdate_ThrowsException_WhenTipoRecursoIsNull() {
         Long id = 1L;
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Cancha");
@@ -207,6 +207,28 @@ class RecursoComunServiceTest {
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
 
         ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.update(id, dto));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
+    }
+
+    @Test
+    void testSave_ThrowsException_WhenTipoRecursoIsNull() {
+        Long id = 1L;
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Cancha");
+        dto.setDescripcion("Cancha de fútbol");
+        dto.setTipoRecursoComun(null);
+
+        RecursoComun oldRecurso = new RecursoComun();
+        oldRecurso.setId(id);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
         assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
