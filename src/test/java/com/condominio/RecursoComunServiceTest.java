@@ -217,23 +217,18 @@ class RecursoComunServiceTest {
 
     @Test
     void testSave_ThrowsException_WhenTipoRecursoIsNull() {
-        Long id = 1L;
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
         dto.setTipoRecursoComun(null);
 
-        RecursoComun oldRecurso = new RecursoComun();
-        oldRecurso.setId(id);
-
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
+        when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
 
         ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+        assertTrue(exception.getMessage().toLowerCase().contains("tipo de recurso válido"));
 
-        verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
     }
 
