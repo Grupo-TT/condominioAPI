@@ -1,5 +1,6 @@
 package com.condominio.dto.request;
 
+import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.TipoRecursoComun;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,4 +16,5 @@ public class RecursoComunDTO {
     private String nombre;
     private String descripcion;
     private TipoRecursoComun tipoRecursoComun;
+    private DisponibilidadRecurso disponibilidadRecurso;
 }

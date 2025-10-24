@@ -19,8 +19,9 @@ public class RecursoComun {
     private String nombre;
     @Column
     private String descripcion;
-    @Column
-    private boolean estadoRecurso;
+    @Enumerated(EnumType.STRING)
+    private DisponibilidadRecurso disponibilidadRecurso;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_recurso_comun", nullable = false)
     private TipoRecursoComun tipoRecursoComun;
