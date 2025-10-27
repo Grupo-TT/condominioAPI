@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -41,38 +42,53 @@ public class PagoService implements IPagoService {
             casa = obligacion.getCasa();
             propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                     orElse(null);
-            if ((pagoDTO.getMontoAPagar() > obligacion.getMonto()) && (obligacion.getEstadoPago() == EstadoPago.PENDIENTE) ) {
-                throw new ApiException("El valor ingresado supera la deuda actual.", HttpStatus.BAD_REQUEST);
-            }else if(pagoDTO.getMontoAPagar() == obligacion.getMonto()) {
-                obligacion.setEstadoPago(EstadoPago.CONDONADO);
-                Pago pago = Pago.builder()
-                        .fechaPago(LocalDate.now())
-                        .total(pagoDTO.getMontoAPagar())
-                        .build();
-                pagoRepository.save(pago);
-                pagoDetalleRepository.save(PagoDetalle.builder()
-                                .montoPagado(pagoDTO.getMontoAPagar())
-                                .obligacion(obligacion)
-                                .pago(pago)
-                                .build());
-                obligacionRepository.save(obligacion);
-                obligacionDTO = ObligacionDTO.builder()
-                        .id(obligacion.getId())
-                        .casa(casa.getNumeroCasa())
-                        .monto(obligacion.getMonto())
-                        .motivo(obligacion.getMotivo())
-                        .estado(String.valueOf(EstadoPago.CONDONADO))
-                        .fechaPago(LocalDate.now())
-                        .build();
 
+            int montoDeuda = obligacion.getMonto() - Objects.requireNonNullElse(obligacion.getMontoPagado(), 0);
+
+            if ((pagoDTO.getMontoAPagar() > montoDeuda) && (obligacion.getEstadoPago() != EstadoPago.CONDONADO) ) {
+                throw new ApiException("El valor ingresado supera la deuda actual.", HttpStatus.BAD_REQUEST);
+            }else if(pagoDTO.getMontoAPagar() == montoDeuda) {
+                obligacion.setEstadoPago(EstadoPago.CONDONADO);
+                obligacion.setMontoPagado(obligacion.getMonto());
+                obligacionDTO = realizarPago(pagoDTO, obligacion, casa);
                 applicationEventPublisher.publishEvent(new CreatedPagoEvent(propietario.getUser().getEmail(), obligacionDTO));
 
             }else{
-                throw new ApiException("El valor ingresado es menor a la deuda actual.", HttpStatus.BAD_REQUEST);
+                obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+                obligacion.setMontoPagado(pagoDTO.getMontoAPagar());
+                obligacionDTO = realizarPago(pagoDTO, obligacion, casa);
+                applicationEventPublisher.publishEvent(new CreatedPagoEvent(propietario.getUser().getEmail(), obligacionDTO));
             }
-
         }
         return new SuccessResult<>("Pago realizado correctamente", obligacionDTO);
     }
 
+    public ObligacionDTO realizarPago(PagoDTO pagoDTO , Obligacion obligacion, Casa casa) {
+        Pago pago = Pago.builder()
+                .fechaPago(LocalDate.now())
+                .total(pagoDTO.getMontoAPagar())
+                .build();
+        pagoRepository.save(pago);
+        pagoDetalleRepository.save(PagoDetalle.builder()
+                .montoPagado(pagoDTO.getMontoAPagar())
+                .obligacion(obligacion)
+                .pago(pago)
+                .build());
+        obligacionRepository.save(obligacion);
+        int saldoPendiente = obligacion.getMonto() - obligacion.getMontoPagado();
+
+        return ObligacionDTO.builder()
+                .id(obligacion.getId())
+                .casa(casa.getNumeroCasa())
+                .monto(pagoDTO.getMontoAPagar())
+                .saldo(saldoPendiente)
+                .motivo(obligacion.getMotivo())
+                .estado(String.valueOf(obligacion.getEstadoPago()))
+                .fechaPago(LocalDate.now())
+                .build();
+    }
+
+    public Optional<LocalDate> obtenerFechaUltimoPagoPorCasa(Long idCasa) {
+        return pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa);
+    }
 }

@@ -11,6 +11,7 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.CasaService;
 import com.condominio.service.implementation.MascotaService;
 import com.condominio.service.implementation.MiembroService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ class CasaServiceTest {
 
     @Mock
     private MascotaRepository  mascotaRepository;
+
+    @Mock
+    private IPagoService pagoService;
 
     @InjectMocks
     private CasaService casaService;
@@ -411,14 +415,14 @@ class CasaServiceTest {
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(10L);
-        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMotivo("Cuota de administración");
         obligacion.setMonto(50000);
         obligacion.setCasa(newCasa);
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
-        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR))
+        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
@@ -437,7 +441,7 @@ class CasaServiceTest {
 
         verify(casaRepository).findCasasConObligacionesPorCobrar();
         verify(personaRepository).findPropietarioByCasaId(1L);
-        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.POR_COBRAR);
+        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE);
     }
 
     @Test
@@ -448,14 +452,14 @@ class CasaServiceTest {
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(20L);
-        obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
+        obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMotivo("Mantenimiento");
         obligacion.setMonto(30000);
         obligacion.setCasa(newCasa);
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
-        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.POR_COBRAR))
+        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.PENDIENTE))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();

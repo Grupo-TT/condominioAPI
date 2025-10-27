@@ -9,6 +9,7 @@ import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.ICasaService;
 import com.condominio.service.interfaces.IMascotaService;
 import com.condominio.service.interfaces.IMiembroService;
+import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,7 +30,7 @@ public class CasaService implements ICasaService {
     private final PersonaRepository personaRepository;
     private final ObligacionRepository obligacionRepository;
     private final MascotaRepository mascotaRepository;
-
+    private final IPagoService pagoService;
 
     @Override
     public Optional<Casa> findById(Long id) {
@@ -58,6 +59,7 @@ public class CasaService implements ICasaService {
         CasaCuentaDTO dto = CasaCuentaDTO.builder()
                 .saldoPendienteTotal(saldoPendienteTotal)
                 .multasActivas(obligacionesPendientes)
+                .ultimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(idCasa).orElse(null))
                 .build();
         return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
     }
@@ -143,19 +145,23 @@ public class CasaService implements ICasaService {
             }
 
             List<Obligacion> pendientes = obligacionRepository
-                    .findByCasaIdAndEstadoPago(casa.getId(), EstadoPago.POR_COBRAR);
+                    .findByCasaIdAndEstadoPago(casa.getId(), EstadoPago.PENDIENTE);
 
             int saldoPendiente = pendientes.stream()
                     .mapToInt(Obligacion::getMonto)
                     .sum();
 
-            List<ObligacionDTO> obligacionesDTO = pendientes.stream()
-                    .map(o -> ObligacionDTO.builder()
+            List<MostrarObligacionDTO> obligacionesDTO = pendientes.stream()
+                    .map(o -> MostrarObligacionDTO.builder()
                             .id((o.getId()))
                             .estado(o.getEstadoPago().name())
                             .motivo(o.getMotivo())
                             .casa(o.getCasa().getNumeroCasa())
                             .monto(o.getMonto())
+                            .valorTotal(o.getValorTotal())
+                            .saldoPendiente(o.getSaldoPendiente())
+                            .estadoPago(o.getEstadoPago())
+                            .tipoObligacion(o.getTipoObligacion())
                             .build())
                     .toList();
 

@@ -16,4 +16,4 @@ public class CasaDeudoraDTO {
     private int numeroCasa;
     private PersonaSimpleDTO propietario;
     private int saldoPendiente;
-    private List<ObligacionDTO> obligacionesPendientes;}
+    private List<MostrarObligacionDTO> obligacionesPendientes;}

@@ -26,7 +26,12 @@ public class Obligacion {
     private int diasMaxMora;
     private int tasaInteres;
     private int interes;
+    @Column(columnDefinition = "int default 0")
+    private int montoPagado;
     private String motivo;
+
+    private int valorTotal;
+    private int saldoPendiente;
 
     @ManyToOne(targetEntity = Casa.class)
     @JoinColumn(nullable = false)
@@ -40,4 +45,11 @@ public class Obligacion {
 
     @Enumerated(EnumType.STRING)
     private EstadoPago estadoPago;
+
+    @PrePersist
+    @PreUpdate
+    private void calcularValores() {
+        this.valorTotal = this.monto + this.interes;
+        this.saldoPendiente = this.valorTotal - this.montoPagado;
+    }
 }

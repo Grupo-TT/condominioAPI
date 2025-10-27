@@ -2,12 +2,10 @@ package com.condominio.util.configuration;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.RecursoComunDTO;
-import com.condominio.dto.request.TipoRecursoComunDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.SolicitudReservaRecurso;
-import com.condominio.persistence.model.TipoRecursoComun;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.springframework.context.annotation.Bean;
@@ -33,13 +31,6 @@ public class AppConfig {
             }
         });
 
-
-        modelMapper.addMappings(new PropertyMap<TipoRecursoComunDTO, TipoRecursoComun>() {
-            @Override
-            protected void configure() {
-                skip(destination.getId());
-            }
-        });
         modelMapper.addMappings(new PropertyMap<RecursoComunDTO, RecursoComun>() {
             @Override
             protected void configure() {

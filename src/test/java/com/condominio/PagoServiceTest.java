@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,14 +75,14 @@ class PagoServiceTest {
         pagoDTO.setMontoAPagar(250000); // igual al monto
     }
 
-    // ✅ Caso 1: Monto igual a la deuda — pago exitoso
+    //Caso 1: Monto igual a la deuda — pago exitoso
     @Test
     void registrarPago_montoIgual_guardadoYEventoPublicado() {
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
 
         SuccessResult<ObligacionDTO> result = pagoService.registrarPago(pagoDTO);
-
+        assertEquals("Pago realizado correctamente", result.message());
 
         // Verificaciones de persistencia
         verify(pagoRepository, times(1)).save(any(Pago.class));
@@ -92,7 +93,7 @@ class PagoServiceTest {
         verify(eventPublisher, times(1)).publishEvent(any(CreatedPagoEvent.class));
     }
 
-    // 💥 Caso 2: Monto mayor a la deuda — lanza excepción
+    //Caso 2: Monto mayor a la deuda — lanza excepción
     @Test
     void registrarPago_montoMayor_lanzaExcepcion() {
         pagoDTO.setMontoAPagar(300000); // mayor que la deuda
@@ -107,18 +108,68 @@ class PagoServiceTest {
         verifyNoInteractions(pagoRepository, pagoDetalleRepository, eventPublisher);
     }
 
-    // ⚠️ Caso 3: Monto menor a la deuda — lanza excepción
+    //Caso 3: Monto menor a la deuda — lanza excepción
     @Test
-    void registrarPago_montoMenor_lanzaExcepcion() {
-        pagoDTO.setMontoAPagar(100000); // menor que la deuda
-
+    void registrarPago_montoMenor_registraPagoParcial() {
+        // Arrange
+        pagoDTO.setMontoAPagar(100000); // menor que la deuda total (250000)
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
 
-        ApiException ex = assertThrows(ApiException.class, () -> pagoService.registrarPago(pagoDTO));
+        // Act
+        SuccessResult<ObligacionDTO> result = pagoService.registrarPago(pagoDTO);
 
-        assertEquals("El valor ingresado es menor a la deuda actual.", ex.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        // Assert
+        assertNotNull(result);
+        assertEquals("Pago realizado correctamente", result.message());
+        ObligacionDTO dto = result.data();
+        assertNotNull(dto);
 
-        verifyNoInteractions(pagoRepository, pagoDetalleRepository, eventPublisher);
+        // Verificar datos del DTO
+        assertEquals(obligacion.getId(), dto.getId());
+        assertEquals("Mantenimiento", dto.getMotivo());
+        assertEquals(100000, dto.getMonto());
+        assertEquals("POR_COBRAR", dto.getEstado());
+        assertEquals(150000, dto.getSaldo()); // saldo = 250000 - 100000
+
+        // Verificar llamadas a repositorios
+        verify(pagoRepository, times(1)).save(any(Pago.class));
+        verify(pagoDetalleRepository, times(1)).save(any(PagoDetalle.class));
+        verify(obligacionRepository, times(1)).save(obligacion);
+
+        // Verificar que se haya publicado el evento
+        verify(eventPublisher, times(1)).publishEvent(any(CreatedPagoEvent.class));
+    }
+
+    @Test
+    void obtenerFechaUltimoPagoPorCasa_deberiaRetornarFechaCuandoExistePago() {
+        // given
+        Long idCasa = 1L;
+        LocalDate fechaEsperada = LocalDate.of(2025, 10, 22);
+        when(pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa))
+                .thenReturn(Optional.of(fechaEsperada));
+
+        // when
+        Optional<LocalDate> resultado = pagoService.obtenerFechaUltimoPagoPorCasa(idCasa);
+
+        // then
+        assertTrue(resultado.isPresent());
+        assertEquals(fechaEsperada, resultado.get());
+        verify(pagoDetalleRepository, times(1)).findFechaUltimoPagoByCasaId(idCasa);
+    }
+
+    @Test
+    void obtenerFechaUltimoPagoPorCasa_deberiaRetornarVacioCuandoNoHayPagos() {
+        // given
+        Long idCasa = 2L;
+        when(pagoDetalleRepository.findFechaUltimoPagoByCasaId(idCasa))
+                .thenReturn(Optional.empty());
+
+        // when
+        Optional<LocalDate> resultado = pagoService.obtenerFechaUltimoPagoPorCasa(idCasa);
+
+        // then
+        assertTrue(resultado.isEmpty());
+        verify(pagoDetalleRepository, times(1)).findFechaUltimoPagoByCasaId(idCasa);
     }
 }
