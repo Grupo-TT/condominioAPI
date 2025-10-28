@@ -134,7 +134,6 @@ public class RecursoComunService implements IRecursoComunService {
                         .id(recurso.getId())
                         .nombre(recurso.getNombre())
                         .descripcion(recurso.getDescripcion())
-                        .cantidadMaxima(Integer.parseInt(recurso.getCapacidadMaximaUso()))
                         .disponibilidadRecurso(recurso.getDisponibilidadRecurso())
                         .build())
                 .toList();

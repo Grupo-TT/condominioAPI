@@ -21,8 +21,6 @@ public class RecursoComun {
     private String descripcion;
     @Enumerated(EnumType.STRING)
     private DisponibilidadRecurso disponibilidadRecurso;
-    @Column(columnDefinition = "int default 0")
-    private String capacidadMaximaUso;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_recurso_comun", nullable = false)

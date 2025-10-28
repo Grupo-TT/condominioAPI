@@ -15,6 +15,5 @@ public class RecursoComunPropiDTO {
     private long id;
     private String nombre;
     private String descripcion;
-    private int cantidadMaxima;
     private DisponibilidadRecurso disponibilidadRecurso;
 }
