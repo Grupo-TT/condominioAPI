@@ -249,7 +249,7 @@ class ObligacionServiceTest {
     }
     @Test
     void save_DebeGuardarMultaCuandoCasaExiste() {
-        MultaRegistroDTO dto = new MultaRegistroDTO(1L, 20000, "Basura mal dispuesta");
+        MultaRegistroDTO dto = new MultaRegistroDTO(1L, 20000,"Multa por dejar basura en lugar no adecuado", "Basura mal dispuesta");
 
         when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
         when(obligacionRepository.save(any(Obligacion.class))).thenReturn(obligacion);
@@ -266,7 +266,7 @@ class ObligacionServiceTest {
 
     @Test
     void save_DebeFallarCuandoCasaNoExiste() {
-        MultaRegistroDTO dto = new MultaRegistroDTO(99L, 15000, "Basura mal dispuesta");
+        MultaRegistroDTO dto = new MultaRegistroDTO(99L, 15000, "Multa por dejar basura en lugar no adecuado", "Basura mal dispuesta");
 
         when(casaRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -279,7 +279,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_DebeActualizarMultaCorrectamente() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Pago tardío", TipoPago.DINERO);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Multa por demora en el pago","Pago tardío", TipoPago.DINERO);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
@@ -295,7 +295,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_DebeFallarSiMultaNoExiste() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Pago tardío", TipoPago.DINERO);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Multa por demora en el pago", "Pago tardío", TipoPago.DINERO);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -309,7 +309,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_DebeFallarSiCasaNoExiste() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(99L, 30000, "Pago tardío", TipoPago.DINERO);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(99L, 30000, "Multa por demora en el pago", "Pago tardío", TipoPago.DINERO);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(casaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -323,7 +323,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_NoDebeCambiarTipoPagoSiNoSeEnvia() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 50000, "Pago tardío", null);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 50000, "Multa por demora en el pago", "Pago tardío", null);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));

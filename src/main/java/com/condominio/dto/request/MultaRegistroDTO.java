@@ -20,5 +20,6 @@ public class MultaRegistroDTO {
 
     private Long idCasa;
     private int monto;
+    private String titulo;
     private String motivo;
 }

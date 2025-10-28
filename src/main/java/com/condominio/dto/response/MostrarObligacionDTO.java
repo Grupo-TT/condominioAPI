@@ -17,6 +17,7 @@ public class MostrarObligacionDTO {
 
     private Long id;
     private String estado;
+    private String titulo;
     private String motivo;
     private int casa;
     private int monto;
