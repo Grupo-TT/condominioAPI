@@ -1,5 +1,6 @@
 package com.condominio.service.interfaces;
 
+import com.condominio.dto.response.SolicitudRecursoPropiDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.EstadoSolicitud;
@@ -13,4 +14,5 @@ public interface ISolicitudReservaRecursoService {
     SuccessResult<SolicitudReservaRecursoDTO> rechazar(Long id);
     SuccessResult<SolicitudReservaRecursoDTO> eliminar(Long id);
     SuccessResult<SolicitudReservaRecursoDTO> update(Long id, SolicitudReservaRecursoDTO solicitud);
+    SuccessResult<SolicitudRecursoPropiDTO> crearSolicitud(SolicitudRecursoPropiDTO solicitud);
 }

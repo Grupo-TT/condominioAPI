@@ -1,6 +1,7 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.request.RecursoComunDTO;
+import com.condominio.dto.response.RecursoComunPropiDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.RecursoComun;
@@ -119,5 +120,22 @@ public class RecursoComunService implements IRecursoComunService {
     @Override
     public List<RecursoComun> findByTipoRecurso(TipoRecursoComun tipoRecursoComun) {
         return recursoComunRepository.findByTipoRecursoComun(tipoRecursoComun);
+    }
+
+    @Override
+    public List<RecursoComunPropiDTO> findByDisponibilidad() {
+        List<RecursoComun> recursos = (List<RecursoComun>) recursoComunRepository.findAll();
+        if(recursos.isEmpty()){
+            throw new ApiException("No hay recursos registrados", HttpStatus.BAD_REQUEST);
+        }
+
+        return recursos.stream()
+                .map(recurso -> RecursoComunPropiDTO.builder()
+                        .id(recurso.getId())
+                        .nombre(recurso.getNombre())
+                        .descripcion(recurso.getDescripcion())
+                        .disponibilidadRecurso(recurso.getDisponibilidadRecurso())
+                        .build())
+                .toList();
     }
 }
