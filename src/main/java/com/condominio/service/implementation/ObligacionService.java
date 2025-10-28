@@ -95,6 +95,7 @@ public class ObligacionService implements IObligacionService {
         Obligacion obligacion = Obligacion.builder()
                 .fechaGenerada(LocalDate.now())
                 .monto(multa.getMonto())
+                .titulo(multa.getTitulo())
                 .motivo(multa.getMotivo())
                 .casa(casa)
                 .tipoObligacion(TipoObligacion.MULTA)
@@ -120,6 +121,7 @@ public class ObligacionService implements IObligacionService {
                 .orElseThrow(() -> new RuntimeException("Casa no encontrada con ID: " + multa.getIdCasa()));
 
         obligacion.setMonto(multa.getMonto());
+        obligacion.setTitulo(multa.getTitulo());
         obligacion.setMotivo(multa.getMotivo());
         obligacion.setCasa(casa);
 
