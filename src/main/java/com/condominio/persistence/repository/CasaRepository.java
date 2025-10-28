@@ -14,7 +14,7 @@ public interface CasaRepository extends CrudRepository<Casa, Long> {
     @Query("""
            SELECT DISTINCT o.casa
            FROM Obligacion o
-           WHERE o.estadoPago = 'POR_COBRAR'
+           WHERE o.estadoPago = 'PENDIENTE'
            """)
     List<Casa> findCasasConObligacionesPorCobrar();
 }
