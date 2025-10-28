@@ -50,4 +50,10 @@ public class ObligacionController {
         SuccessResult<Obligacion> result = obligacionService.update(id, multa);
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/generar-administracion-mensual")
+    public ResponseEntity<String> generarObligacionesMensualesManual() {
+        obligacionService.generarObligacionesMensuales();
+        return ResponseEntity.ok("✅ Obligaciones mensuales generadas manualmente con éxito");
+    }
 }

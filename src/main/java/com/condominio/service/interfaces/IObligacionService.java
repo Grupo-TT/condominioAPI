@@ -13,5 +13,5 @@ public interface IObligacionService {
     SuccessResult<Obligacion> save(MultaRegistroDTO multa);
     SuccessResult<Obligacion> update(Long id, MultaActualizacionDTO multa);
     ResponseEntity<?> generarPazYSalvo(Long idCasa);
-
+    void generarObligacionesMensuales();
 }
