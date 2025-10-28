@@ -1,5 +1,6 @@
 package com.condominio.controller;
 
+import com.condominio.dto.response.SolicitudRecursoPropiDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.EstadoSolicitud;
@@ -48,5 +49,11 @@ public class SolicitudReservaRecursoController {
     @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<SolicitudReservaRecursoDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaRecursoDTO solicitud){
         return solicitudReservaService.update(id, solicitud);
+    }
+
+    @PostMapping("/crear")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<SolicitudRecursoPropiDTO> crearSolicitud(@RequestBody SolicitudRecursoPropiDTO solicitudDTO){
+        return solicitudReservaService.crearSolicitud(solicitudDTO);
     }
 }

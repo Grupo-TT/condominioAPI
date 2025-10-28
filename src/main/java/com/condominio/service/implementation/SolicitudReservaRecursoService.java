@@ -1,13 +1,12 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.response.PersonaSimpleDTO;
+import com.condominio.dto.response.SolicitudRecursoPropiDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.DisponibilidadRecurso;
-import com.condominio.persistence.model.EstadoSolicitud;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.SolicitudReservaRecurso;
+import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.RecursoComunRepository;
 import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import com.condominio.util.exception.ApiException;
@@ -17,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     private final SolicitudReservaRecursoRepository solicitudReservaRecursoRepository;
     private final ModelMapper modelMapper;
     private final PersonaRepository personaRepository;
+    private final RecursoComunRepository recursoComunRepository;
 
 
     public  SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado){
@@ -117,6 +119,56 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         SolicitudReservaRecurso actualizada = solicitudReservaRecursoRepository.save(oldSolicitud);
 
         return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaRecursoDTO.class));
+    }
+
+    @Override
+    public SuccessResult<SolicitudRecursoPropiDTO> crearSolicitud(SolicitudRecursoPropiDTO solicitudDTO) {
+
+        Optional<RecursoComun> optionalRecursoComun = recursoComunRepository.findById(solicitudDTO.getIdRecurso());
+        Optional<Persona> optionalPersona = personaRepository.findById(solicitudDTO.getIdSolicitante());
+        RecursoComun recursoComun = null;
+        Persona persona;
+        if(optionalRecursoComun.isPresent()) {
+            recursoComun = optionalRecursoComun.get();
+            if(recursoComun.getDisponibilidadRecurso() != DisponibilidadRecurso.DISPONIBLE) {
+                throw new ApiException("Recurso no disponible.", HttpStatus.BAD_REQUEST);
+            }
+        }
+        if(optionalPersona.isPresent()) {
+            persona = optionalPersona.get();
+        }else {
+            throw new ApiException("Solicitante no encontrado.", HttpStatus.BAD_REQUEST);
+        }
+
+        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud());
+
+        LocalTime nuevaHoraInicio = solicitudDTO.getHoraInicio();
+        LocalTime nuevaHoraFin = solicitudDTO.getHoraFin();
+
+        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            LocalTime horaInicioExistente = reserva.getHoraInicio();
+            LocalTime horaFinExistente = reserva.getHoraFin();
+
+            // Condición de traslape:
+            // (inicioNueva < finExistente) && (finNueva > inicioExistente)
+            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
+        });
+
+        if (hayConflicto) {
+            throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
+        }
+        SolicitudReservaRecurso reservaRecurso = SolicitudReservaRecurso.builder()
+                .fechaSolicitud(LocalDate.now())
+                .recursoComun(recursoComun)
+                .casa(persona.getCasa())
+                .horaInicio(solicitudDTO.getHoraInicio())
+                .horaFin(solicitudDTO.getHoraFin())
+                .estadoSolicitud(EstadoSolicitud.PENDIENTE)
+                .numeroInvitados(solicitudDTO.getNumeroInvitados())
+                .build();
+        solicitudReservaRecursoRepository.save(reservaRecurso);
+
+        return new SuccessResult<>("Reserva creada exitosamente, Pendiente de aprobación por el administrador.", solicitudDTO);
     }
 
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
