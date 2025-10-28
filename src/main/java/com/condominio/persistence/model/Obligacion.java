@@ -29,6 +29,7 @@ public class Obligacion {
     @Column(columnDefinition = "int default 0")
     private int montoPagado;
     private String motivo;
+    private String titulo;
 
     private int valorTotal;
     private int saldoPendiente;
