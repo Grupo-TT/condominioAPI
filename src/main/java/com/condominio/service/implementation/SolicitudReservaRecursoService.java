@@ -1,9 +1,6 @@
 package com.condominio.service.implementation;
 
-import com.condominio.dto.response.PersonaSimpleDTO;
-import com.condominio.dto.response.SolicitudRecursoPropiDTO;
-import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RecursoComunRepository;
@@ -169,6 +166,25 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         solicitudReservaRecursoRepository.save(reservaRecurso);
 
         return new SuccessResult<>("Reserva creada exitosamente, Pendiente de aprobación por el administrador.", solicitudDTO);
+    }
+
+    @Override
+    public SuccessResult<SolicitudRecursoPropiDTO> modificarCantidadInvitados(InvitadoDTO invitadoDTO) {
+        Optional<SolicitudReservaRecurso> optionalSolicitudReservaRecurso = solicitudReservaRecursoRepository.findById(invitadoDTO.getIdSolicitud());
+        SolicitudReservaRecurso solicitudReservaRecurso = null;
+        if(optionalSolicitudReservaRecurso.isPresent()) {
+            solicitudReservaRecurso = optionalSolicitudReservaRecurso.get();
+            solicitudReservaRecurso.setNumeroInvitados(invitadoDTO.getCantidadInvitados());
+            solicitudReservaRecursoRepository.save(solicitudReservaRecurso);
+        }
+        SolicitudRecursoPropiDTO solicitudDTO = SolicitudRecursoPropiDTO.builder()
+                .idRecurso(solicitudReservaRecurso.getRecursoComun().getId())
+                .fechaSolicitud(solicitudReservaRecurso.getFechaSolicitud())
+                .horaFin(solicitudReservaRecurso.getHoraFin())
+                .horaInicio(solicitudReservaRecurso.getHoraInicio())
+                .numeroInvitados(invitadoDTO.getCantidadInvitados())
+                .build();
+        return new SuccessResult<>("Cantidad de invitados modificado correctamente.", solicitudDTO);
     }
 
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
