@@ -32,6 +32,7 @@ public class UserService implements IUserService, UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity user = userRepository.findUserEntityByEmail(username);
 
+
         if (user == null) {
             throw new UsernameNotFoundException("Usuario no encontrado");
         }

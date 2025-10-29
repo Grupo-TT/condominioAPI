@@ -1,6 +1,8 @@
 package com.condominio.service.implementation;
 
 
+import com.condominio.persistence.model.Asamblea;
+import com.condominio.persistence.model.Persona;
 import com.condominio.dto.response.ObligacionDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,11 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.List;
 import static com.condominio.util.constants.AppConstants.*;
 
 @Service
@@ -91,4 +98,48 @@ public class EmailService {
             log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
         }
     }
+
+    @Async("mailTaskExecutor")
+    public void enviarInvitacionAsamblea(
+            String destinatario,
+            String nombreAsamblea,
+            Date fecha,
+            LocalTime hora) throws MessagingException {
+
+        String htmlContent = generarHtmlInvitacionAsamblea(nombreAsamblea, fecha, hora);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(destinatario);
+        helper.setSubject("Invitación a la Asamblea: " + nombreAsamblea);
+        helper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarInvitacionesAsambleaMasivas(List<Persona> personas, Asamblea asamblea) {
+        personas.forEach(persona -> {
+            try {
+                enviarInvitacionAsamblea(
+                        persona.getUser().getEmail(),
+                        asamblea.getTitulo(),
+                        asamblea.getFecha(),
+                        asamblea.getHoraInicio()
+                );
+            } catch (MessagingException e) {
+
+                System.err.println("No se pudo enviar correo a " + persona.getUser().getEmail() + ": " + e.getMessage());
+            }
+        });
+    }
+    public String generarHtmlInvitacionAsamblea(String nombreAsamblea, Date fecha, LocalTime hora) {
+        Context context = new Context();
+        context.setVariable("nombreAsamblea", nombreAsamblea);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        context.setVariable("fecha", sdf.format(fecha));
+
+        context.setVariable("hora", hora.format(DateTimeFormatter.ofPattern("HH:mm")));
+        return templateEngine.process("email/invitacion-asamblea", context);
+    }
+
 }
