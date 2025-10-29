@@ -1,6 +1,7 @@
 package com.condominio;
 
 
+import com.condominio.dto.response.InvitadoDTO;
 import com.condominio.dto.response.SolicitudRecursoPropiDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
@@ -694,6 +695,55 @@ class SolicitudReservaRecursoServiceTest {
 
         assertEquals("El recurso ya tiene una solicitud en el horario solicitado.", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void modificarCantidadInvitados_conSolicitudExistente_actualizaExitosamente() {
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(10L);
+        recurso.setNombre("Piscina");
+
+        SolicitudReservaRecurso solicitudReservaRecurso = SolicitudReservaRecurso.builder()
+                .id(1L)
+                .recursoComun(recurso)
+                .fechaSolicitud(LocalDate.of(2025, 10, 28))
+                .horaInicio(LocalTime.of(14, 0))
+                .horaFin(LocalTime.of(16, 0))
+                .numeroInvitados(3)
+                .build();
+
+        InvitadoDTO invitadoDTO = InvitadoDTO.builder()
+                .idSolicitud(1L)
+                .cantidadInvitados(8)
+                .build();
+
+        when(solicitudReservaRecursoRepository.findById(1L))
+                .thenReturn(Optional.of(solicitudReservaRecurso));
+
+        SuccessResult<SolicitudRecursoPropiDTO> resultado =
+                solicitudReservaRecursoService.modificarCantidadInvitados(invitadoDTO);
+
+        assertNotNull(resultado);
+        assertEquals("Cantidad de invitados modificado correctamente.", resultado.message());
+        assertEquals(8, resultado.data().getNumeroInvitados());
+        assertEquals(10L, resultado.data().getIdRecurso());
+        verify(solicitudReservaRecursoRepository, times(1)).save(solicitudReservaRecurso);
+    }
+
+    @Test
+    void modificarCantidadInvitados_conSolicitudInexistente_lanzaError() {
+        InvitadoDTO invitadoDTO = InvitadoDTO.builder()
+                .idSolicitud(1L)
+                .cantidadInvitados(8)
+                .build();
+
+        when(solicitudReservaRecursoRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(NullPointerException.class, () -> solicitudReservaRecursoService.modificarCantidadInvitados(invitadoDTO));
+
         verify(solicitudReservaRecursoRepository, never()).save(any());
     }
 }
