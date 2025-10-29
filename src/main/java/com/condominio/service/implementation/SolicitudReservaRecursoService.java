@@ -179,6 +179,8 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             solicitudReservaRecurso = optionalSolicitudReservaRecurso.get();
             solicitudReservaRecurso.setNumeroInvitados(invitadoDTO.getCantidadInvitados());
             solicitudReservaRecursoRepository.save(solicitudReservaRecurso);
+        }else{
+            throw new ApiException("No se encontró la solicitud de reserva.", HttpStatus.BAD_REQUEST);
         }
         SolicitudRecursoPropiDTO solicitudDTO = SolicitudRecursoPropiDTO.builder()
                 .idRecurso(solicitudReservaRecurso.getRecursoComun().getId())
