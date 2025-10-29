@@ -170,6 +170,9 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
     @Override
     public SuccessResult<SolicitudRecursoPropiDTO> modificarCantidadInvitados(InvitadoDTO invitadoDTO) {
+        if (invitadoDTO.getCantidadInvitados() < 0) {
+            throw new ApiException("No puede ingresar una cantidad de invitados negativa.", HttpStatus.BAD_REQUEST);
+        }
         Optional<SolicitudReservaRecurso> optionalSolicitudReservaRecurso = solicitudReservaRecursoRepository.findById(invitadoDTO.getIdSolicitud());
         SolicitudReservaRecurso solicitudReservaRecurso = null;
         if(optionalSolicitudReservaRecurso.isPresent()) {
