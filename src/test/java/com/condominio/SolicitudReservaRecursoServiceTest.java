@@ -738,15 +738,6 @@ class SolicitudReservaRecursoServiceTest {
         recurso.setId(10L);
         recurso.setNombre("Piscina");
 
-        SolicitudReservaRecurso solicitudReservaRecurso = SolicitudReservaRecurso.builder()
-                .id(1L)
-                .recursoComun(recurso)
-                .fechaSolicitud(LocalDate.of(2025, 10, 28))
-                .horaInicio(LocalTime.of(14, 0))
-                .horaFin(LocalTime.of(16, 0))
-                .numeroInvitados(3)
-                .build();
-
         InvitadoDTO invitadoDTO = InvitadoDTO.builder()
                 .idSolicitud(1L)
                 .cantidadInvitados(8)
