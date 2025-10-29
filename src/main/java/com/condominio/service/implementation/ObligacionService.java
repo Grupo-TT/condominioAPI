@@ -3,6 +3,7 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.MultaActualizacionDTO;
 import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.response.EstadoCuentaDTO;
+import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
@@ -30,6 +31,7 @@ import java.time.format.TextStyle;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static com.condominio.util.constants.AppConstants.ZONE;
 
@@ -216,6 +218,32 @@ public class ObligacionService implements IObligacionService {
                     .build();
 
             obligacionRepository.save(obligacion);
+
+            Optional<Persona> propietarioOpt = personaRepository.findPropietarioByCasaId(casa.getId());
+
+            if (propietarioOpt.isPresent()) {
+                Persona propietario = propietarioOpt.get();
+
+                MostrarObligacionDTO mostrarObligacionDTO = MostrarObligacionDTO.builder()
+                        .titulo(titulo)
+                        .motivo(motivo)
+                        .casa(casa.getNumeroCasa())
+                        .monto(MONTO_ADMIN)
+                        .fecha(hoy)
+                        .build();
+
+                try {
+                    emailService.enviarObligacionMensual(
+                            propietario.getUser().getEmail(),
+                            mostrarObligacionDTO
+                    );
+                } catch (MessagingException e) {
+                    System.err.println("No se pudo enviar correo a " + propietario.getUser().getEmail() + ": " + e.getMessage());
+                }
+            } else {
+                System.out.println("⚠️ No se encontró propietario para la casa con ID: " + casa.getId());
+            }
+
         }
     }
 }

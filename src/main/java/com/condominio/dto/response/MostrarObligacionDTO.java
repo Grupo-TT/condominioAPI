@@ -16,6 +16,7 @@ import java.time.LocalDate;
 public class MostrarObligacionDTO {
 
     private Long id;
+    private LocalDate fecha;
     private String estado;
     private String titulo;
     private String motivo;

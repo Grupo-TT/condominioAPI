@@ -1,6 +1,7 @@
 package com.condominio.service.implementation;
 
 
+import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.persistence.model.Asamblea;
 import com.condominio.persistence.model.Persona;
 import com.condominio.dto.response.ObligacionDTO;
@@ -17,8 +18,11 @@ import org.thymeleaf.context.Context;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+
 import static com.condominio.util.constants.AppConstants.*;
 
 @Service
@@ -140,6 +144,51 @@ public class EmailService {
 
         context.setVariable("hora", hora.format(DateTimeFormatter.ofPattern("HH:mm")));
         return templateEngine.process("email/invitacion-asamblea", context);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarObligacionMensual(
+            String destinatario,
+            MostrarObligacionDTO obligacionDTO) throws MessagingException {
+
+        String mesActual = obligacionDTO.getFecha()
+                .getMonth()
+                .getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
+        mesActual = mesActual.substring(0, 1).toUpperCase() + mesActual.substring(1);
+
+        String htmlContent = generarHtmlObligacionMensual(obligacionDTO);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(destinatario);
+        helper.setSubject("Se ha generado tu mensualidad por administración de " + mesActual);
+        helper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarObligacionesMensualesMasivas(List<Persona> personas, MostrarObligacionDTO mostrarObligacionDTO) {
+        personas.forEach(persona -> {
+            try {
+                enviarObligacionMensual(
+                        persona.getUser().getEmail(),
+                        mostrarObligacionDTO
+                );
+            } catch (MessagingException e) {
+
+                System.err.println("No se pudo enviar correo a " + persona.getUser().getEmail() + ": " + e.getMessage());
+            }
+        });
+    }
+
+    public String generarHtmlObligacionMensual(MostrarObligacionDTO obligacionDTO) {
+        Context context = new Context();
+
+        context.setVariable("titulo", obligacionDTO.getTitulo());
+        context.setVariable("motivo", obligacionDTO.getMotivo());
+        context.setVariable("casa", obligacionDTO.getCasa());
+        context.setVariable("monto", obligacionDTO.getMonto());
+
+        return templateEngine.process("email/obligacion-mensual", context);
     }
 
 }

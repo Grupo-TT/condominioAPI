@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Administración Mensual</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Figtree, sans-serif; color: #333333 !important; background-color: #f7f7f7;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td style="padding: 20px 0;">
+            <table align="center" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                   style="background-color: #ffffff; margin: 0 auto; border-radius: 8px;
+                          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                <!-- Header -->
+                <tr>
+                    <td style="background-color: #622599; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Administación Mensual - Flor del Campo</h1>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 30px;">
+                        <p style="margin-top: 0; font-size: 16px; color: #333333 !important;">Estimado(a) propietario,</p>
+
+                        <p style="font-size: 16px; line-height: 1.5; color: #333333 !important;">
+                            Te informamos que se ha generado un nuevo <strong>cobro por administración</strong> correspondiente al mes actual.
+                        </p>
+
+                        <div style="background-color: #f9f9f9; border-left: 4px solid #622599;
+                                    padding: 15px 20px; margin: 25px 0; border-radius: 4px;">
+                            <p style="margin: 0; font-size: 16px; font-weight: bold; color: #333333 !important;">
+                                Detalles del cobro
+                            </p>
+                            <table width="100%" cellpadding="6" cellspacing="0"
+                                   style="font-size: 15px; color: #333333 !important;">
+                                <tr>
+                                    <td style="font-weight: bold; width: 40%;">Título:</td>
+                                    <td th:text="${titulo}">Cobro de administración</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold;">Motivo:</td>
+                                    <td th:text="${motivo}">Cuota de administración</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold;">Casa:</td>
+                                    <td th:text="${casa}">12</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold;">Monto a pagar:</td>
+                                    <td th:text="|$${#numbers.formatInteger(monto, 3, 'POINT')}|">$100.000</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <p style="font-size: 16px; line-height: 1.5; color: #333333 !important;">
+                            Te recordamos que el pago debe realizarse dentro de los primeros 10 días del mes
+                            para evitar recargos por mora.
+                        </p>
+
+                        <p style="font-size: 16px; margin-bottom: 0; color: #333333 !important;">
+                            Atentamente,<br>
+                            Administración del Condominio Flor del Campo
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #f5f5f5; padding: 20px; text-align: center;
+                               font-size: 14px; color: #666666; border-radius: 0 0 8px 8px;">
+                        <p style="margin: 0;">&copy; 2025 Flor del Campo - Todos los derechos reservados.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
