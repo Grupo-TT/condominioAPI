@@ -145,7 +145,7 @@ public class CasaService implements ICasaService {
             }
 
             List<Obligacion> pendientes = obligacionRepository
-                    .findByCasaIdAndEstadoPagoIsNot(casa.getId(), EstadoPago.CONDONADO);
+                    .findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(casa.getId(), EstadoPago.CONDONADO);
 
             int saldoPendiente = pendientes.stream()
                     .mapToInt(Obligacion::getMonto)
