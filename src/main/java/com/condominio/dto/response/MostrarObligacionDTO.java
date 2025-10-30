@@ -23,6 +23,7 @@ public class MostrarObligacionDTO {
     private int monto;
     private int valorTotal;
     private int saldoPendiente;
+    private int montoPagado;
     private TipoObligacion tipoObligacion;
     private EstadoPago estadoPago;
 }

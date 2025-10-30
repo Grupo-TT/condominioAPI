@@ -69,7 +69,7 @@ public class ObligacionService implements IObligacionService {
         List<Obligacion> todasObligaciones = obligacionRepository.findByCasaId(idCasa);
 
         List<Obligacion> obligacionesPendientes = todasObligaciones.stream()
-                .filter(o -> o.getEstadoPago() == EstadoPago.PENDIENTE)
+                .filter(o -> o.getEstadoPago() != EstadoPago.CONDONADO)
                 .toList();
 
         Long saldoPendienteTotal = obligacionesPendientes.stream()

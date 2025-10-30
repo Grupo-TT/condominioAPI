@@ -1,6 +1,7 @@
 package com.condominio;
 
 import com.condominio.dto.request.RecursoComunDTO;
+import com.condominio.dto.response.RecursoComunPropiDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.RecursoComun;
@@ -388,6 +389,46 @@ class RecursoComunServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(recursoComunRepository, times(1)).findByTipoRecursoComun(tipo);
+    }
+
+    @Test
+    void findByDisponibilidad_conRecursos_devuelveListaDTO() {
+        RecursoComun recurso1;
+        RecursoComun recurso2;
+
+        recurso1 = new RecursoComun();
+        recurso1.setId(1L);
+        recurso1.setNombre("Piscina");
+        recurso1.setDescripcion("Piscina olímpica");
+        recurso1.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        recurso2 = new RecursoComun();
+        recurso2.setId(2L);
+        recurso2.setNombre("Salón Social");
+        recurso2.setDescripcion("Salón para eventos");
+        recurso2.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
+        when(recursoComunRepository.findAll()).thenReturn(List.of(recurso1, recurso2));
+
+        List<RecursoComunPropiDTO> resultado = recursoComunService.findByDisponibilidad();
+
+        assertNotNull(resultado);
+        assertEquals(2, resultado.size());
+        assertEquals("Piscina", resultado.get(0).getNombre());
+        assertEquals(DisponibilidadRecurso.NO_DISPONIBLE, resultado.get(1).getDisponibilidadRecurso());
+
+        verify(recursoComunRepository, times(1)).findAll();
+    }
+
+    @Test
+    void findByDisponibilidad_sinRecursos_lanzaExcepcion() {
+        when(recursoComunRepository.findAll()).thenReturn(Collections.emptyList());
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.findByDisponibilidad());
+
+        assertEquals("No hay recursos registrados", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(recursoComunRepository, times(1)).findAll();
     }
 
 }

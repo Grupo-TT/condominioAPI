@@ -1,6 +1,7 @@
 package com.condominio.controller;
 
 import com.condominio.dto.request.RecursoComunDTO;
+import com.condominio.dto.response.RecursoComunPropiDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.service.interfaces.IRecursoComunService;
@@ -63,4 +64,13 @@ public class RecursoComunController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/all-public")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public ResponseEntity<SuccessResult<List<RecursoComunPropiDTO>>> recursosPublic(){
+        List<RecursoComunPropiDTO> recursos = recursoComunService.findByDisponibilidad();
+        SuccessResult<List<RecursoComunPropiDTO>> response =
+                new SuccessResult<>("Recursos  comunes obtenidos exitosamente", recursos);
+
+        return ResponseEntity.ok(response);
+    }
 }

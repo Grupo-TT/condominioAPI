@@ -1,10 +1,13 @@
 package com.condominio;
 
 
+import com.condominio.dto.response.InvitadoDTO;
+import com.condominio.dto.response.SolicitudRecursoPropiDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.RecursoComunRepository;
 import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
 import com.condominio.service.implementation.SolicitudReservaRecursoService;
 import com.condominio.util.exception.ApiException;
@@ -24,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +38,9 @@ class SolicitudReservaRecursoServiceTest {
 
     @Mock
     private PersonaRepository personaRepository;
+
+    @Mock
+    private RecursoComunRepository recursoComunRepository;
 
     @Mock
     private ModelMapper modelMapper;
@@ -611,6 +618,136 @@ class SolicitudReservaRecursoServiceTest {
                 });
 
         verify(solicitudReservaRecursoRepository).findById(id);
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void crearSolicitud_sinConflicto_guardaExitosamente() {
+        RecursoComun recurso;
+        Persona persona;
+        SolicitudRecursoPropiDTO solicitudDTO;
+
+        recurso = new RecursoComun();
+        recurso.setId(1L);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        persona = new Persona();
+        persona.setId(2L);
+        persona.setCasa(new Casa(1L, 101));
+
+        solicitudDTO = SolicitudRecursoPropiDTO.builder()
+                .idRecurso(1L)
+                .idSolicitante(2L)
+                .fechaSolicitud(LocalDate.of(2025, 10, 28))
+                .horaInicio(LocalTime.of(14, 0))
+                .horaFin(LocalTime.of(15, 0))
+                .numeroInvitados(3)
+                .build();
+
+        when(recursoComunRepository.findById(1L)).thenReturn(Optional.of(recurso));
+        when(personaRepository.findById(2L)).thenReturn(Optional.of(persona));
+        when(solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recurso, solicitudDTO.getFechaSolicitud()))
+                .thenReturn(Collections.emptyList());
+
+        SuccessResult<SolicitudRecursoPropiDTO> resultado = solicitudReservaRecursoService.crearSolicitud(solicitudDTO);
+
+        assertNotNull(resultado);
+        assertEquals("Reserva creada exitosamente, Pendiente de aprobación por el administrador.", resultado.message());
+        verify(solicitudReservaRecursoRepository, times(1)).save(any(SolicitudReservaRecurso.class));
+    }
+
+    @Test
+    void crearSolicitud_conConflicto_lanzaExcepcion() {
+
+        RecursoComun recurso;
+        Persona persona;
+        SolicitudRecursoPropiDTO solicitudDTO;
+
+        recurso = new RecursoComun();
+        recurso.setId(1L);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        persona = new Persona();
+        persona.setId(2L);
+        persona.setCasa(new Casa(1L, 101));
+
+        solicitudDTO = SolicitudRecursoPropiDTO.builder()
+                .idRecurso(1L)
+                .idSolicitante(2L)
+                .fechaSolicitud(LocalDate.of(2025, 10, 28))
+                .horaInicio(LocalTime.of(14, 0))
+                .horaFin(LocalTime.of(15, 0))
+                .numeroInvitados(3)
+                .build();
+
+        when(recursoComunRepository.findById(1L)).thenReturn(Optional.of(recurso));
+        when(personaRepository.findById(2L)).thenReturn(Optional.of(persona));
+
+        SolicitudReservaRecurso reservaExistente = SolicitudReservaRecurso.builder()
+                .horaInicio(LocalTime.of(14, 30))
+                .horaFin(LocalTime.of(15, 30))
+                .build();
+
+        when(solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recurso, solicitudDTO.getFechaSolicitud()))
+                .thenReturn(List.of(reservaExistente));
+
+        ApiException ex = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.crearSolicitud(solicitudDTO));
+
+        assertEquals("El recurso ya tiene una solicitud en el horario solicitado.", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void modificarCantidadInvitados_conSolicitudExistente_actualizaExitosamente() {
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(10L);
+        recurso.setNombre("Piscina");
+
+        SolicitudReservaRecurso solicitudReservaRecurso = SolicitudReservaRecurso.builder()
+                .id(1L)
+                .recursoComun(recurso)
+                .fechaSolicitud(LocalDate.of(2025, 10, 28))
+                .horaInicio(LocalTime.of(14, 0))
+                .horaFin(LocalTime.of(16, 0))
+                .numeroInvitados(3)
+                .build();
+
+        InvitadoDTO invitadoDTO = InvitadoDTO.builder()
+                .idSolicitud(1L)
+                .cantidadInvitados(8)
+                .build();
+
+        when(solicitudReservaRecursoRepository.findById(1L))
+                .thenReturn(Optional.of(solicitudReservaRecurso));
+
+        SuccessResult<SolicitudRecursoPropiDTO> resultado =
+                solicitudReservaRecursoService.modificarCantidadInvitados(invitadoDTO);
+
+        assertNotNull(resultado);
+        assertEquals("Cantidad de invitados modificado correctamente.", resultado.message());
+        assertEquals(8, resultado.data().getNumeroInvitados());
+        assertEquals(10L, resultado.data().getIdRecurso());
+        verify(solicitudReservaRecursoRepository, times(1)).save(solicitudReservaRecurso);
+    }
+
+    @Test
+    void modificarCantidadInvitados_conSolicitudInexistente_lanzaError() {
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(10L);
+        recurso.setNombre("Piscina");
+
+        InvitadoDTO invitadoDTO = InvitadoDTO.builder()
+                .idSolicitud(1L)
+                .cantidadInvitados(8)
+                .build();
+
+        when(solicitudReservaRecursoRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ApiException.class, () -> solicitudReservaRecursoService.modificarCantidadInvitados(invitadoDTO));
+
         verify(solicitudReservaRecursoRepository, never()).save(any());
     }
 }

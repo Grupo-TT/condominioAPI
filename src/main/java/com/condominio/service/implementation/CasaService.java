@@ -145,7 +145,7 @@ public class CasaService implements ICasaService {
             }
 
             List<Obligacion> pendientes = obligacionRepository
-                    .findByCasaIdAndEstadoPago(casa.getId(), EstadoPago.PENDIENTE);
+                    .findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(casa.getId(), EstadoPago.CONDONADO);
 
             int saldoPendiente = pendientes.stream()
                     .mapToInt(Obligacion::getMonto)
@@ -161,6 +161,7 @@ public class CasaService implements ICasaService {
                             .valorTotal(o.getValorTotal())
                             .saldoPendiente(o.getSaldoPendiente())
                             .estadoPago(o.getEstadoPago())
+                            .montoPagado(o.getMontoPagado())
                             .tipoObligacion(o.getTipoObligacion())
                             .build())
                     .toList();
@@ -170,7 +171,7 @@ public class CasaService implements ICasaService {
             dto.setPropietario(propietarioDTO);
             dto.setSaldoPendiente(saldoPendiente);
             dto.setObligacionesPendientes(obligacionesDTO);
-
+            dto.setUltimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(casa.getId()).orElse(null));
             return dto;
         }).toList();
 
