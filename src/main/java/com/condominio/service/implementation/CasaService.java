@@ -172,8 +172,6 @@ public class CasaService implements ICasaService {
             dto.setSaldoPendiente(saldoPendiente);
             dto.setObligacionesPendientes(obligacionesDTO);
             dto.setUltimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(casa.getId()).orElse(null));
-            ;
-
             return dto;
         }).toList();
 
