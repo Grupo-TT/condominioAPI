@@ -12,7 +12,7 @@ public interface ObligacionRepository extends CrudRepository<Obligacion, Long> {
 
     List<Obligacion> findByCasaId(Long casaId);
 
-    List<Obligacion> findByCasaIdAndEstadoPago(Long id, EstadoPago estadoPago);
+    List<Obligacion> findByCasaIdAndEstadoPagoIsNot(Long id, EstadoPago estadoPago);
 
     boolean existsByCasaIdAndEstadoPago(Long casaId, EstadoPago estadoPago);
 }

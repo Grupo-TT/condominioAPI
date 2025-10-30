@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -16,4 +17,6 @@ public class CasaDeudoraDTO {
     private int numeroCasa;
     private PersonaSimpleDTO propietario;
     private int saldoPendiente;
-    private List<MostrarObligacionDTO> obligacionesPendientes;}
+    private List<MostrarObligacionDTO> obligacionesPendientes;
+    private LocalDate ultimoPago;
+}

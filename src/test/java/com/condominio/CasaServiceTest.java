@@ -422,7 +422,7 @@ class CasaServiceTest {
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
-        when(obligacionRepository.findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE))
+        when(obligacionRepository.findByCasaIdAndEstadoPagoIsNot(1L, EstadoPago.CONDONADO))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
@@ -441,7 +441,7 @@ class CasaServiceTest {
 
         verify(casaRepository).findCasasConObligacionesPorCobrar();
         verify(personaRepository).findPropietarioByCasaId(1L);
-        verify(obligacionRepository).findByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE);
+        verify(obligacionRepository).findByCasaIdAndEstadoPagoIsNot(1L, EstadoPago.CONDONADO);
     }
 
     @Test
@@ -459,7 +459,7 @@ class CasaServiceTest {
 
         when(casaRepository.findCasasConObligacionesPorCobrar()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
-        when(obligacionRepository.findByCasaIdAndEstadoPago(2L, EstadoPago.PENDIENTE))
+        when(obligacionRepository.findByCasaIdAndEstadoPagoIsNot(2L, EstadoPago.CONDONADO))
                 .thenReturn(List.of(obligacion));
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerCasasConObligacionesPorCobrar();
