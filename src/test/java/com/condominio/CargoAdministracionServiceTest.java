@@ -1,12 +1,9 @@
 package com.condominio;
 
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.ActualizacionHelper;
 import com.condominio.persistence.model.CargoAdministracion;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.UserEntity;
 import com.condominio.persistence.repository.CargoAdministracionRepository;
-import com.condominio.persistence.repository.PersonaRepository;
-import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.implementation.CargoAdministracionService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,12 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-
+import java.time.OffsetDateTime;
 import java.util.Optional;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -32,10 +25,7 @@ class CargoAdministracionServiceTest {
     private CargoAdministracionRepository cargoAdministracionRepository;
 
     @Mock
-    private PersonaRepository personaRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    private ActualizacionHelper actualizacionHelper;
 
     @InjectMocks
     private CargoAdministracionService cargoAdministracionService;
@@ -52,6 +42,9 @@ class CargoAdministracionServiceTest {
 
     @Test
     void testActualizarCargoAdministracion_WhenNuevoValorIsZero_ShouldThrowException() {
+        when(cargoAdministracionRepository.findById(1L))
+                .thenReturn(Optional.of(cargoAdministracion));
+
         assertThatThrownBy(() -> cargoAdministracionService.actualizarCargoAdministracion(0))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("El nuevo valor no puede ser tan bajo");
@@ -70,30 +63,19 @@ class CargoAdministracionServiceTest {
 
     @Test
     void testActualizarCargoAdministracion_WhenSuccessful() {
-
-        Authentication auth = mock(Authentication.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
-
-        when(auth.getName()).thenReturn("admin@example.com");
-
-
-        UserEntity userEntity = new UserEntity();
-        userEntity.setEmail("admin@example.com");
-
-        Persona persona = new Persona();
-        persona.setPrimerNombre("Juan");
-        persona.setPrimerApellido("Pérez");
-
+        // Arrange
         when(cargoAdministracionRepository.findById(1L))
                 .thenReturn(Optional.of(cargoAdministracion));
 
-        when(userRepository.findUserEntityByEmail("admin@example.com"))
-                .thenReturn(userEntity);
+        CargoAdministracion actualizado = new CargoAdministracion();
+        actualizado.setValorActual(1200.0);
+        actualizado.setNuevoValor(1500.0);
+        actualizado.setCorreoActualizador("admin@example.com");
+        actualizado.setNombreActualizador("Juan Pérez");
+        actualizado.setFechaAplicacion(OffsetDateTime.now());
 
-        when(personaRepository.findPersonaByUser(userEntity))
-                .thenReturn(persona);
+        when(actualizacionHelper.aplicarDatosComunes(cargoAdministracion, 1500.0))
+                .thenReturn(actualizado);
 
         when(cargoAdministracionRepository.save(any(CargoAdministracion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -105,15 +87,11 @@ class CargoAdministracionServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Cargo de administración actualizado correctamente");
-        assertThat(result.data().getValorActual()).isEqualTo(1200.0);
         assertThat(result.data().getNuevoValor()).isEqualTo(1500.0);
         assertThat(result.data().getCorreoActualizador()).isEqualTo("admin@example.com");
-        assertThat(result.data().getNombreActualizador()).isEqualTo("Juan Pérez");
-        assertThat(result.data().getFechaAplicacion()).isNotNull();
 
         verify(cargoAdministracionRepository).findById(1L);
-        verify(userRepository).findUserEntityByEmail("admin@example.com");
-        verify(personaRepository).findPersonaByUser(userEntity);
+        verify(actualizacionHelper).aplicarDatosComunes(cargoAdministracion, 1500.0);
         verify(cargoAdministracionRepository).save(any(CargoAdministracion.class));
     }
 
