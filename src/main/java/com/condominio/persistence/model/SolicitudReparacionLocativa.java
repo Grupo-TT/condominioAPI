@@ -23,7 +23,7 @@ public class SolicitudReparacionLocativa {
     @Column
     private String motivo;
     @Column
-    private String reponsable;
+    private String responsable;
 
     @Enumerated(EnumType.STRING)
     private EstadoSolicitud estadoSolicitud;
