@@ -1,6 +1,7 @@
 package com.condominio.service.implementation;
 
-import com.condominio.dto.response.ConfiguracionFinancieraDTO;
+import com.condominio.dto.response.ConfigItemDTO;
+import com.condominio.dto.response.ConfiguracionListaDTO;
 import com.condominio.persistence.model.CargoAdministracion;
 import com.condominio.persistence.model.PagoAdicional;
 import com.condominio.persistence.model.TasaDeInteres;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ConfiguracionFinancieraService {
@@ -20,7 +23,7 @@ public class ConfiguracionFinancieraService {
     private final TasaDeInteresRepository tasaDeInteresRepository;
     private final CargoAdministracionRepository cargoAdministracionRepository;
 
-    public ConfiguracionFinancieraDTO obtenerConfiguracion() {
+    public ConfiguracionListaDTO obtenerConfiguracion() {
         PagoAdicional pago = pagoAdicionalRepository.findById(1L)
                 .orElseThrow(() -> new ApiException("No existe pago adicional", HttpStatus.NOT_FOUND));
 
@@ -30,6 +33,12 @@ public class ConfiguracionFinancieraService {
         CargoAdministracion cargo = cargoAdministracionRepository.findById(1L)
                 .orElseThrow(() -> new ApiException("No existe cargo de administración", HttpStatus.NOT_FOUND));
 
-        return new ConfiguracionFinancieraDTO(pago, tasa, cargo);
+        List<ConfigItemDTO> lista = List.of(
+                new ConfigItemDTO("Pago adicional", pago.getNuevoValor()),
+                new ConfigItemDTO("Tasa de interés", tasa.getNuevoValor() * 100),
+                new ConfigItemDTO("Cargo de administración", cargo.getNuevoValor())
+        );
+
+        return new ConfiguracionListaDTO(lista);
     }
 }

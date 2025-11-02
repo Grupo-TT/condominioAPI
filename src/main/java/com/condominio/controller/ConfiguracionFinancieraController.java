@@ -1,6 +1,7 @@
 package com.condominio.controller;
 
-import com.condominio.dto.response.ConfiguracionFinancieraDTO;
+
+import com.condominio.dto.response.ConfiguracionListaDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.service.implementation.ConfiguracionFinancieraService;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,8 @@ public class ConfiguracionFinancieraController {
     private final ConfiguracionFinancieraService configuracionService;
 
     @GetMapping
-    public ResponseEntity<SuccessResult<ConfiguracionFinancieraDTO>> obtenerConfiguracion() {
-        ConfiguracionFinancieraDTO data = configuracionService.obtenerConfiguracion();
+    public ResponseEntity<SuccessResult<ConfiguracionListaDTO>> obtenerConfiguracion() {
+        ConfiguracionListaDTO data = configuracionService.obtenerConfiguracion();
         return ResponseEntity.ok(new SuccessResult<>("Configuración cargada correctamente", data));
     }
 }

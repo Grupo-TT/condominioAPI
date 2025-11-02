@@ -1,6 +1,7 @@
 package com.condominio;
 
-import com.condominio.dto.response.ConfiguracionFinancieraDTO;
+import com.condominio.dto.response.ConfiguracionListaDTO;
+import com.condominio.dto.response.ConfigItemDTO;
 import com.condominio.persistence.model.CargoAdministracion;
 import com.condominio.persistence.model.PagoAdicional;
 import com.condominio.persistence.model.TasaDeInteres;
@@ -16,9 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class ConfiguracionFinancieraServiceTest {
@@ -56,19 +58,22 @@ class ConfiguracionFinancieraServiceTest {
 
     @Test
     void testObtenerConfiguracion_WhenAllExist_ShouldReturnDTO() {
-        // given
         when(pagoAdicionalRepository.findById(1L)).thenReturn(Optional.of(pagoAdicional));
         when(tasaDeInteresRepository.findById(1L)).thenReturn(Optional.of(tasaDeInteres));
         when(cargoAdministracionRepository.findById(1L)).thenReturn(Optional.of(cargoAdministracion));
 
-
-        ConfiguracionFinancieraDTO result = configuracionFinancieraService.obtenerConfiguracion();
-
+        ConfiguracionListaDTO result = configuracionFinancieraService.obtenerConfiguracion();
 
         assertThat(result).isNotNull();
-        assertThat(result.getPagoAdicional()).isEqualTo(pagoAdicional);
-        assertThat(result.getTasaDeInteres()).isEqualTo(tasaDeInteres);
-        assertThat(result.getCargoAdministracion()).isEqualTo(cargoAdministracion);
+        assertThat(result.getConfiguraciones()).hasSize(3);
+
+        assertThat(result.getConfiguraciones())
+                .extracting(ConfigItemDTO::getTipo)
+                .containsExactly("Pago adicional", "Tasa de interés", "Cargo de administración");
+
+        assertThat(result.getConfiguraciones())
+                .extracting(ConfigItemDTO::getValor)
+                .containsExactly(2000.0, 8.0, 100.0);
 
         verify(pagoAdicionalRepository).findById(1L);
         verify(tasaDeInteresRepository).findById(1L);
@@ -105,3 +110,4 @@ class ConfiguracionFinancieraServiceTest {
                 .hasMessageContaining("No existe cargo de administración");
     }
 }
+
