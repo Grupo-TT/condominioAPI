@@ -2,6 +2,7 @@ package com.condominio.persistence.repository;
 
 import com.condominio.persistence.model.EstadoPago;
 import com.condominio.persistence.model.Obligacion;
+import com.condominio.persistence.model.TipoObligacion;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,6 @@ public interface ObligacionRepository extends CrudRepository<Obligacion, Long> {
     List<Obligacion> findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(Long id, EstadoPago estadoPago);
 
     boolean existsByCasaIdAndEstadoPago(Long casaId, EstadoPago estadoPago);
+
+    List<Obligacion> findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion tipoObligacion);
 }
