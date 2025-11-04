@@ -3,9 +3,7 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.MultaActualizacionDTO;
 import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.request.PersonaRegistroDTO;
-import com.condominio.dto.response.EstadoCuentaDTO;
-import com.condominio.dto.response.PersonaSimpleDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
@@ -184,5 +182,31 @@ public class ObligacionService implements IObligacionService {
             log.error("Error al enviar correo de paz y salvo a {}: {}", solicitante.getUser().getEmail(), e.getMessage());
         }
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
+    public SuccessResult<List<MultasPorCasaDTO>> obtenerCasasConMultas() {
+        List<Obligacion> multas = obligacionRepository
+                .findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion.MULTA);
+
+        List<MultasPorCasaDTO> obligacionesDTO = multas.stream().map(o -> {
+            Persona propietario = personaRepository.findPropietarioByCasaId(o.getCasa().getId())
+                    .orElse(null);
+
+            String nombrePropietario = propietario != null ? propietario.getNombreCompleto() : "Sin propietario";
+
+            return MultasPorCasaDTO.builder()
+                    .id(o.getId())
+                    .casa(o.getCasa().getNumeroCasa())
+                    .propietario(nombrePropietario)
+                    .titulo(o.getTitulo())
+                    .monto(o.getMonto())
+                    .fecha(o.getFechaGenerada())
+                    .estadoPago(o.getEstadoPago())
+                    .motivo(o.getMotivo())
+                    .tipoObligacion(o.getTipoObligacion())
+                    .build();
+        }).toList();
+
+        return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
     }
 }
