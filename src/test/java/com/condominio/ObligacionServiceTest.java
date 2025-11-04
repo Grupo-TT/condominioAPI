@@ -3,6 +3,7 @@ package com.condominio;
 import com.condominio.dto.request.MultaActualizacionDTO;
 import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.response.EstadoCuentaDTO;
+import com.condominio.dto.response.MultasPorCasaDTO;
 import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
@@ -64,6 +65,7 @@ class ObligacionServiceTest {
     private Casa casa;
     private Persona propietario;
     private Obligacion obligacion;
+    private Obligacion multa;
     private UserEntity user;
     private AutoCloseable closeable;
 
@@ -94,6 +96,16 @@ class ObligacionServiceTest {
         propietario.setPrimerApellido("Gómez");
         propietario.setTelefono(3112234567L);
         propietario.setUser(user);
+
+        multa = new Obligacion();
+        multa.setId(10L);
+        multa.setCasa(casa);
+        multa.setTitulo("Multa por ruido");
+        multa.setMotivo("Exceso de ruido en zona común");
+        multa.setMonto(50000);
+        multa.setFechaGenerada(LocalDate.of(2025, 10, 15));
+        multa.setEstadoPago(EstadoPago.PENDIENTE);
+        multa.setTipoObligacion(TipoObligacion.MULTA);
     }
 
     @AfterEach
@@ -333,5 +345,49 @@ class ObligacionServiceTest {
 
         // Verificamos que el tipo de pago original (DINERO) se conserve
         assertThat(obligacion.getTipoPago()).isEqualTo(TipoPago.DINERO);
+    }
+
+    @Test
+    void debeObtenerCasasConMultasCorrectamente() {
+        // Arrange
+        when(obligacionRepository.findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion.MULTA))
+                .thenReturn(List.of(multa));
+        when(personaRepository.findPropietarioByCasaId(1L))
+                .thenReturn(Optional.of(propietario));
+
+        // Act
+        SuccessResult<List<MultasPorCasaDTO>> resultado = obligacionService.obtenerCasasConMultas();
+
+        // Assert
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.data()).hasSize(1);
+        MultasPorCasaDTO dto = resultado.data().get(0);
+
+        assertThat(dto.getCasa()).isEqualTo(101);
+        assertThat(dto.getPropietario()).isEqualTo("Ana Gómez");
+        assertThat(dto.getMonto()).isEqualTo(50000);
+        assertThat(dto.getEstadoPago()).isEqualTo(EstadoPago.PENDIENTE);
+        assertThat(dto.getTipoObligacion()).isEqualTo(TipoObligacion.MULTA);
+        assertThat(resultado.message()).isEqualTo("Casas con multas obtenidas correctamente");
+
+        // Verifica interacciones
+        verify(obligacionRepository).findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion.MULTA);
+        verify(personaRepository).findPropietarioByCasaId(1L);
+    }
+
+    @Test
+    void debeAsignarSinPropietarioCuandoNoExistePersona() {
+        // Arrange
+        when(obligacionRepository.findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion.MULTA))
+                .thenReturn(List.of(multa));
+        when(personaRepository.findPropietarioByCasaId(1L))
+                .thenReturn(Optional.empty());
+
+        // Act
+        SuccessResult<List<MultasPorCasaDTO>> resultado = obligacionService.obtenerCasasConMultas();
+
+        // Assert
+        assertThat(resultado.data()).hasSize(1);
+        assertThat(resultado.data().get(0).getPropietario()).isEqualTo("Sin propietario");
     }
 }
