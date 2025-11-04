@@ -3,8 +3,7 @@ package com.condominio.controller;
 import com.condominio.dto.request.MultaActualizacionDTO;
 import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.request.RecursoComunDTO;
-import com.condominio.dto.response.EstadoCuentaDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.Obligacion;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.service.interfaces.IObligacionService;
@@ -13,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,5 +50,10 @@ public class ObligacionController {
 
         SuccessResult<Obligacion> result = obligacionService.update(id, multa);
         return ResponseEntity.ok(result);
+    }
+    @GetMapping("/multas")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<List<MultasPorCasaDTO>> obtenerCasasConMultas() {
+        return obligacionService.obtenerCasasConMultas();
     }
 }

@@ -2,29 +2,24 @@ package com.condominio.dto.response;
 
 import com.condominio.persistence.model.EstadoPago;
 import com.condominio.persistence.model.TipoObligacion;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MostrarObligacionDTO {
+public class MultasPorCasaDTO {
 
     private Long id;
-    private String propietario;
-    private String estado;
-    private String titulo;
-    private String motivo;
     private int casa;
+    private String propietario;
+    private String titulo;
     private int monto;
-    private int valorTotal;
-    private int saldoPendiente;
-    private int montoPagado;
-    private TipoObligacion tipoObligacion;
+    private LocalDate fecha;
     private EstadoPago estadoPago;
+    private TipoObligacion tipoObligacion;
+    private String motivo;
 }
