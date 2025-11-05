@@ -12,7 +12,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MultaActualizacionDTO {
 
-    private Long idCasa;
     private int monto;
     private String titulo;
     private String motivo;

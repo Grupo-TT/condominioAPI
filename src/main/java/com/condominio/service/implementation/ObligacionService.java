@@ -115,13 +115,9 @@ public class ObligacionService implements IObligacionService {
         Obligacion obligacion = obligacionRepository.findById(id)
                 .orElseThrow(() -> new ApiException("La multa no existe", HttpStatus.NOT_FOUND));
 
-        Casa casa = casaRepository.findById(multa.getIdCasa())
-                .orElseThrow(() -> new RuntimeException("Casa no encontrada con ID: " + multa.getIdCasa()));
-
         obligacion.setMonto(multa.getMonto());
         obligacion.setTitulo(multa.getTitulo());
         obligacion.setMotivo(multa.getMotivo());
-        obligacion.setCasa(casa);
 
         if (multa.getTipoPago() != null) {
             obligacion.setTipoPago(multa.getTipoPago());
