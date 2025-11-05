@@ -2,6 +2,7 @@ package com.condominio.dto.response;
 
 import com.condominio.persistence.model.EstadoPago;
 import com.condominio.persistence.model.TipoObligacion;
+import com.condominio.persistence.model.TipoPago;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -22,4 +23,5 @@ public class MultasPorCasaDTO {
     private EstadoPago estadoPago;
     private TipoObligacion tipoObligacion;
     private String motivo;
+    private TipoPago tipoPago;
 }
