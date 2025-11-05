@@ -32,7 +32,7 @@ public class Obligacion {
     private String titulo;
 
     private int valorTotal;
-    private int saldoPendiente;
+    private int valorPendiente;
 
     @ManyToOne(targetEntity = Casa.class)
     @JoinColumn(nullable = false)
@@ -51,6 +51,6 @@ public class Obligacion {
     @PreUpdate
     private void calcularValores() {
         this.valorTotal = this.monto + this.interes;
-        this.saldoPendiente = this.valorTotal - this.montoPagado;
+        this.valorPendiente = this.valorTotal - this.montoPagado;
     }
 }

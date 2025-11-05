@@ -43,7 +43,7 @@ public class PagoService implements IPagoService {
             propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                     orElse(null);
 
-            int montoDeuda = obligacion.getMonto() - Objects.requireNonNullElse(obligacion.getMontoPagado(), 0);
+            int montoDeuda = obligacion.getValorPendiente();
 
             if ((pagoDTO.getMontoAPagar() > montoDeuda) && (obligacion.getEstadoPago() != EstadoPago.CONDONADO) ) {
                 throw new ApiException("El valor ingresado supera la deuda actual.", HttpStatus.BAD_REQUEST);
@@ -55,7 +55,7 @@ public class PagoService implements IPagoService {
 
             }else{
                 obligacion.setEstadoPago(EstadoPago.POR_COBRAR);
-                obligacion.setMontoPagado(pagoDTO.getMontoAPagar());
+                obligacion.setMontoPagado(obligacion.getMontoPagado() + pagoDTO.getMontoAPagar());
                 obligacionDTO = realizarPago(pagoDTO, obligacion, casa);
                 applicationEventPublisher.publishEvent(new CreatedPagoEvent(propietario.getUser().getEmail(), obligacionDTO));
             }
@@ -75,7 +75,7 @@ public class PagoService implements IPagoService {
                 .pago(pago)
                 .build());
         obligacionRepository.save(obligacion);
-        int saldoPendiente = obligacion.getMonto() - obligacion.getMontoPagado();
+        int saldoPendiente = obligacion.getValorPendiente() - pagoDTO.getMontoAPagar();
 
         return ObligacionDTO.builder()
                 .id(obligacion.getId())

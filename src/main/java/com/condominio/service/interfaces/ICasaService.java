@@ -17,5 +17,6 @@ public interface ICasaService {
     SuccessResult<CasaCuentaDTO> estadoDeCuenta(Long idCasa);
     SuccessResult<List<CasaInfoDTO>> obtenerCasas();
     SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar();
+    SuccessResult<List<CasaDeudoraDTO>>  obtenerObligacionesPorCasa();
 
 }

@@ -67,6 +67,7 @@ class PagoServiceTest {
         obligacion.setId(1L);
         obligacion.setCasa(casa);
         obligacion.setMonto(250000);
+        obligacion.setValorPendiente(250000);
         obligacion.setMotivo("Mantenimiento");
         obligacion.setEstadoPago(EstadoPago.PENDIENTE);
 
