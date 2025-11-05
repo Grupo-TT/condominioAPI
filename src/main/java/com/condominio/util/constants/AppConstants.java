@@ -21,5 +21,6 @@ public class AppConstants {
     public static final ZoneId ZONE = ZoneId.of("America/Bogota");
     public static final DateTimeFormatter READABLE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+    public static final double MAX_PAGO_ADICIONAL = 10_000_000;
 
 }
