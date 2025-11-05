@@ -159,7 +159,7 @@ public class CasaService implements ICasaService {
                             .casa(o.getCasa().getNumeroCasa())
                             .monto(o.getMonto())
                             .valorTotal(o.getValorTotal())
-                            .saldoPendiente(o.getSaldoPendiente())
+                            .valorPendiente(o.getValorPendiente())
                             .estadoPago(o.getEstadoPago())
                             .montoPagado(o.getMontoPagado())
                             .tipoObligacion(o.getTipoObligacion())
