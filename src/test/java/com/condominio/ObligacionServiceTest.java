@@ -291,7 +291,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_DebeActualizarMultaCorrectamente() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Multa por demora en el pago","Pago tardío", TipoPago.DINERO);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(30000, "Multa por demora en el pago","Pago tardío", TipoPago.DINERO);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
@@ -307,7 +307,7 @@ class ObligacionServiceTest {
 
     @Test
     void update_DebeFallarSiMultaNoExiste() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 30000, "Multa por demora en el pago", "Pago tardío", TipoPago.DINERO);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO( 30000, "Multa por demora en el pago", "Pago tardío", TipoPago.DINERO);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -320,22 +320,8 @@ class ObligacionServiceTest {
     }
 
     @Test
-    void update_DebeFallarSiCasaNoExiste() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(99L, 30000, "Multa por demora en el pago", "Pago tardío", TipoPago.DINERO);
-
-        when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
-        when(casaRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> obligacionService.update(1L, dto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Casa no encontrada con ID: 99");
-
-        verify(obligacionRepository, never()).save(any());
-    }
-
-    @Test
     void update_NoDebeCambiarTipoPagoSiNoSeEnvia() {
-        MultaActualizacionDTO dto = new MultaActualizacionDTO(1L, 50000, "Multa por demora en el pago", "Pago tardío", null);
+        MultaActualizacionDTO dto = new MultaActualizacionDTO(50000, "Multa por demora en el pago", "Pago tardío", null);
 
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
