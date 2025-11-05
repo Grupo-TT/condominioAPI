@@ -200,6 +200,7 @@ public class ObligacionService implements IObligacionService {
                     .estadoPago(o.getEstadoPago())
                     .motivo(o.getMotivo())
                     .tipoObligacion(o.getTipoObligacion())
+                    .tipoPago(o.getTipoPago())
                     .build();
         }).toList();
 
