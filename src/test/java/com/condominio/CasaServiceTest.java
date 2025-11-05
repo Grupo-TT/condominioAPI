@@ -498,9 +498,9 @@ class CasaServiceTest {
     @Test
     void testObtenerObligacionesPorCasa_WhenCasasExist() {
         // Arrange
-        Casa casa = new Casa();
-        casa.setId(1L);
-        casa.setNumeroCasa(101);
+        Casa newCasa = new Casa();
+        newCasa.setId(1L);
+        newCasa.setNumeroCasa(101);
 
         UserEntity user = new UserEntity();
         user.setEmail("propietario@mail.com");
@@ -521,7 +521,7 @@ class CasaServiceTest {
         obligacion1.setMontoPagado(10000);
         obligacion1.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion1.setTipoObligacion(TipoObligacion.ADMINISTRACION);
-        obligacion1.setCasa(casa);
+        obligacion1.setCasa(newCasa);
         obligacion1.setFechaGenerada(LocalDate.of(2025, 1, 1));
 
         Obligacion obligacion2 = new Obligacion();
@@ -533,10 +533,10 @@ class CasaServiceTest {
         obligacion2.setMontoPagado(0);
         obligacion2.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion2.setTipoObligacion(TipoObligacion.MULTA);
-        obligacion2.setCasa(casa);
+        obligacion2.setCasa(newCasa);
         obligacion2.setFechaGenerada(LocalDate.of(2025, 2, 1));
 
-        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(casa));
+        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
         when(obligacionRepository.findByCasaIdOrderByFechaGeneradaDesc(1L))
                 .thenReturn(List.of(obligacion1, obligacion2));
@@ -581,9 +581,9 @@ class CasaServiceTest {
 
     @Test
     void testObtenerObligacionesPorCasa_WhenNoPropietario() {
-        Casa casa = new Casa();
-        casa.setId(2L);
-        casa.setNumeroCasa(202);
+        Casa newCasa = new Casa();
+        newCasa.setId(2L);
+        newCasa.setNumeroCasa(202);
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(20L);
@@ -591,9 +591,9 @@ class CasaServiceTest {
         obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMonto(30000);
         obligacion.setValorPendiente(30000);
-        obligacion.setCasa(casa);
+        obligacion.setCasa(newCasa);
 
-        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(casa));
+        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
         when(obligacionRepository.findByCasaIdOrderByFechaGeneradaDesc(2L)).thenReturn(List.of(obligacion));
         when(pagoService.obtenerFechaUltimoPagoPorCasa(2L)).thenReturn(Optional.empty());
