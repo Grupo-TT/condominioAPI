@@ -18,4 +18,6 @@ public interface ObligacionRepository extends CrudRepository<Obligacion, Long> {
     boolean existsByCasaIdAndEstadoPago(Long casaId, EstadoPago estadoPago);
 
     List<Obligacion> findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion tipoObligacion);
+
+    List<Obligacion> findByCasaIdOrderByFechaGeneradaDesc(Long casaId);
 }
