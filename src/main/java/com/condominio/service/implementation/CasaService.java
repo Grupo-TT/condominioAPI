@@ -148,10 +148,63 @@ public class CasaService implements ICasaService {
                     .findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(casa.getId(), EstadoPago.CONDONADO);
 
             int saldoPendiente = pendientes.stream()
-                    .mapToInt(Obligacion::getMonto)
+                    .mapToInt(Obligacion::getValorPendiente)
                     .sum();
 
             List<MostrarObligacionDTO> obligacionesDTO = pendientes.stream()
+                    .map(o -> MostrarObligacionDTO.builder()
+                            .id((o.getId()))
+                            .estado(o.getEstadoPago().name())
+                            .motivo(o.getMotivo())
+                            .casa(o.getCasa().getNumeroCasa())
+                            .monto(o.getMonto())
+                            .valorTotal(o.getValorTotal())
+                            .valorPendiente(o.getValorPendiente())
+                            .estadoPago(o.getEstadoPago())
+                            .montoPagado(o.getMontoPagado())
+                            .tipoObligacion(o.getTipoObligacion())
+                            .build())
+                    .toList();
+
+            CasaDeudoraDTO dto = new CasaDeudoraDTO();
+            dto.setNumeroCasa(casa.getNumeroCasa());
+            dto.setPropietario(propietarioDTO);
+            dto.setSaldoPendiente(saldoPendiente);
+            dto.setObligacionesPendientes(obligacionesDTO);
+            dto.setUltimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(casa.getId()).orElse(null));
+            return dto;
+        }).toList();
+
+        return new SuccessResult<>("Casas con obligaciones por cobrar obtenidas correctamente", dtos);
+    }
+
+    public SuccessResult<List<CasaDeudoraDTO>>  obtenerObligacionesPorCasa() {
+        List<Casa> casas = casaRepository. obtenerObligacionesPorCasa();
+        if (casas.isEmpty()) {
+            throw new ApiException("No hay casas con obligaciones", HttpStatus.BAD_REQUEST);
+        }
+
+        List<CasaDeudoraDTO> dtos = casas.stream().map(casa -> {
+            Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId())
+                    .orElse(null);
+
+            PersonaSimpleDTO propietarioDTO = null;
+            if (propietario != null) {
+                propietarioDTO = PersonaSimpleDTO.builder()
+                        .nombreCompleto(propietario.getNombreCompleto())
+                        .telefono(propietario.getTelefono())
+                        .correo(propietario.getUser().getEmail())
+                        .build();
+            }
+
+            List<Obligacion> obligaciones = obligacionRepository
+                    .findByCasaIdOrderByFechaGeneradaDesc(casa.getId());
+
+            int saldoPendiente = obligaciones.stream()
+                    .mapToInt(Obligacion::getValorPendiente)
+                    .sum();
+
+            List<MostrarObligacionDTO> obligacionesDTO = obligaciones.stream()
                     .map(o -> MostrarObligacionDTO.builder()
                             .id((o.getId()))
                             .estado(o.getEstadoPago().name())

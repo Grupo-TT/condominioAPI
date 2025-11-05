@@ -39,4 +39,10 @@ public class CasaController {
     public SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar() {
         return casaService.obtenerCasasConObligacionesPorCobrar();
     }
+
+    @GetMapping("/obligaciones-casa")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<List<CasaDeudoraDTO>> obtenerObligacionesPorCasa() {
+        return casaService. obtenerObligacionesPorCasa();
+    }
 }
