@@ -4,11 +4,15 @@ import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RecursoComunRepository;
+import com.condominio.persistence.repository.ReservaRepository;
 import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
+import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
+import com.condominio.util.helper.PersonaHelper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +30,9 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     private final ModelMapper modelMapper;
     private final PersonaRepository personaRepository;
     private final RecursoComunRepository recursoComunRepository;
+    private final ReservaRepository reservaRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PersonaHelper personaHelper;
 
 
     public  SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado){
@@ -63,36 +70,53 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> aprobar(Long id) {
         SolicitudReservaRecurso solicitud = validarSolicitudPendiente(id);
+        Long casaId = solicitud.getCasa().getId();
+        Persona solicitante = personaHelper.obtenerSolicitantePorCasa(casaId);
 
         solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
         SolicitudReservaRecurso aprobada = solicitudReservaRecursoRepository.save(solicitud);
-        return new SuccessResult<>("Reserva aprobada correctamente", modelMapper.map(aprobada, SolicitudReservaRecursoDTO.class));
+        SolicitudReservaRecursoDTO soliDTO = modelMapper.map(aprobada, SolicitudReservaRecursoDTO.class);
+        soliDTO.setSolicitante(personaHelper.toPersonaSimpleDTO(solicitante));
+        Reserva reserva = Reserva.builder()
+                .estado(true)
+                .solicitudReservaRecurso(aprobada)
+                .build();
+        reservaRepository.save(reserva);
+
+        eventPublisher.publishEvent(new RepliedSolicitudEvent(solicitante.getUser().getEmail(),soliDTO));
+        return new SuccessResult<>("Reserva aprobada correctamente", soliDTO);
     }
 
     @Override
     public SuccessResult<SolicitudReservaRecursoDTO> rechazar(Long id) {
         SolicitudReservaRecurso solicitud = validarSolicitudPendiente(id);
+        Long casaId = solicitud.getCasa().getId();
+        Persona solicitante = personaHelper.obtenerSolicitantePorCasa(casaId);
 
         solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
         SolicitudReservaRecurso rechazada = solicitudReservaRecursoRepository.save(solicitud);
-        return new SuccessResult<>("Reserva rechazada correctamente", modelMapper.map(rechazada, SolicitudReservaRecursoDTO.class));
+        SolicitudReservaRecursoDTO soliDTO = modelMapper.map(rechazada, SolicitudReservaRecursoDTO.class);
+        soliDTO.setSolicitante(personaHelper.toPersonaSimpleDTO(solicitante));
+
+        eventPublisher.publishEvent(new RepliedSolicitudEvent(solicitante.getUser().getEmail(),soliDTO));
+        return new SuccessResult<>("Reserva rechazada correctamente", soliDTO);
     }
 
     @Override
-    public SuccessResult<SolicitudReservaRecursoDTO> eliminar(Long id) {
+    public SuccessResult<SolicitudReservaRecursoDTO> cancelar(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         if(solicitud.getEstadoSolicitud() != EstadoSolicitud.APROBADA) {
-            throw new ApiException("Solo se pueden eliminar reservas aprobadas", HttpStatus.BAD_REQUEST);
+            throw new ApiException("Solo se pueden cancelar reservas aprobadas", HttpStatus.BAD_REQUEST);
         }
 
         if(!solicitud.getFechaSolicitud().isBefore(LocalDate.now().minusDays(1))) {
-            throw new ApiException("Solo se permiten borrar reservas posteriores a la fecha de ayer", HttpStatus.BAD_REQUEST);
+            throw new ApiException("Solo se permiten cancelar reservas posteriores a la fecha de ayer", HttpStatus.BAD_REQUEST);
         }
 
         solicitudReservaRecursoRepository.delete(solicitud);
-        return new SuccessResult<>("Reserva eliminada exitosamente", modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class));
+        return new SuccessResult<>("Reserva cancelada exitosamente", modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class));
     }
 
     @Override

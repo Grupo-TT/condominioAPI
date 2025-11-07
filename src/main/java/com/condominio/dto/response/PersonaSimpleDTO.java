@@ -1,9 +1,12 @@
 package com.condominio.dto.response;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class PersonaSimpleDTO {
     private String nombreCompleto;

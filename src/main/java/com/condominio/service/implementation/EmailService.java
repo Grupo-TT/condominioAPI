@@ -2,6 +2,7 @@ package com.condominio.service.implementation;
 
 
 import com.condominio.dto.response.ObligacionDTO;
+import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -91,4 +92,33 @@ public class EmailService {
             log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
         }
     }
+
+    @Async("mailTaskExecutor")
+    public void enviarSolicitud(String destinatario, SolicitudReservaRecursoDTO soliReservaDTO) throws MessagingException {
+        log.info("EmailService.enviarSolicitud invoked para {}", destinatario);
+        try {
+        String htmlContent = generarHtmlSolicitudConThymeleaf(soliReservaDTO);
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(destinatario);
+        helper.setSubject(EMAIL_SOLICITUD_SUBJECT);
+        helper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+        log.info("Correo enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
+        }
+    }
+    public String generarHtmlSolicitudConThymeleaf(SolicitudReservaRecursoDTO soliReservaDTO){
+        Context context = new Context();
+        context.setVariable("recurso", soliReservaDTO.getRecursoComun().getNombre());
+        context.setVariable("horaInicio", soliReservaDTO.getHoraInicio());
+        context.setVariable("horaFin", soliReservaDTO.getHoraFin());
+        context.setVariable("cantidadInvitados", soliReservaDTO.getNumeroInvitados());
+        context.setVariable("fechaSolicitud", soliReservaDTO.getFechaSolicitud());
+        context.setVariable("estado", soliReservaDTO.getEstadoSolicitud());
+        return templateEngine.process(SOLICITUD_HTML, context);
+    }
 }
+
