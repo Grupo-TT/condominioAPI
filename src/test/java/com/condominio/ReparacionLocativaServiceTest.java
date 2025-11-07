@@ -83,7 +83,7 @@ public class ReparacionLocativaServiceTest {
         // Assert
         assertThat(results).isNotNull();
         assertThat(results).hasSize(1);
-        ReparacionLocativaDTO got = results.get(0);
+        ReparacionLocativaDTO got = results.getFirst();
 
         // Ajusta estas llamadas si tu DTO anidado usa nombres distintos:
         assertThat(got.getSolicitudReparacionLocativa()).isNotNull();
