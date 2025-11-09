@@ -14,7 +14,7 @@ public interface IPersonaService {
     boolean existsRoleInCasa(Long casaId, RoleEnum roleEnum);
     Persona obtenerSolicitantePorCasa(Long idCasa);
     PersonaPerfilDTO getPersonaPerfil(UserDetails userDetails);
-    SuccessResult<?> updatePersona(PersonaUpdateDTO personaUpdate, UserDetails userDetails);
+    SuccessResult<Void> updatePersona(PersonaUpdateDTO personaUpdate, UserDetails userDetails);
 
 
 }

@@ -48,7 +48,7 @@ public class PersonaController {
     }
     @PutMapping("/update")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROPIETARIO', 'ARRENDATARIO')")
-    public ResponseEntity<SuccessResult<?>> updatePersona(
+    public ResponseEntity<SuccessResult<Void>> updatePersona(
             @Valid @RequestBody PersonaUpdateDTO personaUpdateDTO,
             @AuthenticationPrincipal UserDetails userDetails) {
 

@@ -141,7 +141,7 @@ public class PersonaService implements IPersonaService {
                 .build();
     }
 
-    public SuccessResult<?> updatePersona(PersonaUpdateDTO personaUpdate,UserDetails userDetails){
+    public SuccessResult<Void> updatePersona(PersonaUpdateDTO personaUpdate,UserDetails userDetails){
         Persona persona = getPersonaFromUserDetails(userDetails);
 
         if (personaRepository.existsByNumeroDocumentoAndIdNot(personaUpdate.getNumeroDocumento(), persona.getId())) {
