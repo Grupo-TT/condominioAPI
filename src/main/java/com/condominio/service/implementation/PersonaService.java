@@ -1,6 +1,7 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
+import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
@@ -17,7 +18,6 @@ import com.condominio.util.exception.ApiException;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -124,7 +124,7 @@ public class PersonaService implements IPersonaService {
         return persona;
     }
 
-    public PersonaPerfilDTO getPersonaPerfil(@AuthenticationPrincipal UserDetails userDetails) {
+    public PersonaPerfilDTO getPersonaPerfil( UserDetails userDetails) {
         Persona persona = getPersonaFromUserDetails(userDetails);
         return PersonaPerfilDTO.builder()
                 .numeroCasa(persona.getCasa().getNumeroCasa())
@@ -140,4 +140,24 @@ public class PersonaService implements IPersonaService {
                 .tipoDocumento(persona.getTipoDocumento())
                 .build();
     }
+
+    public SuccessResult<?> updatePersona(PersonaUpdateDTO personaUpdate,UserDetails userDetails){
+        Persona persona = getPersonaFromUserDetails(userDetails);
+
+        if (personaRepository.existsByNumeroDocumentoAndIdNot(personaUpdate.getNumeroDocumento(), persona.getId())) {
+            throw new ApiException("El número de documento ya está registrado",HttpStatus.BAD_REQUEST);
+        }
+
+        persona.setPrimerNombre(personaUpdate.getPrimerNombre());
+        persona.setSegundoNombre(personaUpdate.getSegundoNombre());
+        persona.setPrimerApellido(personaUpdate.getPrimerApellido());
+        persona.setSegundoApellido(personaUpdate.getSegundoApellido());
+        persona.setTipoDocumento(personaUpdate.getTipoDocumento());
+        persona.setNumeroDocumento(personaUpdate.getNumeroDocumento());
+        persona.setTelefono(personaUpdate.getTelefono());
+        personaRepository.save(persona);
+        return new SuccessResult<>("Persona actualizada correctamente",null);
+
+    }
+
 }

@@ -1,9 +1,18 @@
 package com.condominio.dto.request;
 
+import com.condominio.persistence.model.TipoDocumento;
+import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
 public class PersonaUpdateDTO {
-    private String primerNombre;
-    private String segundoNombre;
-    private String primerApellido;
-    private String segundoApellido;
-    private Long telefono;
+    @NotNull private String primerNombre;
+    @NotNull  private String segundoNombre;
+    @NotNull private String primerApellido;
+    @NotNull private String segundoApellido;
+    @NotNull private Long telefono;
+    @NotNull private TipoDocumento tipoDocumento;
+    @NotNull private Long numeroDocumento;
 }

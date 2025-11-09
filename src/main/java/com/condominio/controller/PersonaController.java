@@ -1,9 +1,12 @@
 package com.condominio.controller;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
+import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.Persona;
 import com.condominio.service.interfaces.IPersonaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,5 +46,12 @@ public class PersonaController {
         PersonaPerfilDTO perfil = personaService.getPersonaPerfil(userDetails);
         return ResponseEntity.ok(perfil);
     }
+    @PutMapping("/update")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROPIETARIO', 'ARRENDATARIO')")
+    public ResponseEntity<SuccessResult<?>> updatePersona(
+            @Valid @RequestBody PersonaUpdateDTO personaUpdateDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
+        return ResponseEntity.ok(personaService.updatePersona(personaUpdateDTO, userDetails));
+    }
 }

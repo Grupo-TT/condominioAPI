@@ -1,6 +1,7 @@
 package com.condominio.service.interfaces;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
+import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Persona;
@@ -13,6 +14,7 @@ public interface IPersonaService {
     boolean existsRoleInCasa(Long casaId, RoleEnum roleEnum);
     Persona obtenerSolicitantePorCasa(Long idCasa);
     PersonaPerfilDTO getPersonaPerfil(UserDetails userDetails);
+    SuccessResult<?> updatePersona(PersonaUpdateDTO personaUpdate, UserDetails userDetails);
 
 
 }
