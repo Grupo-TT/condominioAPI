@@ -1,11 +1,9 @@
 package com.condominio;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
+import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.RoleEnum;
-import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.PersonaService;
 import com.condominio.service.interfaces.ICasaService;
@@ -22,6 +20,8 @@ import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +46,10 @@ class PersonaServiceTest {
 
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
+
+    @Mock
+    private com.condominio.persistence.repository.UserRepository userRepository;
+
 
     private AutoCloseable closeable;
 
@@ -286,5 +290,205 @@ class PersonaServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(personaRepository).findArrendatarioByCasaId(idCasa);
         verify(personaRepository).findPropietarioByCasaId(idCasa);
+    }
+
+
+
+    @Test
+    void getPersonaFromUserDetails_ShouldReturnPersona_WhenUserAndPersonaExist() {
+
+        String email = "test@example.com";
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn(email);
+
+        UserEntity mockUserEntity = new UserEntity();
+        mockUserEntity.setEmail(email);
+
+        Persona mockPersona = new Persona();
+
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(mockUserEntity);
+        when(personaRepository.findPersonaByUser(mockUserEntity)).thenReturn(mockPersona);
+
+
+        Persona result = personaService.getPersonaFromUserDetails(userDetails);
+
+
+        assertNotNull(result);
+        assertEquals(mockPersona, result);
+        verify(userRepository).findUserEntityByEmail(email);
+        verify(personaRepository).findPersonaByUser(mockUserEntity);
+    }
+
+    @Test
+    void getPersonaFromUserDetails_ShouldThrowException_WhenUserNotFound() {
+
+        String email = "notfound@example.com";
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn(email);
+
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(null);
+
+
+        ApiException ex = assertThrows(ApiException.class, () -> personaService.getPersonaFromUserDetails(userDetails));
+
+
+        assertEquals("Usuario no encontrado con el email: " + email, ex.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        verify(userRepository).findUserEntityByEmail(email);
+        verifyNoInteractions(personaRepository);
+    }
+
+    @Test
+    void getPersonaFromUserDetails_ShouldThrowException_WhenPersonaNotFound() {
+
+        String email = "user@example.com";
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn(email);
+
+        UserEntity mockUserEntity = new UserEntity();
+        mockUserEntity.setEmail(email);
+
+        when(userRepository.findUserEntityByEmail(email)).thenReturn(mockUserEntity);
+        when(personaRepository.findPersonaByUser(mockUserEntity)).thenReturn(null);
+
+
+        ApiException ex = assertThrows(ApiException.class, () -> personaService.getPersonaFromUserDetails(userDetails));
+
+
+        assertEquals("Persona no encontrada para el usuario: " + email, ex.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        verify(userRepository).findUserEntityByEmail(email);
+        verify(personaRepository).findPersonaByUser(mockUserEntity);
+    }
+
+    @Test
+    void getPersonaPerfil_ShouldReturnPersonaPerfilDTO_WhenDataIsValid() {
+
+        UserDetails userDetails = mock(UserDetails.class);
+        Persona mockPersona = new Persona();
+        Casa mockCasa = new Casa();
+        UserEntity mockUser = new UserEntity();
+
+        mockCasa.setNumeroCasa(10);
+        mockUser.setEmail("test@example.com");
+
+        mockPersona.setCasa(mockCasa);
+        mockPersona.setJunta(true);
+        mockPersona.setComiteConvivencia(false);
+        mockPersona.setNumeroDocumento(123L);
+        mockPersona.setPrimerNombre("Juan");
+        mockPersona.setSegundoNombre("Carlos");
+        mockPersona.setPrimerApellido("Pérez");
+        mockPersona.setSegundoApellido("Gómez");
+        mockPersona.setTelefono(3216549870L);
+        mockPersona.setTipoDocumento(com.condominio.persistence.model.TipoDocumento.CEDULA_DE_CIUDADANIA);
+        mockPersona.setUser(mockUser);
+
+
+        PersonaService spyService = spy(personaService);
+        doReturn(mockPersona).when(spyService).getPersonaFromUserDetails(userDetails);
+
+
+        var result = spyService.getPersonaPerfil(userDetails);
+
+
+        assertNotNull(result);
+        assertEquals(mockPersona.getCasa().getNumeroCasa(), result.getNumeroCasa());
+        assertEquals(mockPersona.getJunta(), result.getJunta());
+        assertEquals(mockPersona.getComiteConvivencia(), result.getComiteConvivencia());
+        assertEquals(mockPersona.getNumeroDocumento(), result.getNumeroDocumento());
+        assertEquals(mockPersona.getPrimerNombre(), result.getPrimerNombre());
+        assertEquals(mockPersona.getSegundoNombre(), result.getSegundoNombre());
+        assertEquals(mockPersona.getPrimerApellido(), result.getPrimerApellido());
+        assertEquals(mockPersona.getSegundoApellido(), result.getSegundoApellido());
+        assertEquals(mockPersona.getUser().getEmail(), result.getEmail());
+        assertEquals(mockPersona.getTelefono(), result.getTelefono());
+        assertEquals(mockPersona.getTipoDocumento(), result.getTipoDocumento());
+
+        verify(spyService).getPersonaFromUserDetails(userDetails);
+    }
+
+    @Test
+    void getPersonaPerfil_ShouldThrowException_WhenPersonaNotFound() {
+
+        UserDetails userDetails = mock(UserDetails.class);
+
+        PersonaService spyService = spy(personaService);
+        doThrow(new ApiException("Persona no encontrada", HttpStatus.NOT_FOUND))
+                .when(spyService).getPersonaFromUserDetails(userDetails);
+
+
+        ApiException ex = assertThrows(ApiException.class, () -> spyService.getPersonaPerfil(userDetails));
+
+
+        assertEquals("Persona no encontrada", ex.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        verify(spyService).getPersonaFromUserDetails(userDetails);
+    }
+    @Test
+    void updatePersona_ShouldUpdate_WhenDataIsValid() {
+        String email = "test@example.com";
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn(email);
+
+
+        Persona persona = new Persona();
+        persona.setId(1L);
+
+
+        PersonaService spyService = spy(personaService);
+        doReturn(persona).when(spyService).getPersonaFromUserDetails(userDetails);
+
+        PersonaUpdateDTO dto = PersonaUpdateDTO.builder()
+                .primerNombre("Juan")
+                .segundoNombre("Carlos")
+                .primerApellido("Pérez")
+                .segundoApellido("Gómez")
+                .telefono(3001234567L)
+                .tipoDocumento(TipoDocumento.CEDULA_DE_CIUDADANIA)
+                .numeroDocumento(123456L)
+                .build();
+
+        when(personaRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), persona.getId()))
+                .thenReturn(false);
+
+        SuccessResult<?> result = spyService.updatePersona(dto, userDetails);
+
+        assertNotNull(result);
+        assertEquals("Persona actualizada correctamente", result.message());
+        assertNull(result.data());
+        verify(personaRepository).save(persona);
+    }
+
+    @Test
+    void updatePersona_ShouldThrow_WhenNumeroDocumentoAlreadyExists() {
+        String email = "test@example.com";
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn(email);
+
+        Persona persona = new Persona();
+        persona.setId(1L);
+
+        PersonaService spyService = spy(personaService);
+        doReturn(persona).when(spyService).getPersonaFromUserDetails(userDetails);
+
+        PersonaUpdateDTO dto = PersonaUpdateDTO.builder()
+                .primerNombre("Juan")
+                .segundoNombre("Carlos")
+                .primerApellido("Pérez")
+                .segundoApellido("Gómez")
+                .telefono(3001234567L)
+                .tipoDocumento(TipoDocumento.CEDULA_DE_CIUDADANIA)
+                .numeroDocumento(123456L)
+                .build();
+
+        when(personaRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), persona.getId()))
+                .thenReturn(true);
+
+        ApiException ex = assertThrows(ApiException.class, () -> spyService.updatePersona(dto, userDetails));
+
+        assertEquals("El número de documento ya está registrado", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(personaRepository, never()).save(any());
     }
 }
