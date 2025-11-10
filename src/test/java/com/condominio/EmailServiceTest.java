@@ -1,12 +1,16 @@
 package com.condominio;
 
 import com.condominio.dto.response.ObligacionDTO;
+import com.condominio.dto.response.SolicitudReservaRecursoDTO;
+import com.condominio.persistence.model.EstadoSolicitud;
+import com.condominio.persistence.model.RecursoComun;
 import com.condominio.service.implementation.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,7 +19,9 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -177,4 +183,64 @@ class EmailServiceTest {
         verify(mailSender).send(mimeMessage);
     }
 
+    @Test
+    void enviarSolicitud_debeConstruirContextYCambiarHtmlYEnviar() throws Exception {
+
+        String destinatario = "prueba@correo.com";
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        RecursoComun recurso = new RecursoComun();
+        recurso.setNombre("Salón comunal");
+        dto.setRecursoComun(recurso);
+        dto.setHoraInicio(LocalTime.of(10, 0));
+        dto.setHoraFin(LocalTime.of(12, 0));
+        dto.setNumeroInvitados(8);
+        dto.setFechaSolicitud(LocalDate.of(2025, 11, 7));
+        dto.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+
+        String expectedHtml = "<html>OK</html>";
+        when(templateEngine.process(anyString(), any(Context.class))).thenReturn(expectedHtml);
+
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        emailService.enviarSolicitud(destinatario, dto);
+
+        ArgumentCaptor<Context> ctxCaptor = ArgumentCaptor.forClass(Context.class);
+        verify(templateEngine, times(1)).process(anyString(), ctxCaptor.capture());
+
+        Context captured = ctxCaptor.getValue();
+        assertThat(captured.getVariable("recurso")).isEqualTo("Salón comunal");
+        assertThat(captured.getVariable("horaInicio")).isEqualTo(dto.getHoraInicio());
+        assertThat(captured.getVariable("horaFin")).isEqualTo(dto.getHoraFin());
+        assertThat(captured.getVariable("cantidadInvitados")).isEqualTo(dto.getNumeroInvitados());
+        assertThat(captured.getVariable("fechaSolicitud")).isEqualTo(dto.getFechaSolicitud());
+        assertThat(captured.getVariable("estado")).isEqualTo(dto.getEstadoSolicitud());
+
+        // Verificamos que se creó y envió el MimeMessage
+        verify(mailSender, times(1)).createMimeMessage();
+        verify(mailSender, times(1)).send(mensaje);
+    }
+
+    @Test
+    void enviarSolicitud_siTemplateLanzaExcepcion_noLlamaMailSenderSend() throws Exception {
+
+        String destinatario = "fallo@correo.com";
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        RecursoComun recurso = new RecursoComun();
+        recurso.setNombre("Piscina");
+        dto.setRecursoComun(recurso);
+        dto.setHoraInicio(LocalTime.now());
+        dto.setHoraFin(LocalTime.now().plusHours(2));
+        dto.setNumeroInvitados(2);
+        dto.setFechaSolicitud(LocalDate.now());
+        dto.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
+
+        when(templateEngine.process(anyString(), any(Context.class)))
+                .thenThrow(new RuntimeException("error template"));
+
+        emailService.enviarSolicitud(destinatario, dto);
+
+        verify(templateEngine, times(1)).process(anyString(), any(Context.class));
+        verify(mailSender, never()).send(any(MimeMessage.class)); // no debe intentar enviar
+    }
 }

@@ -1,16 +1,16 @@
 package com.condominio;
 
 
-import com.condominio.dto.response.InvitadoDTO;
-import com.condominio.dto.response.SolicitudRecursoPropiDTO;
-import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RecursoComunRepository;
+import com.condominio.persistence.repository.ReservaRepository;
 import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
 import com.condominio.service.implementation.SolicitudReservaRecursoService;
+import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
+import com.condominio.util.helper.PersonaHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -37,6 +38,9 @@ class SolicitudReservaRecursoServiceTest {
     private SolicitudReservaRecursoRepository solicitudReservaRecursoRepository;
 
     @Mock
+    private ReservaRepository reservaRepository;
+
+    @Mock
     private PersonaRepository personaRepository;
 
     @Mock
@@ -44,6 +48,12 @@ class SolicitudReservaRecursoServiceTest {
 
     @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private PersonaHelper personaHelper;
 
     @InjectMocks
     private SolicitudReservaRecursoService solicitudReservaRecursoService;
@@ -242,26 +252,50 @@ class SolicitudReservaRecursoServiceTest {
 
     @Test
     void aprobar_shouldApprove_whenPending_andResourceEnabled() {
-
+        // Arrange
         Long id = 5L;
+        Casa casa = new Casa();
+        casa.setId(5L);
+
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
         solicitud.setId(id);
+        solicitud.setCasa(casa); // <- evita NPE
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.now().plusDays(1));
+        solicitud.setHoraInicio(LocalTime.of(10, 0));
+        solicitud.setHoraFin(LocalTime.of(12, 0));
+        solicitud.setNumeroInvitados(4);
 
         RecursoComun recurso = new RecursoComun();
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         solicitud.setRecursoComun(recurso);
 
+        Persona persona = new Persona();
+        UserEntity user = new UserEntity(); user.setEmail("juan@ejemplo.com");
+        persona.setUser(user);
+
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
         saved.setId(id);
         saved.setEstadoSolicitud(EstadoSolicitud.APROBADA);
 
+        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
+        when(personaHelper.obtenerSolicitantePorCasa(casa.getId())).thenReturn(persona);
         when(solicitudReservaRecursoRepository.save(any(SolicitudReservaRecurso.class))).thenReturn(saved);
-        when(modelMapper.map(saved, SolicitudReservaRecursoDTO.class)).thenReturn(new SolicitudReservaRecursoDTO());
+        when(modelMapper.map(saved, SolicitudReservaRecursoDTO.class)).thenReturn(dto);
+        when(personaHelper.toPersonaSimpleDTO(persona)).thenReturn(
+                PersonaSimpleDTO.builder()
+                        .nombreCompleto("Juan Ejemplo")
+                        .telefono(null)
+                        .correo("juan@ejemplo.com")
+                        .build()
+        );
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(inv -> inv.getArgument(0));
 
+        // Act
         SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.aprobar(id);
 
+        // Assert
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Reserva aprobada correctamente");
         verify(solicitudReservaRecursoRepository).findById(id);
@@ -269,6 +303,14 @@ class SolicitudReservaRecursoServiceTest {
         ArgumentCaptor<SolicitudReservaRecurso> captor = ArgumentCaptor.forClass(SolicitudReservaRecurso.class);
         verify(solicitudReservaRecursoRepository).save(captor.capture());
         assertThat(captor.getValue().getEstadoSolicitud()).isEqualTo(EstadoSolicitud.APROBADA);
+
+        // Verifica que se creo una Reserva
+        verify(reservaRepository).save(any(Reserva.class));
+
+        // Verifica que se publico el evento
+        ArgumentCaptor<RepliedSolicitudEvent> evtCap = ArgumentCaptor.forClass(RepliedSolicitudEvent.class);
+        verify(eventPublisher).publishEvent(evtCap.capture());
+        assertThat(evtCap.getValue().getEmailPropietario()).isEqualTo("juan@ejemplo.com");
     }
 
     @Test
@@ -318,32 +360,54 @@ class SolicitudReservaRecursoServiceTest {
 
     @Test
     void rechazar_shouldReject_whenPending_andResourceEnabled() {
-
+        // Arrange
         Long id = 9L;
+
+        Casa casa = new Casa();
+        casa.setId(99L);
+
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
         solicitud.setId(id);
+        solicitud.setCasa(casa); // <- importante: evita NPE al obtener casaId
         solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.now().plusDays(1));
+        solicitud.setHoraInicio(LocalTime.of(10, 0));
+        solicitud.setHoraFin(LocalTime.of(12, 0));
 
         RecursoComun recurso = new RecursoComun();
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
         solicitud.setRecursoComun(recurso);
+
+        // solicitante (para el evento)
+        Persona persona = new Persona();
+        UserEntity user = new UserEntity();
+        user.setEmail("usuario@example.com");
+        persona.setUser(user);
 
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
         saved.setId(id);
         saved.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(solicitud));
+        when(personaHelper.obtenerSolicitantePorCasa(casa.getId())).thenReturn(persona);
         when(solicitudReservaRecursoRepository.save(any(SolicitudReservaRecurso.class))).thenReturn(saved);
         when(modelMapper.map(saved, SolicitudReservaRecursoDTO.class)).thenReturn(new SolicitudReservaRecursoDTO());
 
+        // Act
         SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.rechazar(id);
 
+        // Assert
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Reserva rechazada correctamente");
 
         ArgumentCaptor<SolicitudReservaRecurso> captor = ArgumentCaptor.forClass(SolicitudReservaRecurso.class);
         verify(solicitudReservaRecursoRepository).save(captor.capture());
         assertThat(captor.getValue().getEstadoSolicitud()).isEqualTo(EstadoSolicitud.RECHAZADA);
+
+        // Verifica que se publicó el evento con el email del solicitante
+        ArgumentCaptor<RepliedSolicitudEvent> evtCap = ArgumentCaptor.forClass(RepliedSolicitudEvent.class);
+        verify(eventPublisher).publishEvent(evtCap.capture());
+        assertThat(evtCap.getValue().getEmailPropietario()).isEqualTo("usuario@example.com");
     }
 
     @Test
@@ -391,7 +455,7 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void eliminar_shouldDeleteWhenApproved_andDateBeforeYesterday() {
+    void cancelar_shouldDeleteWhenApproved_andDateBeforeYesterday() {
 
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
         solicitud.setId(1L);
@@ -402,20 +466,20 @@ class SolicitudReservaRecursoServiceTest {
         when(modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class))
                 .thenReturn(new SolicitudReservaRecursoDTO());
 
-        SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.eliminar(1L);
+        SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.cancelar(1L);
 
         assertThat(result).isNotNull();
-        assertThat(result.message()).isEqualTo("Reserva eliminada exitosamente");
+        assertThat(result.message()).isEqualTo("Reserva cancelada exitosamente");
         verify(solicitudReservaRecursoRepository).findById(1L);
         verify(solicitudReservaRecursoRepository).delete(solicitud);
     }
 
     @Test
-    void eliminar_shouldThrowNotFound_whenMissing() {
+    void cancelar_shouldThrowNotFound_whenMissing() {
 
         when(solicitudReservaRecursoRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(99L))
+        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(99L))
                 .isInstanceOf(ApiException.class)
                 .hasMessage("No se ha encontrado la solicitud")
                 .satisfies(ex -> {
@@ -428,7 +492,7 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void eliminar_shouldThrowBadRequest_ifNotApproved() {
+    void cancelar_shouldThrowBadRequest_ifNotApproved() {
 
         SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
         solicitud.setId(2L);
@@ -437,9 +501,9 @@ class SolicitudReservaRecursoServiceTest {
 
         when(solicitudReservaRecursoRepository.findById(2L)).thenReturn(Optional.of(solicitud));
 
-        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(2L))
+        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(2L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se pueden eliminar reservas aprobadas")
+                .hasMessage("Solo se pueden cancelar reservas aprobadas")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -450,7 +514,7 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void eliminar_shouldThrowBadRequest_ifDateNotBeforeYesterday() {
+    void cancelar_shouldThrowBadRequest_ifDateNotBeforeYesterday() {
 
         SolicitudReservaRecurso solicitudAyer = new SolicitudReservaRecurso();
         solicitudAyer.setId(3L);
@@ -459,9 +523,9 @@ class SolicitudReservaRecursoServiceTest {
 
         when(solicitudReservaRecursoRepository.findById(3L)).thenReturn(Optional.of(solicitudAyer));
 
-        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(3L))
+        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(3L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten borrar reservas posteriores a la fecha de ayer")
+                .hasMessage("Solo se permiten cancelar reservas posteriores a la fecha de ayer")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -477,9 +541,9 @@ class SolicitudReservaRecursoServiceTest {
 
         when(solicitudReservaRecursoRepository.findById(4L)).thenReturn(Optional.of(solicitudHoy));
 
-        assertThatThrownBy(() -> solicitudReservaRecursoService.eliminar(4L))
+        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(4L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten borrar reservas posteriores a la fecha de ayer")
+                .hasMessage("Solo se permiten cancelar reservas posteriores a la fecha de ayer")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
