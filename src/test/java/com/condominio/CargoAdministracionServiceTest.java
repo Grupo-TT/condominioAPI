@@ -12,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -72,7 +71,7 @@ class CargoAdministracionServiceTest {
         actualizado.setNuevoValor(1500.0);
         actualizado.setCorreoActualizador("admin@example.com");
         actualizado.setNombreActualizador("Juan Pérez");
-        actualizado.setFechaAplicacion(OffsetDateTime.now());
+
 
         when(actualizacionHelper.aplicarDatosComunes(cargoAdministracion, 1500.0))
                 .thenReturn(actualizado);

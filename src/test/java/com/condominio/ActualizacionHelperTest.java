@@ -16,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,7 +58,7 @@ class ActualizacionHelperTest {
         assertEquals(800, result.getNuevoValor());
         assertEquals("test@user.com", result.getCorreoActualizador());
         assertEquals("John Tester", result.getNombreActualizador());
-        assertNotNull(result.getFechaAplicacion());
+
     }
 
     @Test
