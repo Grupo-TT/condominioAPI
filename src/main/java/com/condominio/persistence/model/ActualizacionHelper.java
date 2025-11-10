@@ -2,12 +2,10 @@ package com.condominio.persistence.model;
 
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.UserRepository;
-import com.condominio.util.constants.AppConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.time.OffsetDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -29,7 +27,7 @@ public class ActualizacionHelper {
         entidad.setNuevoValor(dividirPorCien ? nuevoValor / 100 : nuevoValor);
         entidad.setCorreoActualizador(username);
         entidad.setNombreActualizador(persona.getNombreCompleto());
-        entidad.setFechaAplicacion(OffsetDateTime.now(AppConstants.ZONE));
+
 
         return entidad;
     }
