@@ -34,7 +34,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
                 solicitudReservaRecursoRepository.findByEstadoSolicitud(estado);
 
         if (solicitudes.isEmpty()) {
-            throw new ApiException("No hay solicitudes con estado: " + estado, HttpStatus.NOT_FOUND);
+            throw new ApiException("No hay solicitudes con estado: " + estado, HttpStatus.OK);
         }
 
         List<SolicitudReservaRecursoDTO> dtos = solicitudes.stream().map(solicitud -> {
