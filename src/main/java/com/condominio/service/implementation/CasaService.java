@@ -179,7 +179,7 @@ public class CasaService implements ICasaService {
     }
 
     public SuccessResult<List<CasaDeudoraDTO>>  obtenerObligacionesPorCasa() {
-        List<Casa> casas = casaRepository. obtenerObligacionesPorCasa();
+        List<Casa> casas = casaRepository.findAll();
         if (casas.isEmpty()) {
             throw new ApiException("No hay casas con obligaciones", HttpStatus.BAD_REQUEST);
         }
@@ -198,7 +198,7 @@ public class CasaService implements ICasaService {
             }
 
             List<Obligacion> obligaciones = obligacionRepository
-                    .findByCasaIdOrderByFechaGeneradaDesc(casa.getId());
+                    .findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(casa.getId(), EstadoPago.CONDONADO);
 
             int saldoPendiente = obligaciones.stream()
                     .mapToInt(Obligacion::getValorPendiente)
@@ -208,7 +208,7 @@ public class CasaService implements ICasaService {
                     .map(o -> MostrarObligacionDTO.builder()
                             .id((o.getId()))
                             .estado(o.getEstadoPago().name())
-                            .motivo(o.getMotivo())
+                            .titulo(o.getTitulo())
                             .casa(o.getCasa().getNumeroCasa())
                             .monto(o.getMonto())
                             .valorTotal(o.getValorTotal())
