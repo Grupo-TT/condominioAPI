@@ -210,7 +210,7 @@ public class ObligacionService implements IObligacionService {
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
     }
 
-    @Scheduled(cron = "0 0 0 1 * *", zone = "America/Bogota")
+    @Scheduled(cron = "0 0 0 12 * *", zone = "America/Bogota")
     public void generarObligacionesMensuales() {
         LocalDate hoy = LocalDate.now();
         String mes = hoy.getMonth().getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
@@ -219,7 +219,6 @@ public class ObligacionService implements IObligacionService {
         String titulo = String.format("Administración %s %d", mes, anio);
         String motivo = String.format("Cobro correspondiente a la administración de %s %d", mes, anio);
 
-        // 💡 Como solo hay un registro, obtenemos directamente el primero
         CargoAdministracion cargoAdmin = cargoAdministracionRepository.findAll().iterator().next();
         TasaDeInteres tasaInteres = tasaDeInteresRepository.findAll().iterator().next();
 
@@ -263,10 +262,10 @@ public class ObligacionService implements IObligacionService {
                             mostrarObligacionDTO
                     );
                 } catch (MessagingException e) {
-                    System.err.println("No se pudo enviar correo a " + propietario.getUser().getEmail() + ": " + e.getMessage());
+                    log.error("No se pudo enviar correo a {}: {}", propietario.getUser().getEmail(), e.getMessage());
                 }
             } else {
-                System.out.println("⚠️ No se encontró propietario para la casa con ID: " + casa.getId());
+                log.warn("No se encontró propietario para la casa con ID: {}", casa.getId());
             }
 
         }
