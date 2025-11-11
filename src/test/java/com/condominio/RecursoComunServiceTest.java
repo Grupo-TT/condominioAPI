@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -351,6 +352,63 @@ class RecursoComunServiceTest {
     }
 
     @Test
+    void enMantenimiento_shouldSetDisponibilidadAndSave_whenResourceExistsAndNotInMaintenance() {
+
+        Long id = 42L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.EN_MANTENIMIENTO);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
+
+        SuccessResult<RecursoComun> result = recursoComunService.enMantenimiento(id);
+
+        assertThat(result).isNotNull();
+        assertEquals("El recurso se ha puesto en mantenimiento exitosamente", result.message());
+        assertThat(result.data()).isEqualTo(saved);
+
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.EN_MANTENIMIENTO);
+    }
+
+    @Test
+    void enMantenimiento_shouldThrowBadRequest_whenResourceAlreadyInMaintenance() {
+        Long id = 7L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.EN_MANTENIMIENTO);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.enMantenimiento(id));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).isEqualTo("El recurso ya está en mantenimiento");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void enMantenimiento_shouldThrowNotFound_whenResourceMissing() {
+        Long id = 999L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.enMantenimiento(id));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        assertEquals("El recurso no existe", ex.getMessage());
+
+        verify(recursoComunRepository).findById(id);
+        verifyNoMoreInteractions(recursoComunRepository);
+    }
+
+    @Test
     void testFindByTipoRecurso_ReturnsListOfResources() {
 
         TipoRecursoComun tipo = TipoRecursoComun.ZONA;
@@ -373,8 +431,8 @@ class RecursoComunServiceTest {
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertEquals("Piscina Olímpica", result.get(0).getNombre());
-        assertEquals(TipoRecursoComun.ZONA, result.get(0).getTipoRecursoComun());
+        assertEquals("Piscina Olímpica", result.getFirst().getNombre());
+        assertEquals(TipoRecursoComun.ZONA, result.getFirst().getTipoRecursoComun());
         verify(recursoComunRepository, times(1)).findByTipoRecursoComun(tipo);
     }
 

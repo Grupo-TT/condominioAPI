@@ -118,6 +118,22 @@ public class RecursoComunService implements IRecursoComunService {
     }
 
     @Override
+    public SuccessResult<RecursoComun> enMantenimiento(Long id) {
+        RecursoComun recurso = recursoComunRepository.findById(id)
+                .orElseThrow(() -> new ApiException("El recurso no existe", HttpStatus.NOT_FOUND));
+
+        if (recurso.getDisponibilidadRecurso()== DisponibilidadRecurso.EN_MANTENIMIENTO) {
+            throw new ApiException("El recurso ya está en mantenimiento", HttpStatus.BAD_REQUEST);
+        } else {
+
+            recurso.setDisponibilidadRecurso(DisponibilidadRecurso.EN_MANTENIMIENTO);
+            RecursoComun actualizado = recursoComunRepository.save(recurso);
+
+            return new SuccessResult<>("El recurso se ha puesto en mantenimiento exitosamente", actualizado);
+        }
+    }
+
+    @Override
     public List<RecursoComun> findByTipoRecurso(TipoRecursoComun tipoRecursoComun) {
         return recursoComunRepository.findByTipoRecursoComun(tipoRecursoComun);
     }

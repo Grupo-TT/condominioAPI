@@ -64,6 +64,15 @@ public class RecursoComunController {
         return ResponseEntity.ok(result);
     }
 
+    @PutMapping("/maintenance/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SuccessResult<RecursoComun>> enMantenimiento(
+            @PathVariable Long id
+    ) {
+        SuccessResult<RecursoComun> result = recursoComunService.enMantenimiento(id);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/all-public")
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
     public ResponseEntity<SuccessResult<List<RecursoComunPropiDTO>>> recursosPublic(){

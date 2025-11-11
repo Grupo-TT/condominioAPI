@@ -16,6 +16,7 @@ public interface IRecursoComunService {
     SuccessResult<RecursoComun> update(Long id,RecursoComunDTO recurso);
     SuccessResult<RecursoComun> habilitar(Long id);
     SuccessResult<RecursoComun> deshabilitar(Long id);
+    SuccessResult<RecursoComun> enMantenimiento(Long id);
     List<RecursoComun> findByTipoRecurso(TipoRecursoComun tipoRecursoComun);
     List<RecursoComunPropiDTO> findByDisponibilidad();
 }
