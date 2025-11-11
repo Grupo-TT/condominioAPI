@@ -208,7 +208,7 @@ public class CasaService implements ICasaService {
                     .map(o -> MostrarObligacionDTO.builder()
                             .id((o.getId()))
                             .estado(o.getEstadoPago().name())
-                            .motivo(o.getMotivo())
+                            .titulo(o.getTitulo())
                             .casa(o.getCasa().getNumeroCasa())
                             .monto(o.getMonto())
                             .valorTotal(o.getValorTotal())

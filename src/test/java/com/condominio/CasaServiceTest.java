@@ -514,7 +514,7 @@ class CasaServiceTest {
 
         Obligacion obligacion1 = new Obligacion();
         obligacion1.setId(10L);
-        obligacion1.setMotivo("Cuota de administración");
+        obligacion1.setTitulo("Cuota de administración");
         obligacion1.setMonto(50000);
         obligacion1.setValorTotal(60000);
         obligacion1.setValorPendiente(50000);
@@ -526,7 +526,7 @@ class CasaServiceTest {
 
         Obligacion obligacion2 = new Obligacion();
         obligacion2.setId(11L);
-        obligacion2.setMotivo("Fondo de reserva");
+        obligacion2.setTitulo("Fondo de reserva");
         obligacion2.setMonto(40000);
         obligacion2.setValorTotal(40000);
         obligacion2.setValorPendiente(40000);
@@ -560,8 +560,8 @@ class CasaServiceTest {
         assertThat(dto.getUltimoPago()).isEqualTo(LocalDate.of(2025, 3, 15));
 
         assertThat(dto.getObligacionesPendientes()).hasSize(2);
-        assertThat(dto.getObligacionesPendientes().get(0).getMotivo()).isEqualTo("Cuota de administración");
-        assertThat(dto.getObligacionesPendientes().get(1).getMotivo()).isEqualTo("Fondo de reserva");
+        assertThat(dto.getObligacionesPendientes().get(0).getTitulo()).isEqualTo("Cuota de administración");
+        assertThat(dto.getObligacionesPendientes().get(1).getTitulo()).isEqualTo("Fondo de reserva");
 
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);
@@ -587,7 +587,7 @@ class CasaServiceTest {
 
         Obligacion obligacion = new Obligacion();
         obligacion.setId(20L);
-        obligacion.setMotivo("Mantenimiento");
+        obligacion.setTitulo("Mantenimiento");
         obligacion.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion.setMonto(30000);
         obligacion.setValorPendiente(30000);
