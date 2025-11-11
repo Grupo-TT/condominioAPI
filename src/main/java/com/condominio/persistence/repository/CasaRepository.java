@@ -22,4 +22,6 @@ public interface CasaRepository extends CrudRepository<Casa, Long> {
            FROM Obligacion o
            """)
     List<Casa> obtenerObligacionesPorCasa();
+
+
 }

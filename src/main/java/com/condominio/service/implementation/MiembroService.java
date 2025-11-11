@@ -1,10 +1,13 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.MiembroRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.IMiembroService;
@@ -24,6 +27,7 @@ public class MiembroService implements IMiembroService {
 
     private final MiembroRepository miembroRepository;
     private final PersonaRepository personaRepository;
+    private final CasaRepository casaRepository;
     @Override
     public int countByCasaId(Long idCasa) {
         return miembroRepository.countByCasaId(idCasa);
@@ -56,6 +60,33 @@ public class MiembroService implements IMiembroService {
 
         return new SuccessResult<>("Miembros encontrados", miembros);
     }
+
+    @Override
+    public SuccessResult<Void> crearMiembro(MiembroRegistroDTO miembroRegistroDTO) {
+        Casa validarCasa = casaRepository.findById(miembroRegistroDTO.getIdCasa())
+                .orElseThrow(() -> new ApiException(
+                        "La casa con id " + miembroRegistroDTO.getIdCasa() + " no existe",
+                        HttpStatus.NOT_FOUND
+                ));
+        if(miembroRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
+            throw new ApiException("El numero  de documento " +
+                    "ya se  encuentra registrado", HttpStatus.OK);
+
+        }
+        Miembro newMiembro= Miembro.builder()
+                .nombre(miembroRegistroDTO.getNombre())
+                .numeroDocumento(miembroRegistroDTO.getNumeroDocumento())
+                .telefono(miembroRegistroDTO.getTelefono())
+                .parentesco(miembroRegistroDTO.getParentesco())
+                .casa(validarCasa)
+                .estado(true)
+                .build();
+
+        miembroRepository.save(newMiembro);
+
+        return new SuccessResult<>("Miembro registrado correctamente",null);
+    }
+
     private MiembrosDTO convertirPersonaAMiembroDTO(Persona persona, String tipoMiembro) {
         UserEntity user = persona.getUser();
 
