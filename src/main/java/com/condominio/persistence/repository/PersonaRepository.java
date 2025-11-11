@@ -32,6 +32,7 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
     Optional<Persona> findArrendatarioByCasaId(@Param("casaId") Long casaId);
 
     Persona findPersonaByUser(UserEntity user);
+    boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
 }
 
 

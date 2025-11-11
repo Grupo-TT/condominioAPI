@@ -43,7 +43,7 @@ public class SolicitudReservaRecursoController {
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public SuccessResult<SolicitudReservaRecursoDTO> eliminar(@PathVariable Long id){
-        return solicitudReservaService.eliminar(id);
+        return solicitudReservaService.cancelar(id);
     }
 
     @PutMapping("/edit/{id}")

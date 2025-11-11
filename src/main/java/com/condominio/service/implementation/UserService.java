@@ -1,5 +1,7 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.PasswordUpdateDTO;
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
@@ -86,6 +88,24 @@ public class UserService implements IUserService, UserDetailsService {
 
     public Persona findPersonaByUser(UserEntity user) {
         return personaRepository.findPersonaByUser(user);
+    }
+
+    public SuccessResult<Void> changePassword(UserDetails userDetails, PasswordUpdateDTO dto) {
+
+        UserEntity userEntity = userRepository.findUserEntityByEmail(userDetails.getUsername());
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), userEntity.getContrasenia())) {
+            throw new ApiException("La contraseña actual no es correcta", HttpStatus.OK);
+        }
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new ApiException("Las contraseñas nuevas no coinciden",HttpStatus.OK);
+        }
+
+        userEntity.setContrasenia(passwordEncoder.encode(dto.getNewPassword()));
+
+        userRepository.save(userEntity);
+        return new SuccessResult<>("Password actualizada correctamente",null);
     }
 
 }
