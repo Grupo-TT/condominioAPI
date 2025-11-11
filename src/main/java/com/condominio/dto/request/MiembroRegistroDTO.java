@@ -2,13 +2,11 @@ package com.condominio.dto.request;
 
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class MiembroRegistroDTO {
+@EqualsAndHashCode(callSuper = true)
+public class MiembroRegistroDTO extends MiembroBaseDTO {
 
-    private Long idCasa;
-    private String nombre;
-    private Long numeroDocumento;
-    private Long telefono;
-    private String parentesco;
+
 }
