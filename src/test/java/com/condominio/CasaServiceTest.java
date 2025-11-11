@@ -536,9 +536,9 @@ class CasaServiceTest {
         obligacion2.setCasa(newCasa);
         obligacion2.setFechaGenerada(LocalDate.of(2025, 2, 1));
 
-        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(newCasa));
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
-        when(obligacionRepository.findByCasaIdOrderByFechaGeneradaDesc(1L))
+        when(obligacionRepository.findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(1L, EstadoPago.CONDONADO))
                 .thenReturn(List.of(obligacion1, obligacion2));
         when(pagoService.obtenerFechaUltimoPagoPorCasa(1L))
                 .thenReturn(Optional.of(LocalDate.of(2025, 3, 15)));
@@ -563,20 +563,20 @@ class CasaServiceTest {
         assertThat(dto.getObligacionesPendientes().get(0).getMotivo()).isEqualTo("Cuota de administración");
         assertThat(dto.getObligacionesPendientes().get(1).getMotivo()).isEqualTo("Fondo de reserva");
 
-        verify(casaRepository).obtenerObligacionesPorCasa();
+        verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);
-        verify(obligacionRepository).findByCasaIdOrderByFechaGeneradaDesc(1L);
+        verify(obligacionRepository).findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(1L, EstadoPago.CONDONADO);
         verify(pagoService).obtenerFechaUltimoPagoPorCasa(1L);
 
     }
 
     @Test
     void testObtenerObligacionesPorCasa_WhenNoCasas_ShouldThrowApiException() {
-        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of());
+        when(casaRepository.findAll()).thenReturn(List.of());
 
         assertThrows(ApiException.class, () -> casaService.obtenerObligacionesPorCasa());
 
-        verify(casaRepository).obtenerObligacionesPorCasa();
+        verify(casaRepository).findAll();
     }
 
     @Test
@@ -593,9 +593,10 @@ class CasaServiceTest {
         obligacion.setValorPendiente(30000);
         obligacion.setCasa(newCasa);
 
-        when(casaRepository.obtenerObligacionesPorCasa()).thenReturn(List.of(newCasa));
+        when(casaRepository.findAll()).thenReturn(List.of(newCasa));
         when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
-        when(obligacionRepository.findByCasaIdOrderByFechaGeneradaDesc(2L)).thenReturn(List.of(obligacion));
+        when(obligacionRepository.findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(2L, EstadoPago.CONDONADO))
+                .thenReturn(List.of(obligacion));
         when(pagoService.obtenerFechaUltimoPagoPorCasa(2L)).thenReturn(Optional.empty());
 
         SuccessResult<List<CasaDeudoraDTO>> result = casaService.obtenerObligacionesPorCasa();
