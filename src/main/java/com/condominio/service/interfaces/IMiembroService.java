@@ -10,4 +10,5 @@ public interface IMiembroService {
     int countByCasaId(Long idCasa);
     SuccessResult<List<MiembrosDTO>> obtenerMiembrosPorCasa(Long idCasa);
     SuccessResult<Void> crearMiembro(MiembroRegistroDTO miembroRegistroDTO);
+
 }

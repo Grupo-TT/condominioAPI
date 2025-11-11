@@ -2,6 +2,7 @@ package com.condominio.service.implementation;
 
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
+import com.condominio.dto.response.MiembrosDatosDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
@@ -28,6 +29,7 @@ public class MiembroService implements IMiembroService {
     private final MiembroRepository miembroRepository;
     private final PersonaRepository personaRepository;
     private final CasaRepository casaRepository;
+
     @Override
     public int countByCasaId(Long idCasa) {
         return miembroRepository.countByCasaId(idCasa);
@@ -85,6 +87,44 @@ public class MiembroService implements IMiembroService {
         miembroRepository.save(newMiembro);
 
         return new SuccessResult<>("Miembro registrado correctamente",null);
+    }
+
+    public List<MiembrosDatosDTO> listarMiembrosPorCasa(Long casaId) {
+        List<Miembro> miembros = miembroRepository.findByCasaId(casaId);
+
+        return miembros.stream()
+                .map(miembro -> {
+                    MiembrosDatosDTO dto = new MiembrosDatosDTO();
+                    dto.setId(miembro.getId());
+                    dto.setIdCasa(miembro.getCasa().getId());
+                    dto.setNombre(miembro.getNombre());
+                    dto.setNumeroDocumento(miembro.getNumeroDocumento());
+                    dto.setTelefono(miembro.getTelefono());
+                    dto.setParentesco(miembro.getParentesco());
+                    dto.setEstado(miembro.getEstado());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembrosDatosDTO dto) {
+        Miembro miembro = miembroRepository.findById(idMiembro)
+                .orElseThrow(() -> new ApiException(
+                        "El miembro con id " + idMiembro + " no existe",
+                        HttpStatus.NOT_FOUND
+                ));
+        if(miembroRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), idMiembro)) {
+            throw new ApiException("El numero de documento ya  se encuentra registrado", HttpStatus.OK);
+        }
+        miembro.setNombre(dto.getNombre());
+        miembro.setNumeroDocumento(dto.getNumeroDocumento());
+        miembro.setTelefono(dto.getTelefono());
+        miembro.setParentesco(dto.getParentesco());
+
+        miembroRepository.save(miembro);
+
+        return new SuccessResult<>("Miembro actualizado correctamente", null);
     }
 
     private MiembrosDTO convertirPersonaAMiembroDTO(Persona persona, String tipoMiembro) {

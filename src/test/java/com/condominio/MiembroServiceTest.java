@@ -2,6 +2,7 @@ package com.condominio;
 
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
+import com.condominio.dto.response.MiembrosDatosDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
@@ -214,5 +215,143 @@ class MiembroServiceTest {
 
 
         verify(miembroRepository, never()).save(any(Miembro.class));
+    }
+    @Test
+    void testListarMiembrosPorCasa_ShouldReturnMappedDtos() {
+
+        Long casaId = 1L;
+
+
+        Casa newCasa = new Casa();
+        newCasa.setId(casaId);
+
+
+        Miembro miembro1 = new Miembro();
+        miembro1.setId(10L);
+        miembro1.setCasa(newCasa);
+        miembro1.setNombre("Juan Pérez");
+        miembro1.setNumeroDocumento(12345L);
+        miembro1.setTelefono(3001112222L);
+        miembro1.setParentesco("Hijo");
+        miembro1.setEstado(true);
+
+        Miembro miembro2 = new Miembro();
+        miembro2.setId(11L);
+        miembro2.setCasa(newCasa);
+        miembro2.setNombre("Ana Gómez");
+        miembro2.setNumeroDocumento(67890L);
+        miembro2.setTelefono(3003334444L);
+        miembro2.setParentesco("Esposa");
+        miembro2.setEstado(false);
+
+
+        when(miembroRepository.findByCasaId(casaId))
+                .thenReturn(List.of(miembro1, miembro2));
+
+
+        List<MiembrosDatosDTO> result = miembroService.listarMiembrosPorCasa(casaId);
+
+
+
+        MiembrosDatosDTO dto1 = result.getFirst();
+        assertThat(dto1.getId()).isEqualTo(10L);
+        assertThat(dto1.getIdCasa()).isEqualTo(casaId);
+        assertThat(dto1.getNombre()).isEqualTo("Juan Pérez");
+        assertThat(dto1.getNumeroDocumento()).isEqualTo(12345L);
+        assertThat(dto1.getTelefono()).isEqualTo(3001112222L);
+        assertThat(dto1.getParentesco()).isEqualTo("Hijo");
+        assertThat(dto1.getEstado()).isEqualTo(true);
+
+        MiembrosDatosDTO dto2 = result.get(1);
+        assertThat(dto2.getId()).isEqualTo(11L);
+        assertThat(dto2.getIdCasa()).isEqualTo(casaId);
+        assertThat(dto2.getNombre()).isEqualTo("Ana Gómez");
+        assertThat(dto2.getNumeroDocumento()).isEqualTo(67890L);
+        assertThat(dto2.getTelefono()).isEqualTo(3003334444L);
+        assertThat(dto2.getParentesco()).isEqualTo("Esposa");
+        assertThat(dto2.getEstado()).isEqualTo(false);
+
+        verify(miembroRepository).findByCasaId(casaId);
+    }
+
+    @Test
+    void testActualizarMiembro_ShouldUpdateSuccessfully() {
+
+        Long idMiembro = 1L;
+
+        Miembro miembroExistente = new Miembro();
+        miembroExistente.setId(idMiembro);
+        miembroExistente.setNombre("Carlos");
+        miembroExistente.setNumeroDocumento(12345L);
+        miembroExistente.setTelefono(3001112222L);
+        miembroExistente.setParentesco("Padre");
+
+        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        dto.setNombre("Carlos López");
+        dto.setNumeroDocumento(99999L);
+        dto.setTelefono(3012223333L);
+        dto.setParentesco("Padre");
+
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembroExistente));
+        when(miembroRepository.existsByNumeroDocumentoAndIdNot(99999L, idMiembro)).thenReturn(false);
+
+        SuccessResult<Void> result = miembroService.actualizarMiembro(idMiembro, dto);
+
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Miembro actualizado correctamente");
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository).existsByNumeroDocumentoAndIdNot(99999L, idMiembro);
+        verify(miembroRepository).save(miembroExistente);
+
+        assertThat(miembroExistente.getNombre()).isEqualTo("Carlos López");
+        assertThat(miembroExistente.getNumeroDocumento()).isEqualTo(99999L);
+        assertThat(miembroExistente.getTelefono()).isEqualTo(3012223333L);
+        assertThat(miembroExistente.getParentesco()).isEqualTo("Padre");
+    }
+
+    @Test
+    void testActualizarMiembro_WhenMiembroNotFound_ShouldThrowException() {
+        Long idMiembro = 99L;
+        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        dto.setNumeroDocumento(123L);
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.empty());
+
+        ApiException thrown = assertThrows(ApiException.class,
+                () -> miembroService.actualizarMiembro(idMiembro, dto));
+
+        assertThat(thrown.getMessage()).isEqualTo("El miembro con id 99 no existe");
+        assertThat(thrown.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository, never()).save(any());
+    }
+
+    @Test
+    void testActualizarMiembro_WhenDocumentoDuplicado_ShouldThrowException() {
+        Long idMiembro = 1L;
+
+        Miembro miembroExistente = new Miembro();
+        miembroExistente.setId(idMiembro);
+        miembroExistente.setNumeroDocumento(12345L);
+
+        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        dto.setNumeroDocumento(123L);
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembroExistente));
+        when(miembroRepository.existsByNumeroDocumentoAndIdNot(123L, idMiembro)).thenReturn(true);
+
+        ApiException thrown = assertThrows(ApiException.class,
+                () -> miembroService.actualizarMiembro(idMiembro, dto));
+
+        assertThat(thrown.getMessage()).isEqualTo("El numero de documento ya  se encuentra registrado");
+        assertThat(thrown.getStatus()).isEqualTo(HttpStatus.OK);
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository).existsByNumeroDocumentoAndIdNot(123L, idMiembro);
+        verify(miembroRepository, never()).save(any());
     }
 }

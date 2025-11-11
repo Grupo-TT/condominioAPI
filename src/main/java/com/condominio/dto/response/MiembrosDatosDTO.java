@@ -8,4 +8,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class MiembrosDatosDTO extends MiembroBaseDTO {
     private Long id;
+    private Boolean estado;
+
 }
