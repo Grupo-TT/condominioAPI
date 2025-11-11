@@ -90,6 +90,7 @@ public class SolicitudReparacionLocativaService implements ISolicitudReparacionL
 
         solicitud.setEstadoSolicitud(EstadoSolicitud.RECHAZADA);
         SolicitudReparacionLocativaDTO soliDTO = saveNewSoliAndReparacion(solicitud, solicitante);
+        solicitud.setComentarios(comentarios);
         soliDTO.setComentarios(comentarios);
         return new SuccessResult<>("Solicitud de Reparacion desaprobada", soliDTO);
     }
