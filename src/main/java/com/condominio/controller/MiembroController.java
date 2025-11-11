@@ -51,7 +51,7 @@ public class MiembroController {
         Persona persona = personaService.getPersonaFromUserDetails(userDetails);
         Long casaId = persona.getCasa().getId();
 
-        List<MiembrosDatosDTO> miembros = miembroService.listarMiembrosPorCasa(casaId);
+        List<MiembrosDatosDTO> miembros = miembroService.listarMiembrosPorCasa(obtenerCasaId(userDetails));
         return ResponseEntity.ok(miembros);
     }
     @PatchMapping("/{idMiembro}/edit-estado")
@@ -59,5 +59,10 @@ public class MiembroController {
     public ResponseEntity<SuccessResult<Void>> toggleEstado(@PathVariable Long idMiembro) {
         SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro);
         return ResponseEntity.ok(result);
+    }
+
+    private Long obtenerCasaId(UserDetails userDetails) {
+        Persona persona = personaService.getPersonaFromUserDetails(userDetails);
+        return persona.getCasa().getId();
     }
 }
