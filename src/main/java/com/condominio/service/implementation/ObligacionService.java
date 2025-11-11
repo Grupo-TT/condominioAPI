@@ -225,25 +225,25 @@ public class ObligacionService implements IObligacionService {
         List<Casa> casas = casaRepository.findAll();
 
         for (Casa casa : casas) {
-            Obligacion obligacion = Obligacion.builder()
-                    .fechaGenerada(hoy)
-                    .fechaLimite(hoy.plusDays(10))
-                    .monto(MONTO_ADMIN)
-                    .tasaInteres(TASA_INTERES)
-                    .motivo(motivo)
-                    .titulo(titulo)
-                    .tipoPago(TipoPago.DINERO)
-                    .tipoObligacion(TipoObligacion.ADMINISTRACION)
-                    .estadoPago(EstadoPago.PENDIENTE)
-                    .casa(casa)
-                    .build();
-
-            obligacionRepository.save(obligacion);
-
             Optional<Persona> propietarioOpt = personaRepository.findPropietarioByCasaId(casa.getId());
 
             if (propietarioOpt.isPresent()) {
                 Persona propietario = propietarioOpt.get();
+
+                Obligacion obligacion = Obligacion.builder()
+                        .fechaGenerada(hoy)
+                        .fechaLimite(hoy.plusDays(10))
+                        .monto(MONTO_ADMIN)
+                        .tasaInteres(TASA_INTERES)
+                        .motivo(motivo)
+                        .titulo(titulo)
+                        .tipoPago(TipoPago.DINERO)
+                        .tipoObligacion(TipoObligacion.ADMINISTRACION)
+                        .estadoPago(EstadoPago.PENDIENTE)
+                        .casa(casa)
+                        .build();
+
+                obligacionRepository.save(obligacion);
 
                 MostrarObligacionDTO mostrarObligacionDTO = MostrarObligacionDTO.builder()
                         .titulo(titulo)

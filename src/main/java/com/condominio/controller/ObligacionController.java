@@ -60,6 +60,6 @@ public class ObligacionController {
     @PostMapping("/generar-administracion-mensual")
     public ResponseEntity<String> generarObligacionesMensualesManual() {
         obligacionService.generarObligacionesMensuales();
-        return ResponseEntity.ok("✅ Obligaciones mensuales generadas manualmente con éxito");
+        return ResponseEntity.ok("Obligaciones mensuales generadas manualmente con éxito");
     }
 }
