@@ -1,9 +1,12 @@
 package com.condominio;
 
+import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.EstadoSolicitud;
+import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RecursoComun;
+import com.condominio.persistence.model.UserEntity;
 import com.condominio.service.implementation.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -20,6 +23,7 @@ import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -243,4 +247,129 @@ class EmailServiceTest {
         verify(templateEngine, times(1)).process(anyString(), any(Context.class));
         verify(mailSender, never()).send(any(MimeMessage.class)); // no debe intentar enviar
     }
+
+    @Test
+    void testGenerarHtmlObligacionMensual_mockeado() {
+        // Arrange
+        MostrarObligacionDTO dto = new MostrarObligacionDTO();
+        dto.setTitulo("Administración Octubre 2025");
+        dto.setMotivo("Cobro correspondiente a la administración de octubre 2025");
+        dto.setCasa(1);
+        dto.setMonto(120000);
+        dto.setFecha(LocalDate.of(2025, 10, 1));
+
+        when(templateEngine.process(anyString(), any(Context.class)))
+                .thenReturn("<html>Título: Administración Octubre 2025</html>");
+
+        // Act
+        String html = emailService.generarHtmlObligacionMensual(dto);
+
+        // Assert
+        assertNotNull(html);
+        assertTrue(html.contains("Administración Octubre 2025"));
+        verify(templateEngine, times(1)).process(eq("email/obligacion-mensual"), any(Context.class));
+    }
+
+    @Test
+    void testEnviarObligacionMensual_mockeado() throws Exception {
+        // Arrange
+        EmailService spyEmailService = spy(emailService);
+
+        MostrarObligacionDTO dto = new MostrarObligacionDTO();
+        dto.setTitulo("Administración Octubre 2025");
+        dto.setMotivo("Cobro correspondiente a la administración de octubre 2025");
+        dto.setCasa(1);
+        dto.setMonto(120000);
+        dto.setFecha(LocalDate.of(2025, 10, 1));
+
+        String destinatario = "propietario@correo.com";
+
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+        doReturn("<html>mock html</html>")
+                .when(spyEmailService)
+                .generarHtmlObligacionMensual(dto);
+
+        // Act
+        spyEmailService.enviarObligacionMensual(destinatario, dto);
+
+        // Assert
+        verify(mailSender, times(1)).createMimeMessage();
+        verify(mailSender, times(1)).send(mensaje);
+        verify(spyEmailService, times(1)).generarHtmlObligacionMensual(dto);
+    }
+
+    @Test
+    void testEnviarObligacionesMensualesMasivas_mockeado() throws Exception {
+        // Arrange
+        EmailService spyEmailService = spy(emailService);
+
+        MostrarObligacionDTO dto = new MostrarObligacionDTO();
+        dto.setTitulo("Administración Noviembre 2025");
+        dto.setMotivo("Cobro correspondiente a la administración de noviembre 2025");
+        dto.setCasa(2);
+        dto.setMonto(90000);
+        dto.setFecha(LocalDate.of(2025, 11, 1));
+
+        Persona persona1 = new Persona();
+        UserEntity user1 = new UserEntity();
+        user1.setEmail("uno@correo.com");
+        persona1.setUser(user1);
+
+        Persona persona2 = new Persona();
+        UserEntity user2 = new UserEntity();
+        user2.setEmail("dos@correo.com");
+        persona2.setUser(user2);
+
+        List<Persona> personas = List.of(persona1, persona2);
+
+        // Simula que la función individual funciona
+        doNothing().when(spyEmailService).enviarObligacionMensual(anyString(), any(MostrarObligacionDTO.class));
+
+        // Act
+        spyEmailService.enviarObligacionesMensualesMasivas(personas, dto);
+
+        // Assert
+        verify(spyEmailService, times(2)).enviarObligacionMensual(anyString(), eq(dto));
+    }
+
+    @Test
+    void testEnviarObligacionesMensualesMasivas_conErrorEnUnaPersona() throws Exception {
+        // Arrange
+        EmailService spyEmailService = spy(emailService);
+
+        MostrarObligacionDTO dto = new MostrarObligacionDTO();
+        dto.setTitulo("Administración Diciembre 2025");
+        dto.setMotivo("Cobro de diciembre 2025");
+        dto.setCasa(3);
+        dto.setMonto(95000);
+        dto.setFecha(LocalDate.of(2025, 12, 1));
+
+        Persona persona1 = new Persona();
+        UserEntity user1 = new UserEntity();
+        user1.setEmail("ok@correo.com");
+        persona1.setUser(user1);
+
+        Persona persona2 = new Persona();
+        UserEntity user2 = new UserEntity();
+        user2.setEmail("falla@correo.com");
+        persona2.setUser(user2);
+
+        List<Persona> personas = List.of(persona1, persona2);
+
+        doNothing()
+                .when(spyEmailService)
+                .enviarObligacionMensual(eq("ok@correo.com"), any(MostrarObligacionDTO.class));
+        doThrow(new MessagingException("Error SMTP"))
+                .when(spyEmailService)
+                .enviarObligacionMensual(eq("falla@correo.com"), any(MostrarObligacionDTO.class));
+
+        // Act
+        spyEmailService.enviarObligacionesMensualesMasivas(personas, dto);
+
+        // Assert
+        verify(spyEmailService, times(2)).enviarObligacionMensual(anyString(), eq(dto));
+    }
+
 }

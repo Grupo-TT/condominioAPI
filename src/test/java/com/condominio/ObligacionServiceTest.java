@@ -2,14 +2,9 @@ package com.condominio;
 
 import com.condominio.dto.request.MultaActualizacionDTO;
 import com.condominio.dto.request.MultaRegistroDTO;
-import com.condominio.dto.response.EstadoCuentaDTO;
-import com.condominio.dto.response.MultasPorCasaDTO;
-import com.condominio.dto.response.PersonaSimpleDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.CasaRepository;
-import com.condominio.persistence.repository.ObligacionRepository;
-import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.EmailService;
 import com.condominio.service.implementation.ObligacionService;
 import com.condominio.service.implementation.PdfService;
@@ -18,10 +13,7 @@ import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.*;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,6 +53,11 @@ class ObligacionServiceTest {
 
     @Mock
     private PersonaService personaService;
+
+    @Mock
+    private CargoAdministracionRepository cargoAdministracionRepository;
+    @Mock
+    private TasaDeInteresRepository tasaDeInteresRepository;
 
     private Casa casa;
     private Persona propietario;
@@ -375,5 +372,56 @@ class ObligacionServiceTest {
         // Assert
         assertThat(resultado.data()).hasSize(1);
         assertThat(resultado.data().get(0).getPropietario()).isEqualTo("Sin propietario");
+    }
+
+    @Test
+    void generarObligacionesMensuales_deberiaCrearObligacionesParaCasasConPropietario() throws MessagingException {
+        // Datos de prueba
+        CargoAdministracion cargoAdmin = new CargoAdministracion();
+        cargoAdmin.setNuevoValor(50000);
+
+        TasaDeInteres tasaInteres = new TasaDeInteres();
+        tasaInteres.setNuevoValor(0.02);
+
+        Casa casaConPropietario = new Casa();
+        casaConPropietario.setId(1L);
+        casaConPropietario.setNumeroCasa(1);
+
+        Casa casaSinPropietario = new Casa();
+        casaSinPropietario.setId(2L);
+        casaSinPropietario.setNumeroCasa(2);
+
+        // Mock repositorios
+        when(cargoAdministracionRepository.findAll()).thenReturn(List.of(cargoAdmin));
+        when(tasaDeInteresRepository.findAll()).thenReturn(List.of(tasaInteres));
+        when(casaRepository.findAll()).thenReturn(List.of(casaConPropietario, casaSinPropietario));
+        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
+        when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
+
+        // Ejecutar
+        obligacionService.generarObligacionesMensuales();
+
+        // Verificaciones
+        ArgumentCaptor<Obligacion> obligacionCaptor = ArgumentCaptor.forClass(Obligacion.class);
+        verify(obligacionRepository, times(1)).save(obligacionCaptor.capture());
+
+        Obligacion obligacionGuardada = obligacionCaptor.getValue();
+
+        assertThat(obligacionGuardada.getMonto()).isEqualTo(50000);
+        assertThat(obligacionGuardada.getTasaInteres()).isEqualTo(0.02);
+        assertThat(obligacionGuardada.getCasa()).isEqualTo(casaConPropietario);
+        assertThat(obligacionGuardada.getTipoPago()).isEqualTo(TipoPago.DINERO);
+        assertThat(obligacionGuardada.getTipoObligacion()).isEqualTo(TipoObligacion.ADMINISTRACION);
+        assertThat(obligacionGuardada.getEstadoPago()).isEqualTo(EstadoPago.PENDIENTE);
+
+        // Verificar que solo se envió un correo
+        verify(emailService, times(1)).enviarObligacionMensual(
+                eq("propietario@mail.com"),
+                any(MostrarObligacionDTO.class)
+        );
+
+        // Verificar que no se intentó crear obligación para casa sin propietario
+        verify(personaRepository, times(1)).findPropietarioByCasaId(1L);
+        verify(personaRepository, times(1)).findPropietarioByCasaId(2L);
     }
 }
