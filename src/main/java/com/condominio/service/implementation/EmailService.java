@@ -157,7 +157,7 @@ public class EmailService {
                 );
             } catch (MessagingException e) {
 
-                System.err.println("No se pudo enviar correo a " + persona.getUser().getEmail() + ": " + e.getMessage());
+                log.error("No se pudo enviar correo a {}: {}", persona.getUser().getEmail(), e.getMessage());
             }
         });
     }
