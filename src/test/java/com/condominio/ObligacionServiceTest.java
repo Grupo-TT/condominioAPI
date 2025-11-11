@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -387,41 +388,48 @@ class ObligacionServiceTest {
         casaConPropietario.setId(1L);
         casaConPropietario.setNumeroCasa(1);
 
-        Casa casaSinPropietario = new Casa();
-        casaSinPropietario.setId(2L);
-        casaSinPropietario.setNumeroCasa(2);
+        UserEntity usuario = new UserEntity();
+        usuario.setEmail("propietario@mail.com");
 
-        // Mock repositorios
+        Persona propietario = new Persona();
+        propietario.setUser(usuario);
+        propietario.setCasa(casaConPropietario);
+
+        // Mocks
         when(cargoAdministracionRepository.findAll()).thenReturn(List.of(cargoAdmin));
         when(tasaDeInteresRepository.findAll()).thenReturn(List.of(tasaInteres));
-        when(casaRepository.findAll()).thenReturn(List.of(casaConPropietario, casaSinPropietario));
-        when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
-        when(personaRepository.findPropietarioByCasaId(2L)).thenReturn(Optional.empty());
+        when(personaRepository.findAllPropietariosConCasa()).thenReturn(List.of(propietario));
 
         // Ejecutar
         obligacionService.generarObligacionesMensuales();
 
-        // Verificaciones
-        ArgumentCaptor<Obligacion> obligacionCaptor = ArgumentCaptor.forClass(Obligacion.class);
-        verify(obligacionRepository, times(1)).save(obligacionCaptor.capture());
+        // Verificar que se llamó a saveAll con una lista válida
+        verify(obligacionRepository, times(1)).saveAll(argThat(iterable -> {
+            if (iterable == null) return false;
 
-        Obligacion obligacionGuardada = obligacionCaptor.getValue();
+            List<Obligacion> lista = new ArrayList<>();
+            iterable.forEach(lista::add);
 
-        assertThat(obligacionGuardada.getMonto()).isEqualTo(50000);
-        assertThat(obligacionGuardada.getTasaInteres()).isEqualTo(0.02);
-        assertThat(obligacionGuardada.getCasa()).isEqualTo(casaConPropietario);
-        assertThat(obligacionGuardada.getTipoPago()).isEqualTo(TipoPago.DINERO);
-        assertThat(obligacionGuardada.getTipoObligacion()).isEqualTo(TipoObligacion.ADMINISTRACION);
-        assertThat(obligacionGuardada.getEstadoPago()).isEqualTo(EstadoPago.PENDIENTE);
+            if (lista.size() != 1) return false;
+            Obligacion o = lista.get(0);
 
-        // Verificar que solo se envió un correo
+            return o.getMonto() == 50000
+                    && o.getTasaInteres() == 0.02
+                    && o.getCasa().equals(casaConPropietario)
+                    && o.getTipoPago() == TipoPago.DINERO
+                    && o.getTipoObligacion() == TipoObligacion.ADMINISTRACION
+                    && o.getEstadoPago() == EstadoPago.PENDIENTE;
+        }));
+
+
+        // Verificar envío de correo
         verify(emailService, times(1)).enviarObligacionMensual(
                 eq("propietario@mail.com"),
                 any(MostrarObligacionDTO.class)
         );
 
-        // Verificar que no se intentó crear obligación para casa sin propietario
-        verify(personaRepository, times(1)).findPropietarioByCasaId(1L);
-        verify(personaRepository, times(1)).findPropietarioByCasaId(2L);
+        // Verificar que no hubo llamadas adicionales inesperadas
+        verifyNoMoreInteractions(obligacionRepository, emailService);
     }
+
 }

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -41,7 +42,7 @@ public class ObligacionService implements IObligacionService {
     private final IPersonaService personaService;
     private final IPagoService pagoService;
     private final IPdfService pdfService;
-    private  final  EmailService emailService;
+    private final EmailService emailService;
     private static final Logger log = LoggerFactory.getLogger(ObligacionService.class);
 
     private final CargoAdministracionRepository cargoAdministracionRepository;
@@ -130,6 +131,7 @@ public class ObligacionService implements IObligacionService {
 
         return new SuccessResult<>("Multa actualizada correctamente", actualizada);
     }
+
     public boolean estaAlDia(Long idCasa) {
 
         boolean tienePendientes = obligacionRepository.existsByCasaIdAndEstadoPago(idCasa, EstadoPago.PENDIENTE);
@@ -225,49 +227,46 @@ public class ObligacionService implements IObligacionService {
         int montoAdmin = (int) cargoAdmin.getNuevoValor();
         double interes = tasaInteres.getNuevoValor();
 
-        List<Casa> casas = casaRepository.findAll();
+        List<Persona> propietarios = personaRepository.findAllPropietariosConCasa();
+        List<Obligacion> obligaciones = new ArrayList<>();
 
-        for (Casa casa : casas) {
-            Optional<Persona> propietarioOpt = personaRepository.findPropietarioByCasaId(casa.getId());
+        for (Persona propietario : propietarios) {
+            Casa casa = propietario.getCasa();
 
-            if (propietarioOpt.isPresent()) {
-                Persona propietario = propietarioOpt.get();
+            Obligacion obligacion = Obligacion.builder()
+                    .fechaGenerada(hoy)
+                    .fechaLimite(hoy.plusDays(10))
+                    .monto(montoAdmin)
+                    .tasaInteres(interes)
+                    .motivo(motivo)
+                    .titulo(titulo)
+                    .tipoPago(TipoPago.DINERO)
+                    .tipoObligacion(TipoObligacion.ADMINISTRACION)
+                    .estadoPago(EstadoPago.PENDIENTE)
+                    .casa(casa)
+                    .build();
 
-                Obligacion obligacion = Obligacion.builder()
-                        .fechaGenerada(hoy)
-                        .fechaLimite(hoy.plusDays(10))
-                        .monto(montoAdmin)
-                        .tasaInteres(interes)
-                        .motivo(motivo)
-                        .titulo(titulo)
-                        .tipoPago(TipoPago.DINERO)
-                        .tipoObligacion(TipoObligacion.ADMINISTRACION)
-                        .estadoPago(EstadoPago.PENDIENTE)
-                        .casa(casa)
-                        .build();
+            obligaciones.add(obligacion);
+        }
 
-                obligacionRepository.save(obligacion);
+        obligacionRepository.saveAll(obligaciones);
 
-                MostrarObligacionDTO mostrarObligacionDTO = MostrarObligacionDTO.builder()
-                        .titulo(titulo)
-                        .motivo(motivo)
-                        .casa(casa.getNumeroCasa())
-                        .monto(montoAdmin)
-                        .fecha(hoy)
-                        .build();
+        for (Persona propietario : propietarios) {
+            Casa casa = propietario.getCasa();
 
-                try {
-                    emailService.enviarObligacionMensual(
-                            propietario.getUser().getEmail(),
-                            mostrarObligacionDTO
-                    );
-                } catch (MessagingException e) {
-                    log.error("No se pudo enviar correo a {}: {}", propietario.getUser().getEmail(), e.getMessage());
-                }
-            } else {
-                log.warn("No se encontró propietario para la casa con ID: {}", casa.getId());
+            MostrarObligacionDTO dto = MostrarObligacionDTO.builder()
+                    .titulo(titulo)
+                    .motivo(motivo)
+                    .casa(casa.getNumeroCasa())
+                    .monto(montoAdmin)
+                    .fecha(hoy)
+                    .build();
+
+            try {
+                emailService.enviarObligacionMensual(propietario.getUser().getEmail(), dto);
+            } catch (MessagingException e) {
+                log.error("No se pudo enviar correo a {}: {}", propietario.getUser().getEmail(), e.getMessage());
             }
-
         }
     }
 }
