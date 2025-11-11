@@ -127,6 +127,24 @@ public class MiembroService implements IMiembroService {
         return new SuccessResult<>("Miembro actualizado correctamente", null);
     }
 
+    public SuccessResult<Void> ActualizarEstadoMiembro(Long idMiembro) {
+        Miembro miembro = miembroRepository.findById(idMiembro)
+                .orElseThrow(() -> new ApiException(
+                        "El miembro con id " + idMiembro + " no existe",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        miembro.setEstado(!miembro.getEstado());
+        miembroRepository.save(miembro);
+
+        String mensaje = miembro.getEstado()
+                ? "Miembro habilitado correctamente"
+                : "Miembro deshabilitado correctamente";
+
+        return new SuccessResult<>(mensaje, null);
+    }
+
+
     private MiembrosDTO convertirPersonaAMiembroDTO(Persona persona, String tipoMiembro) {
         UserEntity user = persona.getUser();
 

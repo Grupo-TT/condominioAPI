@@ -37,6 +37,7 @@ public class MiembroController {
         return ResponseEntity.ok(miembroService.crearMiembro(miembroRegistroDTO));
     }
     @PutMapping("/{idMiembro}/edit")
+    @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
     public ResponseEntity<SuccessResult<Void>> actualizarMiembro(
             @PathVariable Long idMiembro,
             @RequestBody MiembrosDatosDTO dto
@@ -45,11 +46,18 @@ public class MiembroController {
     }
 
     @GetMapping("/all-casa-members")
+    @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
     public ResponseEntity<List<MiembrosDatosDTO>> obtenerMiembros(@AuthenticationPrincipal UserDetails userDetails) {
         Persona persona = personaService.getPersonaFromUserDetails(userDetails);
         Long casaId = persona.getCasa().getId();
 
         List<MiembrosDatosDTO> miembros = miembroService.listarMiembrosPorCasa(casaId);
         return ResponseEntity.ok(miembros);
+    }
+    @PatchMapping("/{idMiembro}/edit-estado")
+    @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
+    public ResponseEntity<SuccessResult<Void>> toggleEstado(@PathVariable Long idMiembro) {
+        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro);
+        return ResponseEntity.ok(result);
     }
 }

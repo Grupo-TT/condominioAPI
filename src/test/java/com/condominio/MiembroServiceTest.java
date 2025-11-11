@@ -354,4 +354,59 @@ class MiembroServiceTest {
         verify(miembroRepository).existsByNumeroDocumentoAndIdNot(123L, idMiembro);
         verify(miembroRepository, never()).save(any());
     }
+
+    @Test
+    void testActualizarEstadoMiembro_ShouldHabilitarSiEstabaDeshabilitado() {
+        Long idMiembro = 1L;
+
+        Miembro newMiembro = new Miembro();
+        newMiembro.setId(idMiembro);
+        newMiembro.setEstado(false); // estaba deshabilitado
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(newMiembro));
+
+        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro);
+
+        assertThat(newMiembro.getEstado()).isTrue();
+        assertThat(result.message()).isEqualTo("Miembro habilitado correctamente");
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository).save(newMiembro);
+    }
+
+    @Test
+    void testActualizarEstadoMiembro_ShouldDeshabilitarSiEstabaHabilitado() {
+        Long idMiembro = 2L;
+
+        Miembro newMiembro = new Miembro();
+        newMiembro.setId(idMiembro);
+        newMiembro.setEstado(true); // estaba habilitado
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(newMiembro));
+
+        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro);
+
+        assertThat(newMiembro.getEstado()).isFalse();
+        assertThat(result.message()).isEqualTo("Miembro deshabilitado correctamente");
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository).save(newMiembro);
+    }
+
+    @Test
+    void testActualizarEstadoMiembro_WhenMiembroNotFound_ShouldThrowException() {
+        Long idMiembro = 99L;
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.empty());
+
+        ApiException thrown = assertThrows(ApiException.class,
+                () -> miembroService.ActualizarEstadoMiembro(idMiembro));
+
+        assertThat(thrown.getMessage()).isEqualTo("El miembro con id 99 no existe");
+        assertThat(thrown.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository, never()).save(any());
+    }
+
 }
