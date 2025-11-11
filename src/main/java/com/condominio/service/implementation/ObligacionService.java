@@ -5,9 +5,7 @@ import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.CasaRepository;
-import com.condominio.persistence.repository.ObligacionRepository;
-import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.interfaces.IObligacionService;
 import com.condominio.service.interfaces.IPagoService;
 import com.condominio.service.interfaces.IPdfService;
@@ -45,6 +43,9 @@ public class ObligacionService implements IObligacionService {
     private final IPdfService pdfService;
     private  final  EmailService emailService;
     private static final Logger log = LoggerFactory.getLogger(ObligacionService.class);
+
+    private final CargoAdministracionRepository cargoAdministracionRepository;
+    private final TasaDeInteresRepository tasaDeInteresRepository;
 
     @Override
     public SuccessResult<EstadoCuentaDTO> estadoDeCuentaCasa(Long idCasa) {
@@ -209,10 +210,6 @@ public class ObligacionService implements IObligacionService {
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
     }
 
-    //Prueba temporal del crear obligaciones automaticas
-    private static final int MONTO_ADMIN = 200000;
-    private static final int TASA_INTERES = 1;
-
     @Scheduled(cron = "0 0 0 1 * *", zone = "America/Bogota")
     public void generarObligacionesMensuales() {
         LocalDate hoy = LocalDate.now();
@@ -221,6 +218,13 @@ public class ObligacionService implements IObligacionService {
 
         String titulo = String.format("Administración %s %d", mes, anio);
         String motivo = String.format("Cobro correspondiente a la administración de %s %d", mes, anio);
+
+        // 💡 Como solo hay un registro, obtenemos directamente el primero
+        CargoAdministracion cargoAdmin = cargoAdministracionRepository.findAll().iterator().next();
+        TasaDeInteres tasaInteres = tasaDeInteresRepository.findAll().iterator().next();
+
+        int montoAdmin = (int) cargoAdmin.getNuevoValor();
+        double interes = tasaInteres.getNuevoValor();
 
         List<Casa> casas = casaRepository.findAll();
 
@@ -233,8 +237,8 @@ public class ObligacionService implements IObligacionService {
                 Obligacion obligacion = Obligacion.builder()
                         .fechaGenerada(hoy)
                         .fechaLimite(hoy.plusDays(10))
-                        .monto(MONTO_ADMIN)
-                        .tasaInteres(TASA_INTERES)
+                        .monto(montoAdmin)
+                        .tasaInteres(interes)
                         .motivo(motivo)
                         .titulo(titulo)
                         .tipoPago(TipoPago.DINERO)
@@ -249,7 +253,7 @@ public class ObligacionService implements IObligacionService {
                         .titulo(titulo)
                         .motivo(motivo)
                         .casa(casa.getNumeroCasa())
-                        .monto(MONTO_ADMIN)
+                        .monto(montoAdmin)
                         .fecha(hoy)
                         .build();
 

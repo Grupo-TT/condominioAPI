@@ -22,7 +22,7 @@ public class Obligacion {
     private int monto;
 
     private LocalDate fechaLimite;
-    private int tasaInteres;
+    private double tasaInteres;
     private int interes;
     @Column(columnDefinition = "int default 0")
     private int montoPagado;
