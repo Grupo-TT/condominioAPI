@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface ISolicitudReparacionLocativaService {
     SuccessResult<List<SolicitudReparacionLocativaDTO>> findByEstado(EstadoSolicitud estado);
+    SuccessResult<SolicitudReparacionLocativaDTO> update(Long id, SolicitudReparacionLocativaDTO solicitud);
+    SuccessResult<SolicitudReparacionLocativaDTO> aprobar(Long id);
+    SuccessResult<SolicitudReparacionLocativaDTO> rechazar(Long id, String comentarios);
+
 }
