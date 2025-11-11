@@ -3,6 +3,7 @@ package com.condominio.controller;
 import com.condominio.dto.request.RecursoComunDTO;
 import com.condominio.dto.response.RecursoComunPropiDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.service.interfaces.IRecursoComunService;
 import lombok.RequiredArgsConstructor;
@@ -48,28 +49,12 @@ public class RecursoComunController {
 
     }
 
-    @PutMapping("/enable/{id}")
+    @PutMapping("/change-availability/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResult<RecursoComun>> habilitar(
-            @PathVariable Long id) {
-        SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
-        return ResponseEntity.ok(result);
-    }
-
-    @PutMapping("/disable/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResult<RecursoComun>> deshabilitar(
-            @PathVariable Long id) {
-        SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
-        return ResponseEntity.ok(result);
-    }
-
-    @PutMapping("/maintenance/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResult<RecursoComun>> enMantenimiento(
-            @PathVariable Long id
-    ) {
-        SuccessResult<RecursoComun> result = recursoComunService.enMantenimiento(id);
+    public ResponseEntity<SuccessResult<RecursoComun>> cambiarDisponibilidad(
+            @PathVariable Long id,
+            @RequestParam("disponibilidad") DisponibilidadRecurso disponibilidad) {
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, disponibilidad);
         return ResponseEntity.ok(result);
     }
 

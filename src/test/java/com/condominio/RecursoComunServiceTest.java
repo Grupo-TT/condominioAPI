@@ -243,118 +243,58 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void habilitar_shouldSetEstadoTrue_andSave_whenResourceExists() {
-
+    void cambiarDisponibilidad_shouldSetToDisponible_whenResourceExistsAndWasNotDisponible() {
         Long id = 1L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
 
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-        when(recursoComunRepository.save(any(RecursoComun.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
 
-        SuccessResult<RecursoComun> result = recursoComunService.habilitar(id);
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE);
 
-        assertNotNull(result);
-        assertEquals("Recurso habilitado exitosamente", result.message());
-        assertEquals(DisponibilidadRecurso.DISPONIBLE, result.data().getDisponibilidadRecurso());
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Recurso habilitado exitosamente");
+        assertThat(result.data()).isEqualTo(saved);
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.DISPONIBLE);
     }
 
     @Test
-    void deshabilitar_shouldSetEstadoFalse_andSave_whenResourceExists() {
-
+    void cambiarDisponibilidad_shouldSetToNoDisponible_whenResourceExistsAndWasNotNoDisponible() {
         Long id = 2L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
 
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-        when(recursoComunRepository.save(any(RecursoComun.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
 
-        SuccessResult<RecursoComun> result = recursoComunService.deshabilitar(id);
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.NO_DISPONIBLE);
 
-        assertNotNull(result);
-        assertEquals("Recurso deshabilitado exitosamente", result.message());
-        assertEquals(DisponibilidadRecurso.NO_DISPONIBLE, result.data().getDisponibilidadRecurso(),
-                "El recurso debe quedar con disponibilidad NO_DISPONIBLE");
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Recurso deshabilitado exitosamente");
+        assertThat(result.data()).isEqualTo(saved);
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.NO_DISPONIBLE);
     }
 
     @Test
-    void habilitar_shouldThrowApiException_whenResourceNotFound() {
-
+    void cambiarDisponibilidad_shouldSetToEnMantenimiento_whenResourceExistsAndWasNotEnMantenimiento() {
         Long id = 3L;
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
-
-        assertEquals("El recurso no existe", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        verify(recursoComunRepository).findById(id);
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
-    void deshabilitar_shouldThrowApiException_whenResourceNotFound() {
-
-        Long id = 4L;
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
-
-        assertEquals("El recurso no existe", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        verify(recursoComunRepository).findById(id);
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
-    void habilitar_shouldThrowApiException_whenAlreadyEnabled() {
-
-        Long id = 2L;
-        RecursoComun recurso = new RecursoComun();
-        recurso.setId(id);
-        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
-
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-
-        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.habilitar(id));
-        assertEquals("El recurso ya está habilitado", ex.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-
-        verify(recursoComunRepository).findById(id);
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
-    void deshabilitar_shouldThrowApiException_whenAlreadyDisabled() {
-
-        Long id = 11L;
-        RecursoComun recurso = new RecursoComun();
-        recurso.setId(id);
-        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
-
-        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
-
-        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.deshabilitar(id));
-        assertEquals("El recurso ya está deshabilitado", ex.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-
-        verify(recursoComunRepository).findById(id);
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
-    void enMantenimiento_shouldSetDisponibilidadAndSave_whenResourceExistsAndNotInMaintenance() {
-
-        Long id = 42L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
@@ -366,12 +306,11 @@ class RecursoComunServiceTest {
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
         when(recursoComunRepository.save(recurso)).thenReturn(saved);
 
-        SuccessResult<RecursoComun> result = recursoComunService.enMantenimiento(id);
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.EN_MANTENIMIENTO);
 
         assertThat(result).isNotNull();
-        assertEquals("El recurso se ha puesto en mantenimiento exitosamente", result.message());
+        assertThat(result.message()).isEqualTo("El recurso se ha puesto en mantenimiento exitosamente");
         assertThat(result.data()).isEqualTo(saved);
-
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).save(recurso);
@@ -379,30 +318,34 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void enMantenimiento_shouldThrowBadRequest_whenResourceAlreadyInMaintenance() {
-        Long id = 7L;
+    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyInRequestedState() {
+        Long id = 4L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
-        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.EN_MANTENIMIENTO);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
 
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
 
-        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.enMantenimiento(id));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE));
+
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(ex.getMessage()).isEqualTo("El recurso ya está en mantenimiento");
+        assertThat(ex.getMessage()).isEqualTo("El recurso ya está habilitado");
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any());
     }
 
     @Test
-    void enMantenimiento_shouldThrowNotFound_whenResourceMissing() {
+    void cambiarDisponibilidad_shouldThrowNotFound_whenResourceMissing() {
         Long id = 999L;
         when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
 
-        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.enMantenimiento(id));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
-        assertEquals("El recurso no existe", ex.getMessage());
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE));
+
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).isEqualTo("El recurso no existe");
 
         verify(recursoComunRepository).findById(id);
         verifyNoMoreInteractions(recursoComunRepository);
