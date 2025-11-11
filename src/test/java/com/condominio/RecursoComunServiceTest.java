@@ -318,7 +318,7 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyInRequestedState() {
+    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyEnable() {
         Long id = 4L;
         RecursoComun recurso = new RecursoComun();
         recurso.setId(id);
@@ -331,6 +331,25 @@ class RecursoComunServiceTest {
 
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(ex.getMessage()).isEqualTo("El recurso ya está habilitado");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyDisable() {
+        Long id = 4L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.NO_DISPONIBLE));
+
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).isEqualTo("El recurso ya está deshabilitado");
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository, never()).save(any());
