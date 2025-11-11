@@ -18,13 +18,17 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 import static com.condominio.util.constants.AppConstants.ZONE;
 
@@ -99,8 +103,6 @@ public class ObligacionService implements IObligacionService {
                 .tipoObligacion(TipoObligacion.MULTA)
                 .tipoPago(TipoPago.DINERO)
                 .estadoPago(EstadoPago.PENDIENTE)
-                .diasGracias(0)
-                .diasMaxMora(0)
                 .tasaInteres(0)
                 .interes(0)
                 .build();
@@ -205,5 +207,64 @@ public class ObligacionService implements IObligacionService {
         }).toList();
 
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
+    }
+
+    //Prueba temporal del crear obligaciones automaticas
+    private static final int MONTO_ADMIN = 200000;
+    private static final int TASA_INTERES = 1;
+
+    @Scheduled(cron = "0 0 0 1 * *", zone = "America/Bogota")
+    public void generarObligacionesMensuales() {
+        LocalDate hoy = LocalDate.now();
+        String mes = hoy.getMonth().getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
+        int anio = hoy.getYear();
+
+        String titulo = String.format("Administración %s %d", mes, anio);
+        String motivo = String.format("Cobro correspondiente a la administración de %s %d", mes, anio);
+
+        List<Casa> casas = casaRepository.findAll();
+
+        for (Casa casa : casas) {
+            Obligacion obligacion = Obligacion.builder()
+                    .fechaGenerada(hoy)
+                    .fechaLimite(hoy.plusDays(10))
+                    .monto(MONTO_ADMIN)
+                    .tasaInteres(TASA_INTERES)
+                    .motivo(motivo)
+                    .titulo(titulo)
+                    .tipoPago(TipoPago.DINERO)
+                    .tipoObligacion(TipoObligacion.ADMINISTRACION)
+                    .estadoPago(EstadoPago.PENDIENTE)
+                    .casa(casa)
+                    .build();
+
+            obligacionRepository.save(obligacion);
+
+            Optional<Persona> propietarioOpt = personaRepository.findPropietarioByCasaId(casa.getId());
+
+            if (propietarioOpt.isPresent()) {
+                Persona propietario = propietarioOpt.get();
+
+                MostrarObligacionDTO mostrarObligacionDTO = MostrarObligacionDTO.builder()
+                        .titulo(titulo)
+                        .motivo(motivo)
+                        .casa(casa.getNumeroCasa())
+                        .monto(MONTO_ADMIN)
+                        .fecha(hoy)
+                        .build();
+
+                try {
+                    emailService.enviarObligacionMensual(
+                            propietario.getUser().getEmail(),
+                            mostrarObligacionDTO
+                    );
+                } catch (MessagingException e) {
+                    System.err.println("No se pudo enviar correo a " + propietario.getUser().getEmail() + ": " + e.getMessage());
+                }
+            } else {
+                System.out.println("⚠️ No se encontró propietario para la casa con ID: " + casa.getId());
+            }
+
+        }
     }
 }

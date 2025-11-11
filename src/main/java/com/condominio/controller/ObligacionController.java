@@ -56,4 +56,10 @@ public class ObligacionController {
     public SuccessResult<List<MultasPorCasaDTO>> obtenerCasasConMultas() {
         return obligacionService.obtenerCasasConMultas();
     }
+
+    @PostMapping("/generar-administracion-mensual")
+    public ResponseEntity<String> generarObligacionesMensualesManual() {
+        obligacionService.generarObligacionesMensuales();
+        return ResponseEntity.ok("✅ Obligaciones mensuales generadas manualmente con éxito");
+    }
 }
