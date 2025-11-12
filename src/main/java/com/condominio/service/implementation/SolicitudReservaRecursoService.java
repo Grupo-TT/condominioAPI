@@ -207,9 +207,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
     @Override
     public SuccessResult<List<SolicitudReservaDTO>> findReservasByCasa(Long idCasa) {
-        Casa casa = casaRepository.findById(idCasa).get();
-
-        List<SolicitudReservaRecurso> reservasCasa = solicitudReservaRecursoRepository.findAllByCasa(casa);
+        List<SolicitudReservaRecurso> reservasCasa = solicitudReservaRecursoRepository.findAllByCasa_Id(idCasa);
         List<SolicitudReservaDTO> reservasDTO = new ArrayList<>();
         if(reservasCasa.isEmpty()) {
             throw new ApiException("No se encontró ninguna reserva.", HttpStatus.NOT_FOUND);

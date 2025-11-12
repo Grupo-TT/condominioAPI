@@ -842,8 +842,8 @@ class SolicitudReservaRecursoServiceTest {
         reserva.setRecursoComun(recurso);
 
         // Given
-        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
-        when(solicitudReservaRecursoRepository.findAllByCasa(casa))
+
+        when(solicitudReservaRecursoRepository.findAllByCasa_Id(casa.getId()))
                 .thenReturn(Collections.singletonList(reserva));
 
         // When
@@ -858,9 +858,7 @@ class SolicitudReservaRecursoServiceTest {
         assertEquals(reserva.getId(), dto.getId());
         assertEquals("Piscina", dto.getNombre());
         assertEquals(TipoRecursoComun.ZONA, dto.getTipoRecursoComun());
-
-        verify(casaRepository, times(1)).findById(1L);
-        verify(solicitudReservaRecursoRepository, times(1)).findAllByCasa(casa);
+        verify(solicitudReservaRecursoRepository, times(1)).findAllByCasa_Id(casa.getId());
     }
 
     @Test
@@ -870,8 +868,7 @@ class SolicitudReservaRecursoServiceTest {
         casa.setId(1L);
 
         // Given
-        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
-        when(solicitudReservaRecursoRepository.findAllByCasa(casa))
+        when(solicitudReservaRecursoRepository.findAllByCasa_Id(casa.getId()))
                 .thenReturn(Collections.emptyList());
 
         // When & Then
