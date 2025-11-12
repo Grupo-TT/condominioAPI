@@ -8,6 +8,7 @@ import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
 import com.condominio.util.helper.PersonaHelper;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.bridge.Message;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
@@ -242,6 +243,17 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             }
         }
         return new SuccessResult<>("Solicitudes obtenidas correctamente", reservasDTO);
+    }
+
+    @Override
+    public SuccessResult<Void> deleteSolicitud(Long id) {
+        if (!solicitudReservaRecursoRepository.existsById(id)) {
+            throw new ApiException("No se encontró la solicitud con el ID especificado.", HttpStatus.NOT_FOUND);
+        }
+
+        solicitudReservaRecursoRepository.deleteById(id);
+
+        return new SuccessResult<>("Solicitud eliminada correctamente", null);
     }
 
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {

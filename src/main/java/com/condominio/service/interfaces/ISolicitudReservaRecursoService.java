@@ -15,5 +15,6 @@ public interface ISolicitudReservaRecursoService {
     SuccessResult<SolicitudRecursoPropiDTO> crearSolicitud(SolicitudRecursoPropiDTO solicitud);
     SuccessResult<SolicitudRecursoPropiDTO> modificarCantidadInvitados(InvitadoDTO invitadoDTO);
     SuccessResult<List<SolicitudReservaDTO>> findReservasByCasa(Long idCasa);
+    SuccessResult<Void> deleteSolicitud(Long id);
 
 }
