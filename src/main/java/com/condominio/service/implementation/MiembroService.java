@@ -108,12 +108,19 @@ public class MiembroService implements IMiembroService {
     }
 
 
-    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembrosDatosDTO dto) {
+    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembrosDatosDTO dto,Long casaUsuarioId) {
         Miembro miembro = miembroRepository.findById(idMiembro)
                 .orElseThrow(() -> new ApiException(
                         "El miembro con id " + idMiembro + " no existe",
                         HttpStatus.NOT_FOUND
                 ));
+
+        if (!miembro.getCasa().getId().equals(casaUsuarioId)) {
+            throw new ApiException(
+                    "No puedes modificar miembros que no pertenezcan a tu casa",
+                    HttpStatus.FORBIDDEN
+            );
+        }
         if(miembroRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), idMiembro)) {
             throw new ApiException("El numero de documento ya  se encuentra registrado", HttpStatus.OK);
         }
@@ -127,12 +134,19 @@ public class MiembroService implements IMiembroService {
         return new SuccessResult<>("Miembro actualizado correctamente", null);
     }
 
-    public SuccessResult<Void> ActualizarEstadoMiembro(Long idMiembro) {
+    public SuccessResult<Void> ActualizarEstadoMiembro(Long idMiembro,Long casaUsuarioId) {
         Miembro miembro = miembroRepository.findById(idMiembro)
                 .orElseThrow(() -> new ApiException(
                         "El miembro con id " + idMiembro + " no existe",
                         HttpStatus.NOT_FOUND
                 ));
+
+        if (!miembro.getCasa().getId().equals(casaUsuarioId)) {
+            throw new ApiException(
+                    "No puedes modificar miembros que no pertenezcan a tu casa",
+                    HttpStatus.FORBIDDEN
+            );
+        }
 
         miembro.setEstado(!miembro.getEstado());
         miembroRepository.save(miembro);
