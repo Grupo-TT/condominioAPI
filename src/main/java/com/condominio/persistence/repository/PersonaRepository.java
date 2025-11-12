@@ -33,6 +33,7 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
 
     Persona findPersonaByUser(UserEntity user);
     boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
+
 }
 
 
