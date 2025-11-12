@@ -3,10 +3,7 @@ package com.condominio;
 
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.PersonaRepository;
-import com.condominio.persistence.repository.RecursoComunRepository;
-import com.condominio.persistence.repository.ReservaRepository;
-import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.SolicitudReservaRecursoService;
 import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
@@ -22,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +52,9 @@ class SolicitudReservaRecursoServiceTest {
 
     @Mock
     private PersonaHelper personaHelper;
+
+    @Mock
+    private CasaRepository casaRepository;
 
     @InjectMocks
     private SolicitudReservaRecursoService solicitudReservaRecursoService;
@@ -813,6 +814,70 @@ class SolicitudReservaRecursoServiceTest {
         assertThrows(ApiException.class, () -> solicitudReservaRecursoService.modificarCantidadInvitados(invitadoDTO));
 
         verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void testFindReservasByCasa_Exito() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setNombre("Piscina");
+        recurso.setDescripcion("Piscina comunal");
+        recurso.setTipoRecursoComun(TipoRecursoComun.ZONA);
+
+        SolicitudReservaRecurso reserva = new SolicitudReservaRecurso();
+        reserva.setId(10L);
+        reserva.setCasa(casa);
+        reserva.setHoraInicio(LocalTime.from(LocalDateTime.of(2025, 11, 12, 10, 0)));
+        reserva.setHoraFin(LocalTime.from(LocalDateTime.of(2025, 11, 12, 12, 0)));
+        reserva.setNumeroInvitados(5);
+        reserva.setFechaSolicitud(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 0)));
+        reserva.setFechaCreacion(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 5)));
+        reserva.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        reserva.setRecursoComun(recurso);
+
+        // Given
+        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
+        when(solicitudReservaRecursoRepository.findAllByCasa(casa))
+                .thenReturn(Collections.singletonList(reserva));
+
+        // When
+        SuccessResult<List<SolicitudReservaDTO>> result = solicitudReservaRecursoService.findReservasByCasa(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("Solicitudes obtenidas correctamente", result.message());
+        assertEquals(1, result.data().size());
+
+        SolicitudReservaDTO dto = result.data().getFirst();
+        assertEquals(reserva.getId(), dto.getId());
+        assertEquals("Piscina", dto.getNombre());
+        assertEquals(TipoRecursoComun.ZONA, dto.getTipoRecursoComun());
+
+        verify(casaRepository, times(1)).findById(1L);
+        verify(solicitudReservaRecursoRepository, times(1)).findAllByCasa(casa);
+    }
+
+    @Test
+    void testFindReservasByCasa_SinResultados() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        // Given
+        when(casaRepository.findById(1L)).thenReturn(Optional.of(casa));
+        when(solicitudReservaRecursoRepository.findAllByCasa(casa))
+                .thenReturn(Collections.emptyList());
+
+        // When & Then
+        ApiException exception = assertThrows(ApiException.class, () -> {
+            solicitudReservaRecursoService.findReservasByCasa(1L);
+        });
+
+        assertEquals("No se encontró ninguna reserva.", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
     }
 }
 
