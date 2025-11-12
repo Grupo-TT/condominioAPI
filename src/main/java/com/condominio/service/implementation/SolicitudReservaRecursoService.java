@@ -1,5 +1,6 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.SolicitudReservaUpdateDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.*;
@@ -161,7 +162,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("Solicitante no encontrado.", HttpStatus.BAD_REQUEST);
         }
 
-        boolean hayConflicto = validarFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud(),solicitudDTO.getHoraInicio(), solicitudDTO.getHoraFin());
+        boolean hayConflicto = validarFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud(),solicitudDTO.getHoraInicio(), solicitudDTO.getHoraFin(), null);
 
         if (hayConflicto) {
             throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
@@ -244,6 +245,36 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         return new SuccessResult<>("Solicitud eliminada correctamente", null);
     }
 
+    @Override
+    public SuccessResult<SolicitudRecursoPropiDTO> actualizarSolicitud(SolicitudReservaUpdateDTO solicitudReservaUpdateDTO) {
+        SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(solicitudReservaUpdateDTO.getIdSolicitud()).get();
+
+        boolean hayConflicto = validarFechaSolicitud(solicitud.getRecursoComun(), solicitudReservaUpdateDTO.getFechaSolicitud(), solicitudReservaUpdateDTO.getHoraInicio(), solicitudReservaUpdateDTO.getHoraFin(), solicitudReservaUpdateDTO.getIdSolicitud());
+
+        if (!solicitud.getEstadoSolicitud().equals(EstadoSolicitud.PENDIENTE)){
+            throw new ApiException("Solo se pueden modificar solicitudes en estado Pendiente.", HttpStatus.NOT_FOUND);
+        }
+        if (!hayConflicto) {
+            solicitud.setFechaSolicitud(solicitudReservaUpdateDTO.getFechaSolicitud());
+            solicitud.setHoraFin(solicitudReservaUpdateDTO.getHoraFin());
+            solicitud.setHoraInicio(solicitudReservaUpdateDTO.getHoraInicio());
+            solicitud.setNumeroInvitados(solicitudReservaUpdateDTO.getNumeroInvitados());
+
+
+            SolicitudRecursoPropiDTO solicitudDTO = SolicitudRecursoPropiDTO.builder()
+                    .horaFin(solicitudReservaUpdateDTO.getHoraFin())
+                    .horaInicio(solicitudReservaUpdateDTO.getHoraInicio())
+                    .fechaSolicitud(solicitudReservaUpdateDTO.getFechaSolicitud())
+                    .numeroInvitados(solicitudReservaUpdateDTO.getNumeroInvitados())
+                    .build();
+
+            solicitudReservaRecursoRepository.save(solicitud);
+
+            return new SuccessResult<>("Reserva modificada exitosamente, Pendiente de aprobación por el administrador.", solicitudDTO);
+        }
+        throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.NOT_FOUND);
+    }
+
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -258,20 +289,31 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         return solicitud;
     }
 
-    private Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin ) {
-        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, fechaSolicitud);
+    private Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin, Long idSolicitud ) {
+        List<SolicitudReservaRecurso> solicitudesReservas =
+                solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, fechaSolicitud);
 
         LocalTime nuevaHoraInicio = horaInicio;
         LocalTime nuevaHoraFin = horaFin;
 
+        if (solicitudesReservas.isEmpty()) {
+            return false;
+        }
+
         boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            // Si es la misma solicitud, permitir editarla (no se considera conflicto)
+            if (idSolicitud != null && reserva.getId().equals(idSolicitud)) {
+                return false;
+            }
+
             LocalTime horaInicioExistente = reserva.getHoraInicio();
             LocalTime horaFinExistente = reserva.getHoraFin();
 
-            // Condición de traslape:
-            // (inicioNueva < finExistente) && (finNueva > inicioExistente)
-            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
+            // Validar traslape: (inicioNueva < finExistente) && (finNueva > inicioExistente)
+            return nuevaHoraInicio.isBefore(horaFinExistente)
+                    && nuevaHoraFin.isAfter(horaInicioExistente);
         });
+
         return hayConflicto;
     }
 }

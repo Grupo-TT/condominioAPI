@@ -1,5 +1,6 @@
 package com.condominio.controller;
 
+import com.condominio.dto.request.SolicitudReservaUpdateDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
@@ -71,6 +72,12 @@ public class SolicitudReservaRecursoController {
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
     public SuccessResult<Void> deleteReserva(@PathVariable Long id){
         return solicitudReservaService.deleteSolicitud(id);
+    }
+
+    @PutMapping("/mis-reservas/update")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<SolicitudRecursoPropiDTO> findAllByPersona(@RequestBody SolicitudReservaUpdateDTO solicitudReservaUpdateDTO){
+        return solicitudReservaService.actualizarSolicitud(solicitudReservaUpdateDTO);
     }
 
 }
