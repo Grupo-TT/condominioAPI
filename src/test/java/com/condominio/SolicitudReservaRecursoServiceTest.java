@@ -875,9 +875,7 @@ class SolicitudReservaRecursoServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When & Then
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            solicitudReservaRecursoService.findReservasByCasa(1L);
-        });
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.findReservasByCasa(1L));
 
         assertEquals("No se encontró ninguna reserva.", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -897,9 +895,7 @@ class SolicitudReservaRecursoServiceTest {
     void testDeleteSolicitud_NoExiste() {
         when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(false);
 
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            solicitudReservaRecursoService.deleteSolicitud(1L);
-        });
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.deleteSolicitud(1L));
 
         assertEquals("No se encontró la solicitud con el ID especificado.", exception.getMessage());
     }
@@ -973,9 +969,7 @@ class SolicitudReservaRecursoServiceTest {
         when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(solicitud));
 
         // When & Then
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            solicitudReservaRecursoService.actualizarSolicitud(updateDTO);
-        });
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.actualizarSolicitud(updateDTO));
 
         assertEquals("Solo se pueden modificar solicitudes en estado Pendiente.", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -1010,9 +1004,7 @@ class SolicitudReservaRecursoServiceTest {
                 any(), any(), any(), any(), anyLong());
 
         // When & Then
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            solicitudReservaRecursoService.actualizarSolicitud(updateDTO);
-        });
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.actualizarSolicitud(updateDTO));
 
         assertEquals("El recurso ya tiene una solicitud en el horario solicitado.", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
