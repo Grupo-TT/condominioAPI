@@ -67,7 +67,7 @@ public class SolicitudReservaRecursoController {
         return solicitudReservaService.findReservasByCasa(id);
     }
 
-    @GetMapping("/mis-reservas/delete/{id}")
+    @DeleteMapping("/mis-reservas/delete/{id}")
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
     public SuccessResult<Void> deleteReserva(@PathVariable Long id){
         return solicitudReservaService.deleteSolicitud(id);

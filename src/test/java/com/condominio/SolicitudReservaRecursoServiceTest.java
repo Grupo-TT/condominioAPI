@@ -879,5 +879,27 @@ class SolicitudReservaRecursoServiceTest {
         assertEquals("No se encontró ninguna reserva.", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
     }
+
+    @Test
+    void testDeleteSolicitud_Exito() {
+        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(true);
+
+        SuccessResult<Void> result = solicitudReservaRecursoService.deleteSolicitud(1L);
+
+        verify(solicitudReservaRecursoRepository, times(1)).deleteById(1L);
+        assertEquals("Solicitud eliminada correctamente", result.message());
+    }
+
+    @Test
+    void testDeleteSolicitud_NoExiste() {
+        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(false);
+
+        ApiException exception = assertThrows(ApiException.class, () -> {
+            solicitudReservaRecursoService.deleteSolicitud(1L);
+        });
+
+        assertEquals("No se encontró la solicitud con el ID especificado.", exception.getMessage());
+    }
+
 }
 
