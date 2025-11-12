@@ -419,4 +419,64 @@ class MiembroServiceTest {
         verify(miembroRepository).findById(idMiembro);
         verify(miembroRepository, never()).save(any());
     }
+    @Test
+    void testActualizarMiembro_CuandoNoPerteneceALaCasa_ShouldThrowForbiddenException() {
+        Long idMiembro = 1L;
+        Long casaUsuarioId = 10L;
+        Long casaMiembroId = 20L;
+
+        Casa casaMiembro = new Casa();
+        casaMiembro.setId(casaMiembroId);
+
+        Miembro miembro = new Miembro();
+        miembro.setId(idMiembro);
+        miembro.setCasa(casaMiembro);
+
+        MiembroActualizacionDTO dto = new MiembroActualizacionDTO();
+        dto.setNombre("Nuevo nombre");
+        dto.setNumeroDocumento(99999L);
+        dto.setTelefono(3012223333L);
+        dto.setParentesco("Hermano");
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembro));
+
+        ApiException thrown = assertThrows(ApiException.class, () ->
+                miembroService.actualizarMiembro(idMiembro, dto, casaUsuarioId)
+        );
+
+        assertThat(thrown.getMessage()).isEqualTo("No puedes modificar miembros que no pertenezcan a tu casa");
+        assertThat(thrown.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository, never()).save(any());
+    }
+
+    @Test
+    void testActualizarEstadoMiembro_CuandoNoPerteneceALaCasa_ShouldThrowForbiddenException() {
+        Long idMiembro = 1L;
+        Long casaUsuarioId = 10L;
+        Long casaMiembroId = 20L;
+
+        Casa casaMiembro = new Casa();
+        casaMiembro.setId(casaMiembroId);
+
+        Miembro miembro = new Miembro();
+        miembro.setId(idMiembro);
+        miembro.setCasa(casaMiembro);
+        miembro.setEstado(true);
+
+        when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembro));
+
+        ApiException thrown = assertThrows(ApiException.class, () ->
+                miembroService.actualizarEstadoMiembro(idMiembro, casaUsuarioId)
+        );
+
+        assertThat(thrown.getMessage()).isEqualTo("No puedes modificar miembros que no pertenezcan a tu casa");
+        assertThat(thrown.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        verify(miembroRepository).findById(idMiembro);
+        verify(miembroRepository, never()).save(any());
+    }
+
+
 }
