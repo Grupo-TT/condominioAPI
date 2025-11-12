@@ -5,9 +5,7 @@ import com.condominio.dto.request.MultaRegistroDTO;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.CasaRepository;
-import com.condominio.persistence.repository.ObligacionRepository;
-import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.interfaces.IObligacionService;
 import com.condominio.service.interfaces.IPagoService;
 import com.condominio.service.interfaces.IPdfService;
@@ -18,13 +16,18 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 import static com.condominio.util.constants.AppConstants.ZONE;
 
@@ -39,8 +42,11 @@ public class ObligacionService implements IObligacionService {
     private final IPersonaService personaService;
     private final IPagoService pagoService;
     private final IPdfService pdfService;
-    private  final  EmailService emailService;
+    private final EmailService emailService;
     private static final Logger log = LoggerFactory.getLogger(ObligacionService.class);
+
+    private final CargoAdministracionRepository cargoAdministracionRepository;
+    private final TasaDeInteresRepository tasaDeInteresRepository;
 
     @Override
     public SuccessResult<EstadoCuentaDTO> estadoDeCuentaCasa(Long idCasa) {
@@ -99,8 +105,6 @@ public class ObligacionService implements IObligacionService {
                 .tipoObligacion(TipoObligacion.MULTA)
                 .tipoPago(TipoPago.DINERO)
                 .estadoPago(EstadoPago.PENDIENTE)
-                .diasGracias(0)
-                .diasMaxMora(0)
                 .tasaInteres(0)
                 .interes(0)
                 .build();
@@ -127,6 +131,7 @@ public class ObligacionService implements IObligacionService {
 
         return new SuccessResult<>("Multa actualizada correctamente", actualizada);
     }
+
     public boolean estaAlDia(Long idCasa) {
 
         boolean tienePendientes = obligacionRepository.existsByCasaIdAndEstadoPago(idCasa, EstadoPago.PENDIENTE);
@@ -205,5 +210,63 @@ public class ObligacionService implements IObligacionService {
         }).toList();
 
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
+    }
+
+    @Scheduled(cron = "0 0 0 12 * *", zone = "America/Bogota")
+    public void generarObligacionesMensuales() {
+        LocalDate hoy = LocalDate.now();
+        String mes = hoy.getMonth().getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
+        int anio = hoy.getYear();
+
+        String titulo = String.format("Administración %s %d", mes, anio);
+        String motivo = String.format("Cobro correspondiente a la administración de %s %d", mes, anio);
+
+        CargoAdministracion cargoAdmin = cargoAdministracionRepository.findAll().iterator().next();
+        TasaDeInteres tasaInteres = tasaDeInteresRepository.findAll().iterator().next();
+
+        int montoAdmin = (int) cargoAdmin.getNuevoValor();
+        double interes = tasaInteres.getNuevoValor();
+
+        List<Persona> propietarios = personaRepository.findAllPropietariosConCasa();
+        List<Obligacion> obligaciones = new ArrayList<>();
+
+        for (Persona propietario : propietarios) {
+            Casa casa = propietario.getCasa();
+
+            Obligacion obligacion = Obligacion.builder()
+                    .fechaGenerada(hoy)
+                    .fechaLimite(hoy.plusDays(10))
+                    .monto(montoAdmin)
+                    .tasaInteres(interes)
+                    .motivo(motivo)
+                    .titulo(titulo)
+                    .tipoPago(TipoPago.DINERO)
+                    .tipoObligacion(TipoObligacion.ADMINISTRACION)
+                    .estadoPago(EstadoPago.PENDIENTE)
+                    .casa(casa)
+                    .build();
+
+            obligaciones.add(obligacion);
+        }
+
+        obligacionRepository.saveAll(obligaciones);
+
+        for (Persona propietario : propietarios) {
+            Casa casa = propietario.getCasa();
+
+            MostrarObligacionDTO dto = MostrarObligacionDTO.builder()
+                    .titulo(titulo)
+                    .motivo(motivo)
+                    .casa(casa.getNumeroCasa())
+                    .monto(montoAdmin)
+                    .fecha(hoy)
+                    .build();
+
+            try {
+                emailService.enviarObligacionMensual(propietario.getUser().getEmail(), dto);
+            } catch (MessagingException e) {
+                log.error("No se pudo enviar correo a {}: {}", propietario.getUser().getEmail(), e.getMessage());
+            }
+        }
     }
 }
