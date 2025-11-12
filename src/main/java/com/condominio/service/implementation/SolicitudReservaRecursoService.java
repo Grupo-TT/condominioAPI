@@ -289,7 +289,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         return solicitud;
     }
 
-    private Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin, Long idSolicitud ) {
+    public Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin, Long idSolicitud) {
         List<SolicitudReservaRecurso> solicitudesReservas =
                 solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, fechaSolicitud);
 
