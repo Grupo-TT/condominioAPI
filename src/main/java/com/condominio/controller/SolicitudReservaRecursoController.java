@@ -1,9 +1,6 @@
 package com.condominio.controller;
 
-import com.condominio.dto.response.InvitadoDTO;
-import com.condominio.dto.response.SolicitudRecursoPropiDTO;
-import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import lombok.RequiredArgsConstructor;
@@ -62,5 +59,11 @@ public class SolicitudReservaRecursoController {
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
     public SuccessResult<SolicitudRecursoPropiDTO> modificarCantidadInvitados(@RequestBody InvitadoDTO invitadoDTO){
         return solicitudReservaService.modificarCantidadInvitados(invitadoDTO);
+    }
+
+    @GetMapping("/mis-reservas/{id}")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<List<SolicitudReservaDTO>> findAllByPersona(@PathVariable Long id){
+        return solicitudReservaService.findReservasByCasa(id);
     }
 }
