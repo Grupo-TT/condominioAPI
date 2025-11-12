@@ -1,5 +1,6 @@
 package com.condominio.controller;
 
+import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
@@ -40,7 +41,7 @@ public class MiembroController {
     @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
     public ResponseEntity<SuccessResult<Void>> actualizarMiembro(
             @PathVariable Long idMiembro,
-            @RequestBody MiembrosDatosDTO dto,
+            @RequestBody MiembroActualizacionDTO dto,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         Long casaUsuarioId = obtenerCasaId(userDetails);
@@ -60,7 +61,7 @@ public class MiembroController {
             ,@AuthenticationPrincipal UserDetails userDetails) {
 
         Long casaUsuarioId = obtenerCasaId(userDetails);
-        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro,casaUsuarioId);
+        SuccessResult<Void> result = miembroService.actualizarEstadoMiembro(idMiembro,casaUsuarioId);
         return ResponseEntity.ok(result);
     }
 

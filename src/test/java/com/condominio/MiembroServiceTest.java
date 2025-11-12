@@ -1,5 +1,6 @@
 package com.condominio;
 
+import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
@@ -285,7 +286,7 @@ class MiembroServiceTest {
         casa.setId(casaUsuarioId);
         miembroExistente.setCasa(casa);
 
-        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        MiembroActualizacionDTO  dto = new MiembroActualizacionDTO ();
         dto.setNombre("Carlos López");
         dto.setNumeroDocumento(99999L);
         dto.setTelefono(3012223333L);
@@ -313,7 +314,7 @@ class MiembroServiceTest {
     void testActualizarMiembro_WhenMiembroNotFound_ShouldThrowException() {
         Long idMiembro = 99L;
         Long casaUsuarioId = 10L;
-        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        MiembroActualizacionDTO  dto = new MiembroActualizacionDTO ();
         dto.setNumeroDocumento(123L);
 
         when(miembroRepository.findById(idMiembro)).thenReturn(Optional.empty());
@@ -339,7 +340,7 @@ class MiembroServiceTest {
         casa.setId(casaUsuarioId);
         miembroExistente.setCasa(casa);
 
-        MiembrosDatosDTO dto = new MiembrosDatosDTO();
+        MiembroActualizacionDTO dto = new MiembroActualizacionDTO ();
         dto.setNumeroDocumento(123L);
 
         when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembroExistente));
@@ -370,7 +371,7 @@ class MiembroServiceTest {
 
         when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembro));
 
-        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro, casaUsuarioId);
+        SuccessResult<Void> result = miembroService.actualizarEstadoMiembro(idMiembro, casaUsuarioId);
 
         assertThat(miembro.getEstado()).isTrue();
         assertThat(result.message()).isEqualTo("Miembro habilitado correctamente");
@@ -386,14 +387,14 @@ class MiembroServiceTest {
 
         Miembro miembro = new Miembro();
         miembro.setId(idMiembro);
-        miembro.setEstado(true); // estaba habilitado
+        miembro.setEstado(true);
         Casa casa = new Casa();
         casa.setId(casaUsuarioId);
         miembro.setCasa(casa);
 
         when(miembroRepository.findById(idMiembro)).thenReturn(Optional.of(miembro));
 
-        SuccessResult<Void> result = miembroService.ActualizarEstadoMiembro(idMiembro, casaUsuarioId);
+        SuccessResult<Void> result = miembroService.actualizarEstadoMiembro(idMiembro, casaUsuarioId);
 
         assertThat(miembro.getEstado()).isFalse();
         assertThat(result.message()).isEqualTo("Miembro deshabilitado correctamente");
@@ -410,7 +411,7 @@ class MiembroServiceTest {
         when(miembroRepository.findById(idMiembro)).thenReturn(Optional.empty());
 
         ApiException thrown = assertThrows(ApiException.class,
-                () -> miembroService.ActualizarEstadoMiembro(idMiembro, casaUsuarioId));
+                () -> miembroService.actualizarEstadoMiembro(idMiembro, casaUsuarioId));
 
         assertThat(thrown.getMessage()).isEqualTo("El miembro con id 99 no existe");
         assertThat(thrown.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);

@@ -1,5 +1,6 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
@@ -12,6 +13,7 @@ import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.MiembroRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.IMiembroService;
+import com.condominio.util.constants.AppConstants;
 import com.condominio.util.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -66,8 +68,8 @@ public class MiembroService implements IMiembroService {
     @Override
     public SuccessResult<Void> crearMiembro(MiembroRegistroDTO miembroRegistroDTO) {
         Casa validarCasa = casaRepository.findById(miembroRegistroDTO.getIdCasa())
-                .orElseThrow(() -> new ApiException(
-                        "La casa con id " + miembroRegistroDTO.getIdCasa() + " no existe",
+                .orElseThrow(() ->  new ApiException(
+                        String.format(AppConstants.CASA_NO_EXISTE, miembroRegistroDTO.getIdCasa()),
                         HttpStatus.NOT_FOUND
                 ));
         if(miembroRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
@@ -108,10 +110,10 @@ public class MiembroService implements IMiembroService {
     }
 
 
-    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembrosDatosDTO dto,Long casaUsuarioId) {
+    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembroActualizacionDTO dto, Long casaUsuarioId) {
         Miembro miembro = miembroRepository.findById(idMiembro)
                 .orElseThrow(() -> new ApiException(
-                        "El miembro con id " + idMiembro + " no existe",
+                        String.format(AppConstants.MIEMBRO_NO_EXISTE, idMiembro),
                         HttpStatus.NOT_FOUND
                 ));
 
@@ -134,10 +136,10 @@ public class MiembroService implements IMiembroService {
         return new SuccessResult<>("Miembro actualizado correctamente", null);
     }
 
-    public SuccessResult<Void> ActualizarEstadoMiembro(Long idMiembro,Long casaUsuarioId) {
+    public SuccessResult<Void> actualizarEstadoMiembro(Long idMiembro,Long casaUsuarioId) {
         Miembro miembro = miembroRepository.findById(idMiembro)
                 .orElseThrow(() -> new ApiException(
-                        "El miembro con id " + idMiembro + " no existe",
+                        String.format(AppConstants.MIEMBRO_NO_EXISTE, idMiembro),
                         HttpStatus.NOT_FOUND
                 ));
 
