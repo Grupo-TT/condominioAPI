@@ -1,7 +1,9 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
+import com.condominio.dto.response.MiembrosDatosDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
@@ -11,6 +13,7 @@ import com.condominio.persistence.repository.CasaRepository;
 import com.condominio.persistence.repository.MiembroRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.IMiembroService;
+import com.condominio.util.constants.AppConstants;
 import com.condominio.util.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +31,7 @@ public class MiembroService implements IMiembroService {
     private final MiembroRepository miembroRepository;
     private final PersonaRepository personaRepository;
     private final CasaRepository casaRepository;
+
     @Override
     public int countByCasaId(Long idCasa) {
         return miembroRepository.countByCasaId(idCasa);
@@ -64,8 +68,8 @@ public class MiembroService implements IMiembroService {
     @Override
     public SuccessResult<Void> crearMiembro(MiembroRegistroDTO miembroRegistroDTO) {
         Casa validarCasa = casaRepository.findById(miembroRegistroDTO.getIdCasa())
-                .orElseThrow(() -> new ApiException(
-                        "La casa con id " + miembroRegistroDTO.getIdCasa() + " no existe",
+                .orElseThrow(() ->  new ApiException(
+                        String.format(AppConstants.CASA_NO_EXISTE, miembroRegistroDTO.getIdCasa()),
                         HttpStatus.NOT_FOUND
                 ));
         if(miembroRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
@@ -86,6 +90,76 @@ public class MiembroService implements IMiembroService {
 
         return new SuccessResult<>("Miembro registrado correctamente",null);
     }
+
+    public List<MiembrosDatosDTO> listarMiembrosPorCasa(Long casaId) {
+        List<Miembro> miembros = miembroRepository.findByCasaId(casaId);
+
+        return miembros.stream()
+                .map(miembro -> {
+                    MiembrosDatosDTO dto = new MiembrosDatosDTO();
+                    dto.setId(miembro.getId());
+                    dto.setIdCasa(miembro.getCasa().getId());
+                    dto.setNombre(miembro.getNombre());
+                    dto.setNumeroDocumento(miembro.getNumeroDocumento());
+                    dto.setTelefono(miembro.getTelefono());
+                    dto.setParentesco(miembro.getParentesco());
+                    dto.setEstado(miembro.getEstado());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    public SuccessResult<Void> actualizarMiembro(Long idMiembro, MiembroActualizacionDTO dto, Long casaUsuarioId) {
+        Miembro miembro = miembroRepository.findById(idMiembro)
+                .orElseThrow(() -> new ApiException(
+                        String.format(AppConstants.MIEMBRO_NO_EXISTE, idMiembro),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (!miembro.getCasa().getId().equals(casaUsuarioId)) {
+            throw new ApiException(
+                    "No puedes modificar miembros que no pertenezcan a tu casa",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+        if(miembroRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), idMiembro)) {
+            throw new ApiException("El numero de documento ya  se encuentra registrado", HttpStatus.OK);
+        }
+        miembro.setNombre(dto.getNombre());
+        miembro.setNumeroDocumento(dto.getNumeroDocumento());
+        miembro.setTelefono(dto.getTelefono());
+        miembro.setParentesco(dto.getParentesco());
+
+        miembroRepository.save(miembro);
+
+        return new SuccessResult<>("Miembro actualizado correctamente", null);
+    }
+
+    public SuccessResult<Void> actualizarEstadoMiembro(Long idMiembro,Long casaUsuarioId) {
+        Miembro miembro = miembroRepository.findById(idMiembro)
+                .orElseThrow(() -> new ApiException(
+                        String.format(AppConstants.MIEMBRO_NO_EXISTE, idMiembro),
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (!miembro.getCasa().getId().equals(casaUsuarioId)) {
+            throw new ApiException(
+                    "No puedes modificar miembros que no pertenezcan a tu casa",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        miembro.setEstado(!miembro.getEstado());
+        miembroRepository.save(miembro);
+
+        String mensaje = miembro.getEstado()
+                ? "Miembro habilitado correctamente"
+                : "Miembro deshabilitado correctamente";
+
+        return new SuccessResult<>(mensaje, null);
+    }
+
 
     private MiembrosDTO convertirPersonaAMiembroDTO(Persona persona, String tipoMiembro) {
         UserEntity user = persona.getUser();

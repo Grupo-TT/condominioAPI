@@ -10,4 +10,6 @@ public interface MiembroRepository extends CrudRepository<Miembro, Long> {
     int countByCasaId(Long idCasa);
     List<Miembro> findByCasaIdAndEstadoTrue(Long casaId);
     boolean existsByNumeroDocumento(Long numeroDocumento);
+    List<Miembro> findByCasaId(Long casaId);
+    boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
 }
