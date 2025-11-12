@@ -300,7 +300,6 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         }
 
         boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
-            // Si es la misma solicitud, permitir editarla (no se considera conflicto)
             if (idSolicitud != null && reserva.getId().equals(idSolicitud)) {
                 return false;
             }
@@ -308,7 +307,6 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             LocalTime horaInicioExistente = reserva.getHoraInicio();
             LocalTime horaFinExistente = reserva.getHoraFin();
 
-            // Validar traslape: (inicioNueva < finExistente) && (finNueva > inicioExistente)
             return nuevaHoraInicio.isBefore(horaFinExistente)
                     && nuevaHoraFin.isAfter(horaInicioExistente);
         });
