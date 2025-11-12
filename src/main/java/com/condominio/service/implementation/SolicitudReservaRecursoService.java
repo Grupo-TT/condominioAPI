@@ -9,7 +9,6 @@ import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
 import com.condominio.util.helper.PersonaHelper;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.bridge.Message;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
