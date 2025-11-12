@@ -161,19 +161,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("Solicitante no encontrado.", HttpStatus.BAD_REQUEST);
         }
 
-        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud());
-
-        LocalTime nuevaHoraInicio = solicitudDTO.getHoraInicio();
-        LocalTime nuevaHoraFin = solicitudDTO.getHoraFin();
-
-        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
-            LocalTime horaInicioExistente = reserva.getHoraInicio();
-            LocalTime horaFinExistente = reserva.getHoraFin();
-
-            // Condición de traslape:
-            // (inicioNueva < finExistente) && (finNueva > inicioExistente)
-            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
-        });
+        boolean hayConflicto = validarFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud(),solicitudDTO.getHoraInicio(), solicitudDTO.getHoraFin());
 
         if (hayConflicto) {
             throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
@@ -268,5 +256,22 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("No se puede aprobar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
         }
         return solicitud;
+    }
+
+    private Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin ) {
+        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, fechaSolicitud);
+
+        LocalTime nuevaHoraInicio = horaInicio;
+        LocalTime nuevaHoraFin = horaFin;
+
+        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            LocalTime horaInicioExistente = reserva.getHoraInicio();
+            LocalTime horaFinExistente = reserva.getHoraFin();
+
+            // Condición de traslape:
+            // (inicioNueva < finExistente) && (finNueva > inicioExistente)
+            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
+        });
+        return hayConflicto;
     }
 }
