@@ -1,12 +1,10 @@
 package com.condominio;
 
 
+import com.condominio.dto.request.SolicitudReservaUpdateDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.PersonaRepository;
-import com.condominio.persistence.repository.RecursoComunRepository;
-import com.condominio.persistence.repository.ReservaRepository;
-import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.SolicitudReservaRecursoService;
 import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
@@ -16,12 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +55,10 @@ class SolicitudReservaRecursoServiceTest {
     @Mock
     private PersonaHelper personaHelper;
 
+    @Mock
+    private CasaRepository casaRepository;
+
+    @Spy
     @InjectMocks
     private SolicitudReservaRecursoService solicitudReservaRecursoService;
 
@@ -814,5 +818,195 @@ class SolicitudReservaRecursoServiceTest {
 
         verify(solicitudReservaRecursoRepository, never()).save(any());
     }
+
+    @Test
+    void testFindReservasByCasa_Exito() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setNombre("Piscina");
+        recurso.setDescripcion("Piscina comunal");
+        recurso.setTipoRecursoComun(TipoRecursoComun.ZONA);
+
+        SolicitudReservaRecurso reserva = new SolicitudReservaRecurso();
+        reserva.setId(10L);
+        reserva.setCasa(casa);
+        reserva.setHoraInicio(LocalTime.from(LocalDateTime.of(2025, 11, 12, 10, 0)));
+        reserva.setHoraFin(LocalTime.from(LocalDateTime.of(2025, 11, 12, 12, 0)));
+        reserva.setNumeroInvitados(5);
+        reserva.setFechaSolicitud(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 0)));
+        reserva.setFechaCreacion(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 5)));
+        reserva.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        reserva.setRecursoComun(recurso);
+
+        // Given
+
+        when(solicitudReservaRecursoRepository.findAllByCasa_Id(casa.getId()))
+                .thenReturn(Collections.singletonList(reserva));
+
+        // When
+        SuccessResult<List<SolicitudReservaDTO>> result = solicitudReservaRecursoService.findReservasByCasa(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("Solicitudes obtenidas correctamente", result.message());
+        assertEquals(1, result.data().size());
+
+        SolicitudReservaDTO dto = result.data().getFirst();
+        assertEquals(reserva.getId(), dto.getId());
+        assertEquals("Piscina", dto.getNombre());
+        assertEquals(TipoRecursoComun.ZONA, dto.getTipoRecursoComun());
+        verify(solicitudReservaRecursoRepository, times(1)).findAllByCasa_Id(casa.getId());
+    }
+
+    @Test
+    void testFindReservasByCasa_SinResultados() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        // Given
+        when(solicitudReservaRecursoRepository.findAllByCasa_Id(casa.getId()))
+                .thenReturn(Collections.emptyList());
+
+        // When & Then
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.findReservasByCasa(1L));
+
+        assertEquals("No se encontró ninguna reserva.", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    }
+
+    @Test
+    void testDeleteSolicitud_Exito() {
+        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(true);
+
+        SuccessResult<Void> result = solicitudReservaRecursoService.deleteSolicitud(1L);
+
+        verify(solicitudReservaRecursoRepository, times(1)).deleteById(1L);
+        assertEquals("Solicitud eliminada correctamente", result.message());
+    }
+
+    @Test
+    void testDeleteSolicitud_NoExiste() {
+        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(false);
+
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.deleteSolicitud(1L));
+
+        assertEquals("No se encontró la solicitud con el ID especificado.", exception.getMessage());
+    }
+
+    @Test
+    void testActualizarSolicitud_Exito() {
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(1L);
+        recurso.setNombre("Salón Comunal");
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setId(1L);
+        solicitud.setRecursoComun(recurso);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.of(2025, 11, 12));
+        solicitud.setHoraInicio(LocalTime.of(10, 0));
+        solicitud.setHoraFin(LocalTime.of(11, 0));
+        solicitud.setNumeroInvitados(5);
+
+        SolicitudReservaUpdateDTO updateDTO = new SolicitudReservaUpdateDTO();
+        updateDTO.setIdSolicitud(1L);
+        updateDTO.setFechaSolicitud(LocalDate.of(2025, 11, 13));
+        updateDTO.setHoraInicio(LocalTime.of(12, 0));
+        updateDTO.setHoraFin(LocalTime.of(13, 0));
+        updateDTO.setNumeroInvitados(8);
+
+        // Given
+        when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+        // No hay conflicto de horario
+        doReturn(false).when(solicitudReservaRecursoService).validarFechaSolicitud(
+                any(), any(), any(), any(), anyLong());
+
+        // When
+        SuccessResult<SolicitudRecursoPropiDTO> result = solicitudReservaRecursoService.actualizarSolicitud(updateDTO);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("Reserva modificada exitosamente, Pendiente de aprobación por el administrador.", result.message());
+        assertEquals(updateDTO.getFechaSolicitud(), result.data().getFechaSolicitud());
+        assertEquals(updateDTO.getHoraInicio(), result.data().getHoraInicio());
+        assertEquals(updateDTO.getHoraFin(), result.data().getHoraFin());
+        assertEquals(updateDTO.getNumeroInvitados(), result.data().getNumeroInvitados());
+
+        verify(solicitudReservaRecursoRepository, times(1)).save(any(SolicitudReservaRecurso.class));
+    }
+
+    @Test
+    void testActualizarSolicitud_EstadoNoPermitido() {
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(1L);
+        recurso.setNombre("Salón Comunal");
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setId(1L);
+        solicitud.setRecursoComun(recurso);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.of(2025, 11, 12));
+        solicitud.setHoraInicio(LocalTime.of(10, 0));
+        solicitud.setHoraFin(LocalTime.of(11, 0));
+        solicitud.setNumeroInvitados(5);
+
+        SolicitudReservaUpdateDTO updateDTO = new SolicitudReservaUpdateDTO();
+        updateDTO.setIdSolicitud(1L);
+        updateDTO.setFechaSolicitud(LocalDate.of(2025, 11, 13));
+        updateDTO.setHoraInicio(LocalTime.of(12, 0));
+        updateDTO.setHoraFin(LocalTime.of(13, 0));
+        updateDTO.setNumeroInvitados(8);
+
+        // Given
+        solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+
+        // When & Then
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.actualizarSolicitud(updateDTO));
+
+        assertEquals("Solo se pueden modificar solicitudes en estado Pendiente.", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
+    @Test
+    void testActualizarSolicitud_ConflictoDeHorario() {
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(1L);
+        recurso.setNombre("Salón Comunal");
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setId(1L);
+        solicitud.setRecursoComun(recurso);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        solicitud.setFechaSolicitud(LocalDate.of(2025, 11, 12));
+        solicitud.setHoraInicio(LocalTime.of(10, 0));
+        solicitud.setHoraFin(LocalTime.of(11, 0));
+        solicitud.setNumeroInvitados(5);
+
+        SolicitudReservaUpdateDTO updateDTO = new SolicitudReservaUpdateDTO();
+        updateDTO.setIdSolicitud(1L);
+        updateDTO.setFechaSolicitud(LocalDate.of(2025, 11, 13));
+        updateDTO.setHoraInicio(LocalTime.of(12, 0));
+        updateDTO.setHoraFin(LocalTime.of(13, 0));
+        updateDTO.setNumeroInvitados(8);
+        // Given
+        when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+        doReturn(true).when(solicitudReservaRecursoService).validarFechaSolicitud(
+                any(), any(), any(), any(), anyLong());
+
+        // When & Then
+        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.actualizarSolicitud(updateDTO));
+
+        assertEquals("El recurso ya tiene una solicitud en el horario solicitado.", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(solicitudReservaRecursoRepository, never()).save(any());
+    }
+
 }
 
