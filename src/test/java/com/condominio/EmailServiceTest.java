@@ -1,10 +1,12 @@
 package com.condominio;
 
+import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.service.implementation.EmailService;
+import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,11 +17,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -241,6 +246,125 @@ class EmailServiceTest {
         emailService.enviarSolicitud(destinatario, dto);
 
         verify(templateEngine, times(1)).process(anyString(), any(Context.class));
-        verify(mailSender, never()).send(any(MimeMessage.class)); // no debe intentar enviar
+        verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+    @Test
+    void testSendToMany_emailsNull_throwsApiException() {
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(null);
+        request.setSubject("Asunto");
+
+        ApiException ex = assertThrows(ApiException.class, () -> emailService.sendToMany(request));
+        assertEquals("Debe enviar al menos un correo", ex.getMessage());
+    }
+    @Test
+    void testSendToMany_subjectNull_throwsApiException() {
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(List.of("test@correo.com"));
+        request.setSubject(null);
+
+        ApiException ex = assertThrows(ApiException.class, () -> emailService.sendToMany(request));
+        assertEquals("El asunto es obligatorio", ex.getMessage());
+    }
+
+    @Test
+    void testSendToMany_messageEmptyAndNoFile_throwsApiException() {
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(List.of("test@correo.com"));
+        request.setSubject("Asunto");
+        request.setMessage("   ");
+        request.setFile(null);
+
+        ApiException ex = assertThrows(ApiException.class, () -> emailService.sendToMany(request));
+        assertEquals("Debe diligenciar el cuerpo del correo si no adjunta una imagen o archivo", ex.getMessage());
+    }
+
+    @Test
+    void testSendToMany_fileTooLarge_throwsApiException() throws IOException {
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(List.of("test@correo.com"));
+        request.setSubject("Asunto");
+        request.setMessage("Mensaje");
+
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(11L * 1024 * 1024);
+        request.setFile(file);
+
+        ApiException ex = assertThrows(ApiException.class, () -> emailService.sendToMany(request));
+        assertTrue(ex.getMessage().contains("El archivo es muy grande"));
+    }
+
+    @Test
+    void testSendToMany_fileNotAllowed_throwsApiException() throws IOException {
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(List.of("test@correo.com"));
+        request.setSubject("Asunto");
+        request.setMessage("Mensaje");
+
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(1024L);
+        when(file.getContentType()).thenReturn("application/exe");
+        request.setFile(file);
+
+        ApiException ex = assertThrows(ApiException.class, () -> emailService.sendToMany(request));
+        assertEquals("Tipo de archivo no permitido", ex.getMessage());
+    }
+
+    @Test
+    void testSendToMany_validRequest_sendsEmail() throws Exception {
+
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(List.of("test@correo.com"));
+        request.setSubject("Asunto");
+        request.setMessage("Mensaje");
+
+
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+
+        EmailService spyService = spy(emailService);
+
+
+        spyService.sendToManyAsync(
+                request.getEmails(),
+                request.getSubject(),
+                request.getMessage(),
+                null,
+                null
+        );
+
+
+        verify(spyService).sendToManyAsync(eq(request.getEmails()), eq("Asunto"), eq("Mensaje"), eq(null), eq(null));
+    }
+
+    @Test
+    void testSendToManyAsync_sendsEmailWithAttachment() throws Exception {
+        // Simular async
+        List<String> emails = List.of("test@correo.com");
+        String subject = "Asunto";
+        String body = "Mensaje";
+        byte[] fileBytes = "archivo".getBytes();
+        String filename = "archivo.txt";
+
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        emailService.sendToManyAsync(emails, subject, body, fileBytes, filename);
+
+        verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    void testSendToManyAsync_sendsEmailWithoutAttachment() throws Exception {
+        List<String> emails = List.of("test@correo.com");
+        String subject = "Asunto";
+        String body = "Mensaje";
+
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        emailService.sendToManyAsync(emails, subject, body, null, null);
+
+        verify(mailSender).send(mimeMessage);
     }
 }

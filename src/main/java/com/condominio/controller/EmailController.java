@@ -21,10 +21,10 @@ public class EmailController {
     public SuccessResult<String> sendToMany(
             @ModelAttribute SendEmailsDTO request
     ) {
-        // call the service
+
         emailService.sendToMany(request);
 
-        // return success
+
         return new SuccessResult<>(
                 "Incertidumbre absoluta, revisar correo.",
                 null

@@ -1,5 +1,8 @@
 package com.condominio.service.implementation;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+
 
 import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.ObligacionDTO;
@@ -128,87 +131,79 @@ public class EmailService {
 
 
 
+    @Autowired
+    @Lazy
+    private EmailService self;
+
     public void sendToMany(SendEmailsDTO request) {
-
-
         if (request.getEmails() == null || request.getEmails().isEmpty()) {
-            throw new ApiException(
-                    "Debe enviar al menos un correo",
-                    HttpStatus.OK
-            );
+            throw new ApiException("Debe enviar al menos un correo", HttpStatus.OK);
         }
 
         if (request.getSubject() == null || request.getSubject().trim().isEmpty()) {
             throw new ApiException("El asunto es obligatorio", HttpStatus.BAD_REQUEST);
         }
 
-
         MultipartFile file = request.getFile();
-
         boolean hasFile = (file != null && !file.isEmpty());
-
-
         boolean messageEmpty = (request.getMessage() == null || request.getMessage().trim().isEmpty());
 
-
         if (!hasFile && messageEmpty) {
-            throw new ApiException(
-                    "Debe diligenciar el cuerpo del correo si no adjunta una imagen o archivo",
-                    HttpStatus.OK
-            );
+            throw new ApiException("Debe diligenciar el cuerpo del correo si no adjunta una imagen o archivo", HttpStatus.OK);
         }
-        if (file != null && !file.isEmpty()) {
 
+        byte[] fileBytes = null;
+        String filename = null;
+
+        if (hasFile) {
             long maxBytes = maxFileSizeMB * 1024L * 1024L;
-
-
             if (file.getSize() > maxBytes) {
-                throw new ApiException(
-                        "El archivo es muy grande. Máximo " + maxFileSizeMB + " MB",
-                        HttpStatus.OK
-                );
+                throw new ApiException("El archivo es muy grande. Máximo " + maxFileSizeMB + " MB", HttpStatus.OK);
             }
-
 
             String type = file.getContentType();
             if (!isAllowed(type)) {
-                throw new ApiException(
-                        "Tipo de archivo no permitido",
-                        HttpStatus.OK
-                );
+                throw new ApiException("Tipo de archivo no permitido", HttpStatus.OK);
+            }
+
+            try {
+                fileBytes = file.getBytes();
+                filename = file.getOriginalFilename();
+            } catch (java.io.IOException e) {
+                log.error("Error al leer el archivo adjunto.", e);
+                throw new ApiException("Error al leer el archivo adjunto.", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
-
 
         String body = request.getMessage();
         if (body == null || body.trim().isEmpty()) {
             body = " ";
         }
 
+
+        self.sendToManyAsync(request.getEmails(), request.getSubject(), body, fileBytes, filename);
+    }
+
+    @Async("mailTaskExecutor")
+    public void sendToManyAsync(java.util.List<String> emails, String subject, String body, byte[] fileBytes, String filename) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, file != null);
+            MimeMessageHelper helper = new MimeMessageHelper(message, fileBytes != null);
 
-            helper.setSubject(request.getSubject());
-            helper.setText(body ,false);
-            helper.setTo(request.getEmails().toArray(new String[0])); // muchos destinatarios
+            helper.setSubject(subject);
+            helper.setText(body, false);
+            helper.setTo(emails.toArray(new String[0]));
 
-
-            if (file != null && !file.isEmpty()) {
-                String filename = (file.getOriginalFilename() != null)
-                        ? file.getOriginalFilename()
-                        : "archivo";
-                helper.addAttachment(filename, file);
+            if (fileBytes != null) {
+                String originalFilename = (filename != null) ? filename : "archivo";
+                helper.addAttachment(originalFilename, new org.springframework.core.io.ByteArrayResource(fileBytes));
             }
 
             mailSender.send(message);
-
+            log.info("Correo masivo asíncrono enviado a {} destinatarios.", emails.size());
         } catch (Exception e) {
-            throw new ApiException(
-                    "Error al enviar el correo",
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            log.error("Error al enviar el correo masivo asíncrono: {}", e.getMessage(), e);
+
         }
     }
 
