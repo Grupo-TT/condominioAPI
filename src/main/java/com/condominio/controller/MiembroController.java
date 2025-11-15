@@ -72,6 +72,7 @@ public class MiembroController {
         return persona.getCasa().getId();
     }
     @GetMapping("/informacion-miembros")
+    @PreAuthorize("hasRole('PROPIETARIO')")
     public ResponseEntity<SuccessResult<MiembrosResponseDTO>> obtenerMiembrosPropietario(
             @AuthenticationPrincipal UserDetails userDetails) {
 
