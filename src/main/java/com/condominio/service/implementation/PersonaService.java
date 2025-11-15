@@ -3,7 +3,6 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
-import com.condominio.dto.response.PersonaSimpleDTO;
 import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
