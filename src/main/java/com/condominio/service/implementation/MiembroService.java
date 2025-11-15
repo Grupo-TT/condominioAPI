@@ -4,6 +4,7 @@ import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
+import com.condominio.dto.response.MiembrosResponseDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
@@ -158,6 +159,39 @@ public class MiembroService implements IMiembroService {
                 : "Miembro deshabilitado correctamente";
 
         return new SuccessResult<>(mensaje, null);
+    }
+
+
+    public SuccessResult<MiembrosResponseDTO> obtenerMiembrosPorCasaConEstado(Long idCasa) {
+
+        List<MiembrosDTO> miembros = new ArrayList<>();
+
+
+        personaRepository.findPropietarioByCasaId(idCasa)
+                .map(p -> convertirPersonaAMiembroDTO(p, "PROPIETARIO"))
+                .ifPresent(miembros::add);
+
+
+        boolean arrendatarioExiste = personaRepository.findArrendatarioByCasaId(idCasa)
+                .map(p -> convertirPersonaAMiembroDTO(p, "ARRENDATARIO"))
+                .map(p -> {
+                    miembros.add(p);
+                    return true;
+                })
+                .orElse(false);
+
+
+        List<Miembro> miembrosActivos = miembroRepository.findByCasaIdAndEstadoTrue(idCasa);
+        boolean miembrosExisten = !miembrosActivos.isEmpty();
+        miembros.addAll(
+                miembrosActivos.stream()
+                        .map(this::convertirMiembroEntidadADTO)
+                        .toList()
+        );
+
+
+        MiembrosResponseDTO response = new MiembrosResponseDTO(miembros, arrendatarioExiste, miembrosExisten);
+        return new SuccessResult<>("Miembros encontrados", response);
     }
 
 
