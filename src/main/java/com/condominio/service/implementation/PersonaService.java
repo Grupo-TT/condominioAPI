@@ -3,6 +3,8 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
+import com.condominio.dto.response.PersonaSimpleDTO;
+import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Persona;
@@ -22,6 +24,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 
 @Service
@@ -159,5 +164,23 @@ public class PersonaService implements IPersonaService {
         return new SuccessResult<>("Persona actualizada correctamente",null);
 
     }
+    public List<PersonaSimpleRolDTO> obtenerTodasPersonas() {
+        Iterable<Persona> personas = personaRepository.findAll();
 
+        return StreamSupport.stream(personas.spliterator(), false)
+                .map(this::convertirASimpleRolDTO)
+                .collect(Collectors.toList());
+    }
+
+    private PersonaSimpleRolDTO convertirASimpleRolDTO(Persona persona) {
+        PersonaSimpleRolDTO dto = new PersonaSimpleRolDTO();
+        dto.setNombreCompleto(persona.getNombreCompleto());
+        dto.setTelefono(persona.getTelefono());
+        dto.setCorreo(persona.getUser().getEmail());
+        List<String> roles = persona.getUser().getRoles().stream()
+                .map(role -> role.getRoleEnum().name())
+                .toList();
+        dto.setRoles(roles);
+        return dto;
+    }
 }

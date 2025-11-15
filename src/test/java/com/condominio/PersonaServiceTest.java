@@ -2,6 +2,7 @@ package com.condominio;
 
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
+import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
@@ -22,7 +23,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -490,5 +495,68 @@ class PersonaServiceTest {
         assertEquals("El número de documento ya está registrado", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(personaRepository, never()).save(any());
+    }
+    @Test
+    void obtenerTodasPersonas_ShouldReturnListOfPersonaSimpleRolDTO() {
+
+        UserEntity user1 = new UserEntity();
+        RoleEntity role1 = new RoleEntity();
+        role1.setRoleEnum(RoleEnum.ADMIN);
+        user1.setRoles(Set.of(role1));
+        user1.setEmail("user1@example.com");
+
+        Persona persona1 = new Persona();
+        persona1.setPrimerNombre("Juan");
+        persona1.setSegundoNombre("Carlos");
+        persona1.setPrimerApellido("Pérez");
+        persona1.setSegundoApellido("Gómez");
+        persona1.setTelefono(123456789L);
+        persona1.setUser(user1);
+
+        UserEntity user2 = new UserEntity();
+        RoleEntity role2 = new RoleEntity();
+        role2.setRoleEnum(RoleEnum.PROPIETARIO);
+        user2.setRoles(Set.of(role2));
+        user2.setEmail("user2@example.com");
+
+        Persona persona2 = new Persona();
+        persona2.setPrimerNombre("Ana");
+        persona2.setPrimerApellido("López");
+        persona2.setTelefono(987654321L);
+        persona2.setUser(user2);
+
+        when(personaRepository.findAll()).thenReturn(List.of(persona1, persona2));
+
+
+        List<PersonaSimpleRolDTO> result = personaService.obtenerTodasPersonas();
+
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        PersonaSimpleRolDTO dto1 = result.getFirst();
+        assertEquals("Juan Carlos Pérez Gómez", dto1.getNombreCompleto());
+        assertEquals(123456789L, dto1.getTelefono());
+        assertEquals("user1@example.com", dto1.getCorreo());
+        assertEquals(List.of("ADMIN"), dto1.getRoles());
+
+        PersonaSimpleRolDTO dto2 = result.get(1);
+        assertEquals("Ana López", dto2.getNombreCompleto());
+        assertEquals(987654321L, dto2.getTelefono());
+        assertEquals("user2@example.com", dto2.getCorreo());
+        assertEquals(List.of("PROPIETARIO"), dto2.getRoles());
+    }
+
+    @Test
+    void obtenerTodasPersonas_ShouldReturnEmptyList_WhenNoPersonas() {
+
+        when(personaRepository.findAll()).thenReturn(Collections.emptyList());
+
+
+        List<PersonaSimpleRolDTO> result = personaService.obtenerTodasPersonas();
+
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }

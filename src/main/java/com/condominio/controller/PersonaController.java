@@ -3,8 +3,8 @@ package com.condominio.controller;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
+import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.Persona;
 import com.condominio.service.interfaces.IPersonaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -13,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/persona")
@@ -53,5 +55,12 @@ public class PersonaController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(personaService.updatePersona(personaUpdateDTO, userDetails));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<List<PersonaSimpleRolDTO>> obtenerTodasPersonas() {
+        List<PersonaSimpleRolDTO> personas = personaService.obtenerTodasPersonas();
+        return new SuccessResult<>("Personas encontradas", personas);
     }
 }
