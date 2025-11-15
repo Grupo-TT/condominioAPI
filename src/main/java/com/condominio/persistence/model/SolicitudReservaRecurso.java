@@ -20,6 +20,8 @@ public class SolicitudReservaRecurso {
 
     @Column
     private LocalDate fechaSolicitud;
+    @Column
+    private LocalDate fechaCreacion;
 
     @Column
     private LocalTime horaInicio;

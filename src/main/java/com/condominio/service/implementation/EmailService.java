@@ -3,10 +3,12 @@ package com.condominio.service.implementation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
+import com.condominio.dto.response.MostrarObligacionDTO;
 
 import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
+import com.condominio.persistence.model.Persona;
 import com.condominio.util.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
+import java.time.format.TextStyle;
+import java.util.List;
+import java.util.Locale;
+
 import static com.condominio.util.constants.AppConstants.*;
 
 @Service
@@ -127,6 +134,51 @@ public class EmailService {
         context.setVariable("fechaSolicitud", soliReservaDTO.getFechaSolicitud());
         context.setVariable("estado", soliReservaDTO.getEstadoSolicitud());
         return templateEngine.process(SOLICITUD_HTML, context);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarObligacionMensual(
+            String destinatario,
+            MostrarObligacionDTO obligacionDTO) throws MessagingException {
+
+        String mesActual = obligacionDTO.getFecha()
+                .getMonth()
+                .getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
+        mesActual = mesActual.substring(0, 1).toUpperCase() + mesActual.substring(1);
+
+        String htmlContent = generarHtmlObligacionMensual(obligacionDTO);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(destinatario);
+        helper.setSubject("Se ha generado tu mensualidad por administración de " + mesActual);
+        helper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarObligacionesMensualesMasivas(List<Persona> personas, MostrarObligacionDTO mostrarObligacionDTO) {
+        personas.forEach(persona -> {
+            try {
+                enviarObligacionMensual(
+                        persona.getUser().getEmail(),
+                        mostrarObligacionDTO
+                );
+            } catch (MessagingException e) {
+
+                log.error("No se pudo enviar correo a {}: {}", persona.getUser().getEmail(), e.getMessage());
+            }
+        });
+    }
+
+    public String generarHtmlObligacionMensual(MostrarObligacionDTO obligacionDTO) {
+        Context context = new Context();
+
+        context.setVariable("titulo", obligacionDTO.getTitulo());
+        context.setVariable("motivo", obligacionDTO.getMotivo());
+        context.setVariable("casa", obligacionDTO.getCasa());
+        context.setVariable("monto", obligacionDTO.getMonto());
+
+        return templateEngine.process("email/obligacion-mensual", context);
     }
 
 

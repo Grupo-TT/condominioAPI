@@ -18,4 +18,5 @@ public interface IObligacionService {
     SuccessResult<Obligacion> update(Long id, MultaActualizacionDTO multa);
     ResponseEntity<?> generarPazYSalvo(Long idCasa);
     SuccessResult<List<MultasPorCasaDTO>> obtenerCasasConMultas();
+    void generarObligacionesMensuales();
 }
