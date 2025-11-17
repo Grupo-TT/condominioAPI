@@ -4,6 +4,7 @@ import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
+import com.condominio.dto.response.MiembrosResponseDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Persona;
 import com.condominio.service.implementation.MiembroService;
@@ -65,9 +66,18 @@ public class MiembroController {
         return ResponseEntity.ok(result);
     }
 
+
     private Long obtenerCasaId(UserDetails userDetails) {
         Persona persona = personaService.getPersonaFromUserDetails(userDetails);
         return persona.getCasa().getId();
     }
+    @GetMapping("/informacion-miembros")
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<SuccessResult<MiembrosResponseDTO>> obtenerMiembrosPropietario(
+            @AuthenticationPrincipal UserDetails userDetails) {
 
+        Long casaUsuarioId = obtenerCasaId(userDetails);
+        SuccessResult<MiembrosResponseDTO> result = miembroService.obtenerMiembrosPorCasaConEstado(casaUsuarioId);
+        return ResponseEntity.ok(result);
+    }
 }
