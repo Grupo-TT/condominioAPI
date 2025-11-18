@@ -21,6 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Set;
 
+
 @RequiredArgsConstructor
 @Service
 public class UserService implements IUserService, UserDetailsService {
@@ -29,6 +30,7 @@ public class UserService implements IUserService, UserDetailsService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final PersonaRepository personaRepository;
+    private final EmailService emailService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -108,4 +110,19 @@ public class UserService implements IUserService, UserDetailsService {
         return new SuccessResult<>("Password actualizada correctamente",null);
     }
 
+
+    public void recuperarPassword(String email) {
+        UserEntity usuario = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException("El usuario no existe", HttpStatus.OK));
+
+        int numero = (int)(Math.random() * 900000) + 100000;
+        String nuevaPassword = String.valueOf(numero);
+        usuario.setContrasenia(passwordEncoder.encode(nuevaPassword));
+        userRepository.save(usuario);
+
+        Persona persona = personaRepository.findByUser_Id(usuario.getId());
+        String nombreUsuario = persona.getNombreCompleto();
+
+        emailService.enviarPasswordOlvidada(email, nuevaPassword, nombreUsuario);
+    }
 }

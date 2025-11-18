@@ -13,5 +13,6 @@ public interface IUserService {
     UserEntity createUser(String email, Long numeroDeDocumento, RoleEnum rolEnum);
     UserEntity findByEmail(String email);
     SuccessResult<Void> changePassword(UserDetails userDetails, PasswordUpdateDTO dto);
+    void recuperarPassword(String email);
 }
 

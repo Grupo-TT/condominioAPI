@@ -172,5 +172,37 @@ public class EmailService {
 
         return templateEngine.process("email/obligacion-mensual", context);
     }
+
+    @Async("mailTaskExecutor")
+    public void enviarPasswordOlvidada(String destinatario,
+                                       String passwordTemporal,
+                                       String nombreUsuario) {
+
+        try {
+            String htmlContent = generarHtmlOlvidarPw(passwordTemporal, nombreUsuario);
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+            helper.setTo(destinatario);
+            helper.setSubject("Tu contraseña temporal - Condominio Flor del campo");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(mimeMessage);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String generarHtmlOlvidarPw(String passwordTemporal, String nombreUsuario) {
+        Context context = new Context();
+        context.setVariable("passwordTemporal", passwordTemporal);
+        context.setVariable("nombreUsuario", nombreUsuario);
+
+        context.setVariable("loginUrl", "http://localhost:8080");
+
+        return templateEngine.process("email/password-olvidada.html", context);
+    }
 }
 
