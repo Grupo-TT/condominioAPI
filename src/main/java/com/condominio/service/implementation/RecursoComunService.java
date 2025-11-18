@@ -135,6 +135,7 @@ public class RecursoComunService implements IRecursoComunService {
                         .nombre(recurso.getNombre())
                         .descripcion(recurso.getDescripcion())
                         .disponibilidadRecurso(recurso.getDisponibilidadRecurso())
+                        .tipoRecursoComun(recurso.getTipoRecursoComun())
                         .build())
                 .toList();
     }
