@@ -19,6 +19,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
 import java.util.Set;
 
 
@@ -115,7 +117,8 @@ public class UserService implements IUserService, UserDetailsService {
         UserEntity usuario = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException("El usuario no existe", HttpStatus.OK));
 
-        int numero = (int)(Math.random() * 900000) + 100000;
+        SecureRandom random = new SecureRandom();
+        int numero = 100000 + random.nextInt(900000);
         String nuevaPassword = String.valueOf(numero);
         usuario.setContrasenia(passwordEncoder.encode(nuevaPassword));
         userRepository.save(usuario);
