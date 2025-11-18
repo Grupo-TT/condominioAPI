@@ -1,6 +1,7 @@
 package com.condominio.dto.response;
 
 import com.condominio.persistence.model.DisponibilidadRecurso;
+import com.condominio.persistence.model.TipoRecursoComun;
 import lombok.*;
 import lombok.Builder;
 
@@ -16,4 +17,5 @@ public class RecursoComunPropiDTO {
     private String nombre;
     private String descripcion;
     private DisponibilidadRecurso disponibilidadRecurso;
+    private TipoRecursoComun tipoRecursoComun;
 }

@@ -24,5 +24,7 @@ public class AppConstants {
     public static final DateTimeFormatter READABLE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
     public static final double MAX_PAGO_ADICIONAL = 10_000_000;
+    public static final String CASA_NO_EXISTE = "La casa con id %d no existe";
+    public static final String MIEMBRO_NO_EXISTE = "El miembro con id %d no existe";
 
 }
