@@ -1,11 +1,9 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.SolicitudReservaUpdateDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.PersonaRepository;
-import com.condominio.persistence.repository.RecursoComunRepository;
-import com.condominio.persistence.repository.ReservaRepository;
-import com.condominio.persistence.repository.SolicitudReservaRecursoRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import com.condominio.util.events.RepliedSolicitudEvent;
 import com.condominio.util.exception.ApiException;
@@ -18,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +32,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     private final ReservaRepository reservaRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final PersonaHelper personaHelper;
+    private final CasaRepository casaRepository;
 
 
     public  SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado){
@@ -175,19 +175,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("Solicitante no encontrado.", HttpStatus.BAD_REQUEST);
         }
 
-        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud());
-
-        LocalTime nuevaHoraInicio = solicitudDTO.getHoraInicio();
-        LocalTime nuevaHoraFin = solicitudDTO.getHoraFin();
-
-        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
-            LocalTime horaInicioExistente = reserva.getHoraInicio();
-            LocalTime horaFinExistente = reserva.getHoraFin();
-
-            // Condición de traslape:
-            // (inicioNueva < finExistente) && (finNueva > inicioExistente)
-            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
-        });
+        boolean hayConflicto = validarFechaSolicitud(recursoComun, solicitudDTO.getFechaSolicitud(),solicitudDTO.getHoraInicio(), solicitudDTO.getHoraFin(), null);
 
         if (hayConflicto) {
             throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
@@ -200,6 +188,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
                 .horaFin(solicitudDTO.getHoraFin())
                 .estadoSolicitud(EstadoSolicitud.PENDIENTE)
                 .numeroInvitados(solicitudDTO.getNumeroInvitados())
+                .fechaCreacion(LocalDate.now())
                 .build();
         solicitudReservaRecursoRepository.save(reservaRecurso);
 
@@ -230,6 +219,73 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         return new SuccessResult<>("Cantidad de invitados modificado correctamente.", solicitudDTO);
     }
 
+    @Override
+    public SuccessResult<List<SolicitudReservaDTO>> findReservasByCasa(Long idCasa) {
+        List<SolicitudReservaRecurso> reservasCasa = solicitudReservaRecursoRepository.findAllByCasa_Id(idCasa);
+        List<SolicitudReservaDTO> reservasDTO = new ArrayList<>();
+        if(reservasCasa.isEmpty()) {
+            throw new ApiException("No se encontró ninguna reserva.", HttpStatus.NOT_FOUND);
+        }else {
+            for (SolicitudReservaRecurso reserva : reservasCasa) {
+                SolicitudReservaDTO solicitudReservaDTO = SolicitudReservaDTO.builder()
+                        .id(reserva.getId())
+                        .horaFin(reserva.getHoraFin())
+                        .horaInicio(reserva.getHoraInicio())
+                        .numeroInvitados(reserva.getNumeroInvitados())
+                        .fechaReserva(reserva.getFechaSolicitud())
+                        .fechaCreacion(reserva.getFechaCreacion())
+                        .estadoSolicitud(reserva.getEstadoSolicitud())
+                        .nombre(reserva.getRecursoComun().getNombre())
+                        .descripcion(reserva.getRecursoComun().getDescripcion())
+                        .tipoRecursoComun(reserva.getRecursoComun().getTipoRecursoComun())
+                        .build();
+                reservasDTO.add(solicitudReservaDTO);
+            }
+        }
+        return new SuccessResult<>("Solicitudes obtenidas correctamente", reservasDTO);
+    }
+
+    @Override
+    public SuccessResult<Void> deleteSolicitud(Long id) {
+        if (!solicitudReservaRecursoRepository.existsById(id)) {
+            throw new ApiException("No se encontró la solicitud con el ID especificado.", HttpStatus.NOT_FOUND);
+        }
+
+        solicitudReservaRecursoRepository.deleteById(id);
+
+        return new SuccessResult<>("Solicitud eliminada correctamente", null);
+    }
+
+    @Override
+    public SuccessResult<SolicitudRecursoPropiDTO> actualizarSolicitud(SolicitudReservaUpdateDTO solicitudReservaUpdateDTO) {
+        SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(solicitudReservaUpdateDTO.getIdSolicitud()).get();
+
+        boolean hayConflicto = validarFechaSolicitud(solicitud.getRecursoComun(), solicitudReservaUpdateDTO.getFechaSolicitud(), solicitudReservaUpdateDTO.getHoraInicio(), solicitudReservaUpdateDTO.getHoraFin(), solicitudReservaUpdateDTO.getIdSolicitud());
+
+        if (!solicitud.getEstadoSolicitud().equals(EstadoSolicitud.PENDIENTE)){
+            throw new ApiException("Solo se pueden modificar solicitudes en estado Pendiente.", HttpStatus.NOT_FOUND);
+        }
+        if (!hayConflicto) {
+            solicitud.setFechaSolicitud(solicitudReservaUpdateDTO.getFechaSolicitud());
+            solicitud.setHoraFin(solicitudReservaUpdateDTO.getHoraFin());
+            solicitud.setHoraInicio(solicitudReservaUpdateDTO.getHoraInicio());
+            solicitud.setNumeroInvitados(solicitudReservaUpdateDTO.getNumeroInvitados());
+
+
+            SolicitudRecursoPropiDTO solicitudDTO = SolicitudRecursoPropiDTO.builder()
+                    .horaFin(solicitudReservaUpdateDTO.getHoraFin())
+                    .horaInicio(solicitudReservaUpdateDTO.getHoraInicio())
+                    .fechaSolicitud(solicitudReservaUpdateDTO.getFechaSolicitud())
+                    .numeroInvitados(solicitudReservaUpdateDTO.getNumeroInvitados())
+                    .build();
+
+            solicitudReservaRecursoRepository.save(solicitud);
+
+            return new SuccessResult<>("Reserva modificada exitosamente, Pendiente de aprobación por el administrador.", solicitudDTO);
+        }
+        throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.NOT_FOUND);
+    }
+
     private SolicitudReservaRecurso validarSolicitudPendiente(Long id) {
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -242,5 +298,31 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("No se puede aprobar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
         }
         return solicitud;
+    }
+
+    public Boolean validarFechaSolicitud(RecursoComun recursoComun, LocalDate fechaSolicitud, LocalTime horaInicio, LocalTime horaFin, Long idSolicitud) {
+        List<SolicitudReservaRecurso> solicitudesReservas =
+                solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, fechaSolicitud);
+
+        LocalTime nuevaHoraInicio = horaInicio;
+        LocalTime nuevaHoraFin = horaFin;
+
+        if (solicitudesReservas.isEmpty()) {
+            return false;
+        }
+
+        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            if (idSolicitud != null && reserva.getId().equals(idSolicitud)) {
+                return false;
+            }
+
+            LocalTime horaInicioExistente = reserva.getHoraInicio();
+            LocalTime horaFinExistente = reserva.getHoraFin();
+
+            return nuevaHoraInicio.isBefore(horaFinExistente)
+                    && nuevaHoraFin.isAfter(horaInicioExistente);
+        });
+
+        return hayConflicto;
     }
 }

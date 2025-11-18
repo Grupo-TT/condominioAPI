@@ -1,6 +1,8 @@
 package com.condominio.controller;
 
 import com.condominio.dto.response.*;
+import com.condominio.dto.request.SolicitudReservaUpdateDTO;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import lombok.RequiredArgsConstructor;
@@ -60,4 +62,23 @@ public class SolicitudReservaRecursoController {
     public SuccessResult<SolicitudRecursoPropiDTO> modificarCantidadInvitados(@RequestBody InvitadoDTO invitadoDTO){
         return solicitudReservaService.modificarCantidadInvitados(invitadoDTO);
     }
+
+    @GetMapping("/mis-reservas/{id}")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<List<SolicitudReservaDTO>> findAllByPersona(@PathVariable Long id){
+        return solicitudReservaService.findReservasByCasa(id);
+    }
+
+    @DeleteMapping("/mis-reservas/delete/{id}")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
+    public SuccessResult<Void> deleteReserva(@PathVariable Long id){
+        return solicitudReservaService.deleteSolicitud(id);
+    }
+
+    @PutMapping("/mis-reservas/update")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<SolicitudRecursoPropiDTO> findAllByPersona(@RequestBody SolicitudReservaUpdateDTO solicitudReservaUpdateDTO){
+        return solicitudReservaService.actualizarSolicitud(solicitudReservaUpdateDTO);
+    }
+
 }

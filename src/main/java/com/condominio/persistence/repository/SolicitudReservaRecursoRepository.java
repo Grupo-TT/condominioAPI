@@ -1,5 +1,6 @@
 package com.condominio.persistence.repository;
 
+import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.SolicitudReservaRecurso;
@@ -14,5 +15,6 @@ public interface SolicitudReservaRecursoRepository extends CrudRepository<Solici
 
     List<SolicitudReservaRecurso> findByEstadoSolicitud(EstadoSolicitud estadoSolicitud);
     List<SolicitudReservaRecurso> findByRecursoComunAndFechaSolicitud(RecursoComun recursoComun, LocalDate fecha);
+    List<SolicitudReservaRecurso> findAllByCasa_Id(Long idCasa);
 
 }
