@@ -15,7 +15,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
@@ -191,7 +190,7 @@ public class EmailService {
             mailSender.send(mimeMessage);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error enviando correo a {}", destinatario, e);
         }
     }
 
