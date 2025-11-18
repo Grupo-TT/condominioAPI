@@ -124,8 +124,26 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
+        RecursoComun recursoComun = oldSolicitud.getRecursoComun();
+
         if(solicitud.getFechaSolicitud().isBefore(LocalDate.now())) {
             throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
+        }
+
+        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitud.getFechaSolicitud());
+
+        LocalTime nuevaHoraInicio = solicitud.getHoraInicio();
+        LocalTime nuevaHoraFin = solicitud.getHoraFin();
+
+        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            LocalTime horaInicioExistente = reserva.getHoraInicio();
+            LocalTime horaFinExistente = reserva.getHoraFin();
+
+            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
+        });
+
+        if (hayConflicto) {
+            throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
         }
 
         oldSolicitud.setFechaSolicitud(solicitud.getFechaSolicitud());
