@@ -120,13 +120,9 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     }
 
     @Override
-    public SuccessResult<SolicitudReservaRecursoDTO> update(Long id, SolicitudReservaRecursoDTO solicitud) {
+    public SuccessResult<SolicitudReservaUpdateDTO> update(Long id, SolicitudReservaUpdateDTO solicitud) {
         SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-        if(solicitud.getRecursoComun().getDisponibilidadRecurso()== DisponibilidadRecurso.NO_DISPONIBLE) {
-            throw new ApiException("No se puede modificar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
-        }
 
         if(solicitud.getFechaSolicitud().isBefore(LocalDate.now())) {
             throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
@@ -139,7 +135,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
         SolicitudReservaRecurso actualizada = solicitudReservaRecursoRepository.save(oldSolicitud);
 
-        return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaRecursoDTO.class));
+        return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaUpdateDTO.class));
     }
 
     @Override

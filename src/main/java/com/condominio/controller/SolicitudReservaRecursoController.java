@@ -1,9 +1,6 @@
 package com.condominio.controller;
 
-import com.condominio.dto.response.InvitadoDTO;
-import com.condominio.dto.response.SolicitudRecursoPropiDTO;
-import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.dto.response.SuccessResult;
+import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +45,7 @@ public class SolicitudReservaRecursoController {
 
     @PutMapping("/edit/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public SuccessResult<SolicitudReservaRecursoDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaRecursoDTO solicitud){
+    public SuccessResult<SolicitudReservaUpdateDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaUpdateDTO solicitud){
         return solicitudReservaService.update(id, solicitud);
     }
 
