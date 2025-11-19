@@ -26,4 +26,6 @@ public class SolicitudReparacionLocativaDTO {
     private Casa casa;
 
     private PersonaSimpleDTO solicitante;
+
+    private String comentarios;
 }

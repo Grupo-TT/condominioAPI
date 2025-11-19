@@ -9,6 +9,7 @@ import com.condominio.persistence.model.UserEntity;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
+import com.condominio.service.implementation.EmailService;
 import com.condominio.service.implementation.UserService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +44,9 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Mock
+    private EmailService emailService;
 
     private AutoCloseable closeable;
 
@@ -338,5 +342,34 @@ class UserServiceTest {
         assertEquals("Las contraseñas nuevas no coinciden", exception.getMessage());
         verify(userRepository, never()).save(any());
     }
+    @Test
+    void recuperarPassword_deberiaGenerarGuardarYEnviar() {
 
+        String email = "test@mail.com";
+
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        user.setEmail(email);
+
+        Persona persona = new Persona();
+        persona.setPrimerNombre("Juan");
+        persona.setPrimerApellido("Perez");
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(anyString())).thenReturn("pw-codificada");
+        when(personaRepository.findByUser_Id(1L)).thenReturn(persona);
+
+        userService.recuperarPassword(email);
+
+        verify(userRepository).findByEmail(email);
+        verify(passwordEncoder).encode(anyString());
+        verify(userRepository).save(user);
+        verify(personaRepository).findByUser_Id(1L);
+
+        verify(emailService).enviarPasswordOlvidada(
+                eq(email),
+                anyString(),
+                eq("Juan Perez")
+        );
+    }
 }

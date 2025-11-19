@@ -1,5 +1,6 @@
 package com.condominio.controller;
 
+import com.condominio.dto.response.*;
 import com.condominio.dto.request.SolicitudReservaUpdateDTO;
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
@@ -46,7 +47,7 @@ public class SolicitudReservaRecursoController {
 
     @PutMapping("/edit/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public SuccessResult<SolicitudReservaRecursoDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaRecursoDTO solicitud){
+    public SuccessResult<SolicitudReservaUpdateDTO> update(@PathVariable Long id, @RequestBody SolicitudReservaUpdateDTO solicitud){
         return solicitudReservaService.update(id, solicitud);
     }
 
