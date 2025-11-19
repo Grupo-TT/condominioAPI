@@ -21,7 +21,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,7 +48,6 @@ class PersonaServiceTest {
 
     @Mock
     private com.condominio.persistence.repository.UserRepository userRepository;
-
 
     private AutoCloseable closeable;
 

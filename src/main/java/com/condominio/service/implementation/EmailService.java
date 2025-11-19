@@ -15,7 +15,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
@@ -171,6 +170,38 @@ public class EmailService {
         context.setVariable("monto", obligacionDTO.getMonto());
 
         return templateEngine.process("email/obligacion-mensual", context);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarPasswordOlvidada(String destinatario,
+                                       String passwordTemporal,
+                                       String nombreUsuario) {
+
+        try {
+            String htmlContent = generarHtmlOlvidarPw(passwordTemporal, nombreUsuario);
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+            helper.setTo(destinatario);
+            helper.setSubject("Tu contraseña temporal - Condominio Flor del campo");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(mimeMessage);
+
+        } catch (Exception e) {
+            log.error("Error enviando correo a {}", destinatario, e);
+        }
+    }
+
+    public String generarHtmlOlvidarPw(String passwordTemporal, String nombreUsuario) {
+        Context context = new Context();
+        context.setVariable("passwordTemporal", passwordTemporal);
+        context.setVariable("nombreUsuario", nombreUsuario);
+
+        context.setVariable("loginUrl", "http://localhost:8080");
+
+        return templateEngine.process("email/password-olvidada.html", context);
     }
 }
 
