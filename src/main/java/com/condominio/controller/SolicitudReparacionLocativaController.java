@@ -6,10 +6,7 @@ import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReparacionLocativaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,4 +23,23 @@ public class SolicitudReparacionLocativaController {
             @RequestParam ("estado")EstadoSolicitud estado){
         return solicitudReparacionLocativaService.findByEstado(estado);
     }
+
+    @PutMapping("/approve/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<SolicitudReparacionLocativaDTO> aprobar(@PathVariable Long id){
+        return solicitudReparacionLocativaService.aprobar(id);
+    }
+
+    @PutMapping("/reject/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<SolicitudReparacionLocativaDTO> rechazar(@PathVariable Long id , @RequestParam("comentarios") String comentarios){
+        return solicitudReparacionLocativaService.rechazar(id, comentarios);
+    }
+
+    @PutMapping("/edit/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<SolicitudReparacionLocativaDTO> update(@PathVariable Long id, @RequestBody SolicitudReparacionLocativaDTO solicitud){
+        return solicitudReparacionLocativaService.update(id, solicitud);
+    }
+
 }
