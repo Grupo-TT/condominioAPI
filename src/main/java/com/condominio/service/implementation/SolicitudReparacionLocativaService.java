@@ -146,7 +146,7 @@ public class SolicitudReparacionLocativaService implements ISolicitudReparacionL
             throw new ApiException("La fecha de fin de la obra debe ser posterior a la fecha de inicio", HttpStatus.BAD_REQUEST);
         }
 
-        SolicitudReparacionLocativa SoliReparacion = SolicitudReparacionLocativa.builder()
+        SolicitudReparacionLocativa soliReparacion = SolicitudReparacionLocativa.builder()
                 .motivo(soliDTO.getMotivo())
                 .responsable(soliDTO.getResponsable())
                 .estadoSolicitud(EstadoSolicitud.PENDIENTE)
@@ -157,7 +157,7 @@ public class SolicitudReparacionLocativaService implements ISolicitudReparacionL
                 .tipoObraDetalle(soliDTO.getTipoObraDetalle())
                 .casa(solicitante.getCasa())
                 .build();
-        solicitudReparacionLocativaRepository.save(SoliReparacion);
+        solicitudReparacionLocativaRepository.save(soliReparacion);
 
         return new SuccessResult<>("Solicitud registrada exitosamente, Pendiente de aprobación por el administrador", soliDTO);
     }
