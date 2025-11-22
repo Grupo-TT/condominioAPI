@@ -1,6 +1,7 @@
 package com.condominio.persistence.repository;
 
 import com.condominio.dto.response.MascotaCountDTO;
+import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Mascota;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -18,4 +19,5 @@ public interface MascotaRepository extends CrudRepository<Mascota, Long> {
             "WHERE m.casa.id = :casaId " +
             "GROUP BY m.tipoMascota")
     List<MascotaCountDTO> contarPorTipo(@Param("casaId") Long casaId);
+    void deleteAllByCasa(Casa casa);
 }

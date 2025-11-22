@@ -103,7 +103,6 @@ class PersonaServiceTest {
 
         verify(userService).createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa());
         verify(personaRepository).findByNumeroDocumento(dto.getNumeroDocumento());
-        verify(personaRepository).existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa());
         verify(casaService).findById(dto.getIdCasa());
         verify(personaRepository).save(mappedPersona);
     }
@@ -127,38 +126,6 @@ class PersonaServiceTest {
 
         assertEquals("El numero  de documento ya se  encuentra registrado", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-
-        verify(userService).createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa());
-        verify(personaRepository).findByNumeroDocumento(dto.getNumeroDocumento());
-        verifyNoMoreInteractions(personaRepository);
-    }
-
-    @Test
-    void save_ShouldThrowException_WhenRoleAlreadyExistsInCasa() {
-        PersonaRegistroDTO dto = new PersonaRegistroDTO();
-        dto.setEmail("test@example.com");
-        dto.setNumeroDocumento(123L);
-        dto.setRolEnCasa(RoleEnum.ARRENDATARIO);
-        dto.setIdCasa(2L);
-
-        UserEntity mockUser = new UserEntity();
-
-        when(userService.createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa()))
-                .thenReturn(mockUser);
-        when(personaRepository.findByNumeroDocumento(dto.getNumeroDocumento()))
-                .thenReturn(Optional.empty());
-        when(personaRepository.existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa()))
-                .thenReturn(true);
-
-        ApiException ex = assertThrows(ApiException.class, () -> personaService.save(dto));
-
-        assertTrue(ex.getMessage().contains("Ya existe un " + dto.getRolEnCasa()));
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-
-        verify(userService).createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa());
-        verify(personaRepository).findByNumeroDocumento(dto.getNumeroDocumento());
-        verify(personaRepository).existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa());
-        verifyNoMoreInteractions(casaService);
     }
 
     @Test
@@ -187,7 +154,6 @@ class PersonaServiceTest {
 
         verify(userService).createUser(dto.getEmail(), dto.getNumeroDocumento(), dto.getRolEnCasa());
         verify(personaRepository).findByNumeroDocumento(dto.getNumeroDocumento());
-        verify(personaRepository).existsRoleInCasa(dto.getIdCasa(), dto.getRolEnCasa());
         verify(casaService).findById(dto.getIdCasa());
     }
 

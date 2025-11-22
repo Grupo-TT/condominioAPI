@@ -32,6 +32,7 @@ public class Persona {
     private Boolean junta;
     private Boolean comiteConvivencia;
     @ManyToOne
+    @JoinColumn(name = "casa_id", nullable = true)
     private Casa casa;
 
     public String getNombreCompleto() {
