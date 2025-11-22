@@ -1,5 +1,6 @@
 package com.condominio.persistence.repository;
 
+import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -12,4 +13,5 @@ public interface MiembroRepository extends CrudRepository<Miembro, Long> {
     boolean existsByNumeroDocumento(Long numeroDocumento);
     List<Miembro> findByCasaId(Long casaId);
     boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
+    void deleteAllByCasa(Casa casa);
 }
