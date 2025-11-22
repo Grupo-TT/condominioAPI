@@ -1,5 +1,6 @@
 package com.condominio.controller;
 
+import com.condominio.dto.request.SolicitudReparacionUpdateDTO;
 import com.condominio.dto.response.*;
 //import com.condominio.persistence.model.EstadoPqrs;
 import com.condominio.persistence.model.EstadoSolicitud;
@@ -43,7 +44,7 @@ public class SolicitudReparacionAndPqrsController {
 
     @PutMapping("/edit-solicitud-reparacion/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public SuccessResult<SolicitudReparacionLocativaDTO> updateSolicitud(@PathVariable Long id, @RequestBody SolicitudReparacionLocativaDTO solicitud){
+    public SuccessResult<SolicitudReparacionUpdateDTO> updateSolicitud(@PathVariable Long id, @RequestBody SolicitudReparacionUpdateDTO solicitud){
         return solicitudReparacionLocativaService.update(id, solicitud);
     }
 

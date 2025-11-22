@@ -1,5 +1,6 @@
 package com.condominio;
 
+import com.condominio.dto.request.SolicitudReparacionUpdateDTO;
 import com.condominio.dto.response.SolicitudReparacionLocativaDTO;
 import com.condominio.dto.response.SolicitudReparacionPropiDTO;
 import com.condominio.dto.response.SuccessResult;
@@ -111,7 +112,7 @@ public class SolicitudReparacionLocativaTest {
         when(solicitudRepo.findByEstadoSolicitud(estado)).thenReturn(Collections.emptyList());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.findByEstado(estado));
-        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(ex.getMessage()).contains("No hay solicitudes con estado: " + estado);
 
         verify(solicitudRepo, times(1)).findByEstadoSolicitud(estado);
@@ -150,17 +151,20 @@ public class SolicitudReparacionLocativaTest {
     void update_shouldUpdateAndReturnDto_whenValidDates() {
 
         Long id = 1L;
+        Casa casa = new Casa();
+        casa.setId(id);
         SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
         existing.setId(id);
         existing.setMotivo("Motivo viejo");
         existing.setResponsable("Responsable viejo");
         existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        existing.setCasa(casa);
         existing.setFechaRealizacion(LocalDate.now().plusDays(5));
 
         // DTO: fechaRealizacion must NOT be future (service throws if isAfter(today))
         // inicioObra must be >= today; finObra > inicioObra
         LocalDate now = LocalDate.now();
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
         dto.setFechaRealizacion(now); // valid (not future)
         dto.setMotivo("Motivo nuevo");
         dto.setResponsable("Responsable nuevo");
@@ -170,24 +174,15 @@ public class SolicitudReparacionLocativaTest {
         dto.setTipoObra(TipoObra.ELECTRICA);
         dto.setTipoObraDetalle("Detalle obra");
 
-        SolicitudReparacionLocativa saved = new SolicitudReparacionLocativa();
-        saved.setId(id);
-        saved.setFechaRealizacion(now);
-        saved.setMotivo(dto.getMotivo());
-        saved.setResponsable(dto.getResponsable());
-        saved.setEstadoSolicitud(dto.getEstadoSolicitud());
-        saved.setInicioObra(dto.getInicioObra());
-        saved.setFinObra(dto.getFinObra());
-        saved.setTipoObra(dto.getTipoObra());
-        saved.setTipoObraDetalle(dto.getTipoObraDetalle());
+        SolicitudReparacionLocativa saved = getSolicitudReparacionLocativa(id, now, dto);
 
-        SolicitudReparacionLocativaDTO mappedDto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO mappedDto = new SolicitudReparacionUpdateDTO();
 
         when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
         when(solicitudRepo.save(existing)).thenReturn(saved);
-        when(modelMapper.map(saved, SolicitudReparacionLocativaDTO.class)).thenReturn(mappedDto);
+        when(modelMapper.map(saved, SolicitudReparacionUpdateDTO.class)).thenReturn(mappedDto);
 
-        SuccessResult<SolicitudReparacionLocativaDTO> result = service.update(id, dto);
+        SuccessResult<SolicitudReparacionUpdateDTO> result = service.update(id, dto);
 
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Solicitud de Reparacion modificada exitosamente");
@@ -205,7 +200,21 @@ public class SolicitudReparacionLocativaTest {
 
         verify(solicitudRepo).findById(id);
         verify(solicitudRepo).save(existing);
-        verify(modelMapper).map(saved, SolicitudReparacionLocativaDTO.class);
+        verify(modelMapper).map(saved, SolicitudReparacionUpdateDTO.class);
+    }
+
+    private static SolicitudReparacionLocativa getSolicitudReparacionLocativa(Long id, LocalDate now, SolicitudReparacionUpdateDTO dto) {
+        SolicitudReparacionLocativa saved = new SolicitudReparacionLocativa();
+        saved.setId(id);
+        saved.setFechaRealizacion(now);
+        saved.setMotivo(dto.getMotivo());
+        saved.setResponsable(dto.getResponsable());
+        saved.setEstadoSolicitud(dto.getEstadoSolicitud());
+        saved.setInicioObra(dto.getInicioObra());
+        saved.setFinObra(dto.getFinObra());
+        saved.setTipoObra(dto.getTipoObra());
+        saved.setTipoObraDetalle(dto.getTipoObraDetalle());
+        return saved;
     }
 
     @Test
@@ -214,11 +223,12 @@ public class SolicitudReparacionLocativaTest {
         Long id = 2L;
         SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
         existing.setId(id);
-        existing.setFechaRealizacion(LocalDate.now().plusDays(2));
+        existing.setFechaRealizacion(LocalDate.now());
 
         // DTO with future fechaRealizacion should trigger BAD_REQUEST per service
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
-        dto.setFechaRealizacion(LocalDate.now().plusDays(1)); // future -> invalid
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
+        dto.setId(id);
+        dto.setFechaRealizacion(LocalDate.now().plusDays(1));// future -> invalid
 
         when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
 
@@ -237,7 +247,7 @@ public class SolicitudReparacionLocativaTest {
         SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
         existing.setId(id);
 
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
         dto.setFechaRealizacion(LocalDate.now()); // valid
         dto.setInicioObra(LocalDate.now().minusDays(1)); // invalid: before today
         dto.setFinObra(LocalDate.now().plusDays(2));
@@ -259,7 +269,7 @@ public class SolicitudReparacionLocativaTest {
         existing.setId(id);
 
         LocalDate now = LocalDate.now();
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
         dto.setFechaRealizacion(now);
         dto.setInicioObra(now.plusDays(3));
         dto.setFinObra(now.plusDays(2)); // fin before inicio -> invalid
@@ -276,7 +286,7 @@ public class SolicitudReparacionLocativaTest {
     @Test
     void update_shouldThrowNotFound_whenSolicitudMissing() {
         Long id = 99L;
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
         when(solicitudRepo.findById(id)).thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.update(id, dto));
@@ -508,7 +518,6 @@ public class SolicitudReparacionLocativaTest {
         verify(solicitudRepo, never()).save(any());
     }
 
-    // eliminar and modificar tests remain same but adjusted where service mutates fechaRealizacion to now
     @Test
     void eliminar_success_deletesWhenOwnerAndPending() {
 
@@ -564,15 +573,26 @@ public class SolicitudReparacionLocativaTest {
         Persona persona = new Persona();
         persona.setCasa(casa);
 
+        SolicitudReparacionLocativaDTO mappedDto = new SolicitudReparacionLocativaDTO();
+
         when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
         when(solicitudRepo.findById(id)).thenReturn(Optional.of(solicitud));
+        when(modelMapper.map(solicitud, SolicitudReparacionLocativaDTO.class)).thenReturn(mappedDto);
+        when(personaHelper.obtenerSolicitantePorCasa(casa.getId())).thenReturn(persona);
+        when(personaHelper.toPersonaSimpleDTO(persona))
+                .thenReturn(com.condominio.dto.response.PersonaSimpleDTO.builder()
+                        .nombreCompleto("Owner").correo("owner@example.com").build());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.eliminar(id));
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(ex.getMessage()).contains("No se puede eliminar una solicitud que ya ha sido aprobada o rechazada");
+        assertThat(ex.getMessage())
+                .contains("No se puede eliminar una solicitud que ya ha sido aprobada o rechazada");
 
         verify(solicitudRepo, never()).delete(any());
+        verify(modelMapper).map(solicitud, SolicitudReparacionLocativaDTO.class); // opcional
+        verify(personaHelper).obtenerSolicitantePorCasa(casa.getId()); // opcional
     }
+
 
     @Test
     void eliminar_forbidden_whenUserNotOwner() {

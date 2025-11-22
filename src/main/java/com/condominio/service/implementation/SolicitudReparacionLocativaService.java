@@ -1,5 +1,6 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.SolicitudReparacionUpdateDTO;
 import com.condominio.dto.response.SolicitudReparacionPropiDTO;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.PersonaRepository;
@@ -53,11 +54,9 @@ public class SolicitudReparacionLocativaService implements ISolicitudReparacionL
     }
 
     @Override
-    public SuccessResult<SolicitudReparacionLocativaDTO> update(Long id, SolicitudReparacionLocativaDTO solicitud) {
+    public SuccessResult<SolicitudReparacionUpdateDTO> update(Long id, SolicitudReparacionUpdateDTO solicitud) {
         SolicitudReparacionLocativa oldSolicitud = solicitudReparacionLocativaRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
-        Long casaId = oldSolicitud.getCasa().getId();
-        Persona solicitante = personaHelper.obtenerSolicitantePorCasa(casaId);
 
         if(solicitud.getFechaRealizacion().isAfter(LocalDate.now())) {
             throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
@@ -81,8 +80,7 @@ public class SolicitudReparacionLocativaService implements ISolicitudReparacionL
         oldSolicitud.setEstadoSolicitud(solicitud.getEstadoSolicitud());
 
         SolicitudReparacionLocativa actualizada = solicitudReparacionLocativaRepository.save(oldSolicitud);
-        SolicitudReparacionLocativaDTO dto = modelMapper.map(actualizada, SolicitudReparacionLocativaDTO.class);
-        dto.setSolicitante(personaHelper.toPersonaSimpleDTO(solicitante));
+        SolicitudReparacionUpdateDTO dto = modelMapper.map(actualizada, SolicitudReparacionUpdateDTO.class);
 
         return new SuccessResult<>("Solicitud de Reparacion modificada exitosamente", dto);
     }
