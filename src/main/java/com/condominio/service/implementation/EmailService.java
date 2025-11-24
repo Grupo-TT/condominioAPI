@@ -1,28 +1,22 @@
 package com.condominio.service.implementation;
 
-
 import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
-
-import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.Persona;
-import com.condominio.util.exception.ApiException;
 import com.condominio.util.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -38,7 +32,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
-    private final int maxFileSizeMB = 10;
+    private static final int maxFileSizeMB = 10;
 
     public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;

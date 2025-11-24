@@ -4,7 +4,6 @@ import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
 import com.condominio.dto.response.PersonaSimpleRolDTO;
-import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.MascotaRepository;
@@ -86,9 +85,7 @@ public class PersonaService implements IPersonaService {
                     propietarioAntiguo.getUser().setEnabled(false);
                     propietarioAntiguo.setCasa(null);
                     personaRepository.save(propietarioAntiguo);
-                    System.out.println("Llegó bien antes de registarPersona.");
                     Persona savedPersona = registrarPersona(persona);
-                    System.out.println("Llegó bien hasta el final.");
                     return new SuccessResult<>("Persona registrada correctamente", savedPersona);
                 }
             }
