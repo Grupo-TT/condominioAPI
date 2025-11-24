@@ -44,6 +44,9 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
     JOIN u.roles r
     WHERE r.roleEnum = 'PROPIETARIO'
 """) List<Persona> findAllPropietariosConCasa();
+
+    Persona findByUser_Id(Long id);
+    List<Persona> findAllByCasa_Id(Long casaId);
 }
 
 

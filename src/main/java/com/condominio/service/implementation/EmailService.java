@@ -1,8 +1,7 @@
 package com.condominio.service.implementation;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 
+import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 
 import com.condominio.dto.request.SendEmailsDTO;
@@ -10,8 +9,12 @@ import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.Persona;
 import com.condominio.util.exception.ApiException;
+import com.condominio.util.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -20,9 +23,9 @@ import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
@@ -181,8 +184,37 @@ public class EmailService {
         return templateEngine.process("email/obligacion-mensual", context);
     }
 
+    @Async("mailTaskExecutor")
+    public void enviarPasswordOlvidada(String destinatario,
+                                       String passwordTemporal,
+                                       String nombreUsuario) {
 
+        try {
+            String htmlContent = generarHtmlOlvidarPw(passwordTemporal, nombreUsuario);
 
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+            helper.setTo(destinatario);
+            helper.setSubject("Tu contraseña temporal - Condominio Flor del campo");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(mimeMessage);
+
+        } catch (Exception e) {
+            log.error("Error enviando correo a {}", destinatario, e);
+        }
+    }
+
+    public String generarHtmlOlvidarPw(String passwordTemporal, String nombreUsuario) {
+        Context context = new Context();
+        context.setVariable("passwordTemporal", passwordTemporal);
+        context.setVariable("nombreUsuario", nombreUsuario);
+
+        context.setVariable("loginUrl", "http://localhost:8080");
+
+        return templateEngine.process("email/password-olvidada.html", context);
+    }
     @Autowired
     @Lazy
     private EmailService self;

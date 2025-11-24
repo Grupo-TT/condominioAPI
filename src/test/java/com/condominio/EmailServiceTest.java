@@ -495,4 +495,39 @@ class EmailServiceTest {
         verify(spyEmailService, times(2)).enviarObligacionMensual(anyString(), eq(dto));
     }
 
+    @Test
+    void testEnviarPasswordOlvidada_mockeado()  {
+
+        EmailService spyEmailService = spy(emailService);
+
+        doReturn("<html>Mock HTML</html>")
+                .when(spyEmailService)
+                .generarHtmlOlvidarPw("123456", "Juan Pérez");
+
+        MimeMessage mensaje = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mensaje);
+
+
+        spyEmailService.enviarPasswordOlvidada("user@correo.com", "123456", "Juan Pérez");
+
+
+        verify(mailSender).send(mensaje);
+        verify(spyEmailService).generarHtmlOlvidarPw("123456", "Juan Pérez");
+    }
+
+    @Test
+    void testGenerarHtmlOlvidarPw_mockeado() {
+
+        when(templateEngine.process(anyString(), any(Context.class)))
+                .thenReturn("<html>pw=123456<br>nombre=Juan Pérez<br>login=http://localhost:8080</html>");
+
+        String html = emailService.generarHtmlOlvidarPw("123456", "Juan Pérez");
+
+        assertNotNull(html);
+        assertTrue(html.contains("123456"));
+        assertTrue(html.contains("Juan Pérez"));
+        assertTrue(html.contains("http://localhost:8080"));
+
+        verify(templateEngine, times(1)).process(anyString(), any(Context.class));
+    }
 }

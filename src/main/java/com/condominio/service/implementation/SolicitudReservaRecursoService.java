@@ -120,16 +120,30 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     }
 
     @Override
-    public SuccessResult<SolicitudReservaRecursoDTO> update(Long id, SolicitudReservaRecursoDTO solicitud) {
+    public SuccessResult<SolicitudReservaUpdateDTO> update(Long id, SolicitudReservaUpdateDTO solicitud) {
         SolicitudReservaRecurso oldSolicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if(solicitud.getRecursoComun().getDisponibilidadRecurso()== DisponibilidadRecurso.NO_DISPONIBLE) {
-            throw new ApiException("No se puede modificar una reserva de un recurso deshabilitado.", HttpStatus.BAD_REQUEST);
-        }
+        RecursoComun recursoComun = oldSolicitud.getRecursoComun();
 
         if(solicitud.getFechaSolicitud().isBefore(LocalDate.now())) {
             throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
+        }
+
+        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitud.getFechaSolicitud());
+
+        LocalTime nuevaHoraInicio = solicitud.getHoraInicio();
+        LocalTime nuevaHoraFin = solicitud.getHoraFin();
+
+        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
+            LocalTime horaInicioExistente = reserva.getHoraInicio();
+            LocalTime horaFinExistente = reserva.getHoraFin();
+
+            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
+        });
+
+        if (hayConflicto) {
+            throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
         }
 
         oldSolicitud.setFechaSolicitud(solicitud.getFechaSolicitud());
@@ -139,7 +153,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
 
         SolicitudReservaRecurso actualizada = solicitudReservaRecursoRepository.save(oldSolicitud);
 
-        return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaRecursoDTO.class));
+        return new SuccessResult<>("Reserva modificada exitosamente", modelMapper.map(actualizada, SolicitudReservaUpdateDTO.class));
     }
 
     @Override

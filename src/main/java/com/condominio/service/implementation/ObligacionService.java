@@ -212,7 +212,7 @@ public class ObligacionService implements IObligacionService {
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
     }
 
-    @Scheduled(cron = "0 0 0 12 * *", zone = "America/Bogota")
+    @Scheduled(cron = "0 0 0 18 * *", zone = "America/Bogota")
     public void generarObligacionesMensuales() {
         LocalDate hoy = LocalDate.now();
         String mes = hoy.getMonth().getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));

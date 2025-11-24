@@ -571,7 +571,7 @@ class SolicitudReservaRecursoServiceTest {
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
 
-        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        SolicitudReservaUpdateDTO dto = new SolicitudReservaUpdateDTO();
         dto.setFechaSolicitud(LocalDate.now().plusDays(3));
         dto.setHoraInicio(LocalTime.of(14, 0));
         dto.setHoraFin(LocalTime.of(16, 0));
@@ -579,7 +579,6 @@ class SolicitudReservaRecursoServiceTest {
 
         RecursoComun recurso = new RecursoComun();
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
-        dto.setRecursoComun(recurso);
 
         SolicitudReservaRecurso saved = new SolicitudReservaRecurso();
         saved.setId(id);
@@ -589,9 +588,9 @@ class SolicitudReservaRecursoServiceTest {
         saved.setNumeroInvitados(dto.getNumeroInvitados());
 
         when(solicitudReservaRecursoRepository.save(any(SolicitudReservaRecurso.class))).thenReturn(saved);
-        when(modelMapper.map(saved, SolicitudReservaRecursoDTO.class)).thenReturn(dto);
+        when(modelMapper.map(saved, SolicitudReservaUpdateDTO.class)).thenReturn(dto);
 
-        SuccessResult<SolicitudReservaRecursoDTO> result = solicitudReservaRecursoService.update(id, dto);
+        SuccessResult<SolicitudReservaUpdateDTO> result = solicitudReservaRecursoService.update(id, dto);
 
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Reserva modificada exitosamente");
@@ -608,7 +607,7 @@ class SolicitudReservaRecursoServiceTest {
         assertThat(arg.getNumeroInvitados()).isEqualTo(dto.getNumeroInvitados());
 
         verify(solicitudReservaRecursoRepository).findById(id);
-        verify(modelMapper).map(saved, SolicitudReservaRecursoDTO.class);
+        verify(modelMapper).map(saved, SolicitudReservaUpdateDTO.class);
     }
 
     @Test
@@ -617,7 +616,7 @@ class SolicitudReservaRecursoServiceTest {
         Long id = 99L;
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.empty());
 
-        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        SolicitudReservaUpdateDTO dto = new SolicitudReservaUpdateDTO();
 
         assertThatThrownBy(() -> solicitudReservaRecursoService.update(id, dto))
                 .isInstanceOf(ApiException.class)
@@ -632,33 +631,6 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void update_shouldThrowBadRequest_whenRecursoDisabled() {
-
-        Long id = 2L;
-        SolicitudReservaRecurso existing = new SolicitudReservaRecurso();
-        existing.setId(id);
-
-        when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
-
-        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
-        RecursoComun recurso = new RecursoComun();
-        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
-        dto.setRecursoComun(recurso);
-        dto.setFechaSolicitud(LocalDate.now().plusDays(1));
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.update(id, dto))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("No se puede modificar una reserva de un recurso deshabilitado.")
-                .satisfies(ex -> {
-                    ApiException ae = (ApiException) ex;
-                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-                });
-
-        verify(solicitudReservaRecursoRepository).findById(id);
-        verify(solicitudReservaRecursoRepository, never()).save(any());
-    }
-
-    @Test
     void update_shouldThrowBadRequest_whenFechaAntesDeHoy() {
 
         Long id = 3L;
@@ -667,10 +639,9 @@ class SolicitudReservaRecursoServiceTest {
 
         when(solicitudReservaRecursoRepository.findById(id)).thenReturn(Optional.of(existing));
 
-        SolicitudReservaRecursoDTO dto = new SolicitudReservaRecursoDTO();
+        SolicitudReservaUpdateDTO dto = new SolicitudReservaUpdateDTO();
         RecursoComun recurso = new RecursoComun();
         recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE); // enabled
-        dto.setRecursoComun(recurso);
 
         dto.setFechaSolicitud(LocalDate.now().minusDays(1)); // fecha anterior a hoy -> invalid
         dto.setHoraInicio(LocalTime.of(10, 0));

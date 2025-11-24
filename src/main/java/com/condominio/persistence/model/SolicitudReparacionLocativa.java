@@ -30,4 +30,7 @@ public class SolicitudReparacionLocativa {
     @ManyToOne(targetEntity = Casa.class)
     @JoinColumn(nullable = false)
     private Casa casa;
+
+    @Column
+    private String comentarios;
 }

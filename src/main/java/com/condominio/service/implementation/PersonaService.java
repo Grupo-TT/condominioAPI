@@ -4,11 +4,11 @@ import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
 import com.condominio.dto.response.PersonaSimpleRolDTO;
+import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.RoleEnum;
-import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.model.*;
+import com.condominio.persistence.repository.MascotaRepository;
+import com.condominio.persistence.repository.MiembroRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.interfaces.ICasaService;
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
+import java.util.Optional;
 
 @Service
 public class PersonaService implements IPersonaService {
@@ -37,21 +37,27 @@ public class PersonaService implements IPersonaService {
     private final ModelMapper modelMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final UserRepository userRepository;
+    private final MascotaRepository mascotaRepository ;
+    private final MiembroService miembroService;
+    private final MiembroRepository miembroRepository;
 
     public PersonaService(IUserService userService,
                           PersonaRepository personaRepository,
                           ModelMapper modelMapper,
                           ICasaService casaService,
                           ApplicationEventPublisher applicationEventPublisher,
-                          UserRepository userRepository
+                          UserRepository userRepository, MascotaRepository mascotaRepository, MiembroService miembroService,
 
-    ) {
+                          MiembroRepository miembroRepository) {
         this.userService = userService;
         this.personaRepository = personaRepository;
         this.casaService = casaService;
         this.modelMapper = modelMapper;
         this.applicationEventPublisher = applicationEventPublisher;
         this.userRepository = userRepository;
+        this.mascotaRepository = mascotaRepository;
+        this.miembroService = miembroService;
+        this.miembroRepository = miembroRepository;
     }
 
     @Override
@@ -67,37 +73,27 @@ public class PersonaService implements IPersonaService {
     @Override
     @Transactional
     public SuccessResult<Persona> save(PersonaRegistroDTO persona) {
-        UserEntity userEntity = userService.createUser(persona.getEmail(),
-                persona.getNumeroDocumento(),
-                persona.getRolEnCasa());
-
-        if (existsByNumeroDeDocumento(persona.getNumeroDocumento())) {
-            throw new ApiException("El numero  de documento " +
-                    "ya se  encuentra registrado", HttpStatus.BAD_REQUEST);
+        List<Persona> personasCasa = personaRepository.findAllByCasa_Id(persona.getIdCasa());
+        if (!personasCasa.isEmpty()) {
+            for(Persona propietarioAntiguo : personasCasa){
+                boolean tieneRol = propietarioAntiguo.getUser().getRoles()
+                        .stream()
+                        .anyMatch(r -> r.getRoleEnum().equals(persona.getRolEnCasa()));
+                if(tieneRol){
+                    propietarioAntiguo.setEstado(false);
+                    mascotaRepository.deleteAllByCasa(propietarioAntiguo.getCasa());
+                    miembroRepository.deleteAllByCasa(propietarioAntiguo.getCasa());
+                    propietarioAntiguo.getUser().setEnabled(false);
+                    propietarioAntiguo.setCasa(null);
+                    personaRepository.save(propietarioAntiguo);
+                    System.out.println("Llegó bien antes de registarPersona.");
+                    Persona savedPersona = registrarPersona(persona);
+                    System.out.println("Llegó bien hasta el final.");
+                    return new SuccessResult<>("Persona registrada correctamente", savedPersona);
+                }
+            }
         }
-
-        boolean takenRol = existsRoleInCasa(persona.getIdCasa(),
-                persona.getRolEnCasa());
-
-        if (takenRol) {
-            throw new ApiException("Ya existe un " + persona.getRolEnCasa()
-                    + " registrado para esta casa",
-                    HttpStatus.BAD_REQUEST);
-        }
-        Casa findCasa = casaService.findById(persona.getIdCasa())
-                .orElseThrow(() -> new ApiException(
-                        "La casa con id " + persona.getIdCasa() + " no existe",
-                        HttpStatus.NOT_FOUND
-                ));
-
-        Persona newPersona = modelMapper.map(persona, Persona.class);
-        newPersona.setUser(userEntity);
-        newPersona.setEstado(true);
-        newPersona.setComiteConvivencia(false);
-        newPersona.setJunta(false);
-        newPersona.setCasa(findCasa);
-        Persona savedPersona = personaRepository.save(newPersona);
-        applicationEventPublisher.publishEvent(new CreatedPersonaEvent(savedPersona));
+        Persona savedPersona = registrarPersona(persona);
         return new SuccessResult<>("Persona registrada correctamente", savedPersona);
     }
 
@@ -165,12 +161,10 @@ public class PersonaService implements IPersonaService {
     }
     public List<PersonaSimpleRolDTO> obtenerTodasPersonas() {
         Iterable<Persona> personas = personaRepository.findAll();
-
         return StreamSupport.stream(personas.spliterator(), false)
                 .map(this::convertirASimpleRolDTO)
                 .collect(Collectors.toList());
-    }
-
+        }
     private PersonaSimpleRolDTO convertirASimpleRolDTO(Persona persona) {
         PersonaSimpleRolDTO dto = new PersonaSimpleRolDTO();
         dto.setNombreCompleto(persona.getNombreCompleto());
@@ -182,4 +176,32 @@ public class PersonaService implements IPersonaService {
         dto.setRoles(roles);
         return dto;
     }
+    public Persona registrarPersona(PersonaRegistroDTO persona){
+
+        if (existsByNumeroDeDocumento(persona.getNumeroDocumento())) {
+            throw new ApiException("El numero  de documento " +
+                    "ya se  encuentra registrado", HttpStatus.BAD_REQUEST);
+        }
+
+        UserEntity userEntity = userService.createUser(persona.getEmail(),
+                persona.getNumeroDocumento(),
+                persona.getRolEnCasa());
+
+        Casa findCasa = casaService.findById(persona.getIdCasa())
+                .orElseThrow(() -> new ApiException(
+                        "La casa con id " + persona.getIdCasa() + " no existe",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        Persona newPersona = modelMapper.map(persona, Persona.class);
+        newPersona.setUser(userEntity);
+        newPersona.setEstado(true);
+        newPersona.setComiteConvivencia(false);
+        newPersona.setJunta(false);
+        newPersona.setCasa(findCasa);
+        Persona savedPersona = personaRepository.save(newPersona);
+        applicationEventPublisher.publishEvent(new CreatedPersonaEvent(savedPersona));
+        return savedPersona;
+    }
+
 }

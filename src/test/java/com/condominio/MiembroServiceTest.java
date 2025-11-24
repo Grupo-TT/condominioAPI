@@ -4,6 +4,7 @@ import com.condominio.dto.request.MiembroActualizacionDTO;
 import com.condominio.dto.request.MiembroRegistroDTO;
 import com.condominio.dto.response.MiembrosDTO;
 import com.condominio.dto.response.MiembrosDatosDTO;
+import com.condominio.dto.response.MiembrosResponseDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.Miembro;
@@ -14,6 +15,7 @@ import com.condominio.persistence.repository.MiembroRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.MiembroService;
 import com.condominio.util.exception.ApiException;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -478,5 +480,118 @@ class MiembroServiceTest {
         verify(miembroRepository, never()).save(any());
     }
 
+    @Test
+    void testObtenerMiembrosPorCasaConEstado_WhenAllExist() {
+        Long casaId = 1L;
 
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+        UserEntity propietarioUser = new UserEntity();
+        propietarioUser.setEmail("juan@example.com");
+        propietario.setUser(propietarioUser);
+
+        when(personaRepository.findPropietarioByCasaId(casaId))
+                .thenReturn(Optional.of(propietario));
+
+
+        Persona arrendatario = new Persona();
+        arrendatario.setPrimerNombre("Ana");
+        arrendatario.setPrimerApellido("Gómez");
+        UserEntity arrUser = new UserEntity();
+        arrUser.setEmail("ana@example.com");
+        arrendatario.setUser(arrUser);
+
+        when(personaRepository.findArrendatarioByCasaId(casaId))
+                .thenReturn(Optional.of(arrendatario));
+
+
+        Miembro hijo = new Miembro();
+        hijo.setNombre("Pedro");
+        hijo.setParentesco("Hijo");
+        when(miembroRepository.findByCasaIdAndEstadoTrue(casaId))
+                .thenReturn(List.of(hijo));
+
+        SuccessResult<MiembrosResponseDTO> result =
+                miembroService.obtenerMiembrosPorCasaConEstado(casaId);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Miembros encontrados");
+
+        MiembrosResponseDTO data = result.data();
+
+
+        assertThat(data.getMiembros().size()).isEqualTo(3);
+        assertThat(data.isArrendatarioExiste()).isTrue();
+        assertThat(data.isMiembrosExisten()).isTrue();
+
+        verify(personaRepository).findPropietarioByCasaId(casaId);
+        verify(personaRepository).findArrendatarioByCasaId(casaId);
+        verify(miembroRepository).findByCasaIdAndEstadoTrue(casaId);
+    }
+    @Test
+    void testObtenerMiembrosPorCasaConEstado_WhenNoArrendatario() {
+        Long casaId = 1L;
+
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Juan");
+        propietario.setPrimerApellido("Pérez");
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@example.com");
+        propietario.setUser(user);
+
+        when(personaRepository.findPropietarioByCasaId(casaId))
+                .thenReturn(Optional.of(propietario));
+
+
+        when(personaRepository.findArrendatarioByCasaId(casaId))
+                .thenReturn(Optional.empty());
+
+
+        Miembro miembro = new Miembro();
+        miembro.setNombre("Carlos");
+        miembro.setParentesco("Hermano");
+        when(miembroRepository.findByCasaIdAndEstadoTrue(casaId))
+                .thenReturn(List.of(miembro));
+
+        SuccessResult<MiembrosResponseDTO> result =
+                miembroService.obtenerMiembrosPorCasaConEstado(casaId);
+
+        MiembrosResponseDTO data = result.data();
+
+
+        assertThat(data.getMiembros().size()).isEqualTo(2);
+
+        assertThat(data.isArrendatarioExiste()).isFalse();
+        assertThat(data.isMiembrosExisten()).isTrue();
+    }
+
+    @Test
+    void testObtenerMiembrosPorCasaConEstado_WhenNoneExist() {
+        Long casaId = 1L;
+
+        when(personaRepository.findPropietarioByCasaId(casaId))
+                .thenReturn(Optional.empty());
+        when(personaRepository.findArrendatarioByCasaId(casaId))
+                .thenReturn(Optional.empty());
+        when(miembroRepository.findByCasaIdAndEstadoTrue(casaId))
+                .thenReturn(List.of());
+
+        SuccessResult<MiembrosResponseDTO> result =
+                miembroService.obtenerMiembrosPorCasaConEstado(casaId);
+
+        MiembrosResponseDTO data = result.data();
+
+
+        assertThat(data.getMiembros())
+                .asInstanceOf(InstanceOfAssertFactories.list(MiembrosDTO.class))
+                .isEmpty();
+
+        assertThat(data.isArrendatarioExiste()).isFalse();
+        assertThat(data.isMiembrosExisten()).isFalse();
+
+        assertThat(result.message()).isEqualTo("Miembros encontrados");
+    }
 }
