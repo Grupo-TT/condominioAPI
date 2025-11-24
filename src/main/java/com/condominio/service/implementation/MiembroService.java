@@ -78,9 +78,14 @@ public class MiembroService implements IMiembroService {
                     "ya se  encuentra registrado", HttpStatus.OK);
 
         }
+        if(personaRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
+            throw new ApiException("El numero  de documento " +
+                    "ya se  encuentra registrado", HttpStatus.OK);
+        }
         Miembro newMiembro= Miembro.builder()
                 .nombre(miembroRegistroDTO.getNombre())
                 .numeroDocumento(miembroRegistroDTO.getNumeroDocumento())
+                .tipoDocumento(miembroRegistroDTO.getTipoDocumento())
                 .telefono(miembroRegistroDTO.getTelefono())
                 .parentesco(miembroRegistroDTO.getParentesco())
                 .casa(validarCasa)
@@ -101,6 +106,7 @@ public class MiembroService implements IMiembroService {
                     dto.setId(miembro.getId());
                     dto.setIdCasa(miembro.getCasa().getId());
                     dto.setNombre(miembro.getNombre());
+                    dto.setTipoDocumento(miembro.getTipoDocumento());
                     dto.setNumeroDocumento(miembro.getNumeroDocumento());
                     dto.setTelefono(miembro.getTelefono());
                     dto.setParentesco(miembro.getParentesco());
@@ -118,6 +124,13 @@ public class MiembroService implements IMiembroService {
                         HttpStatus.NOT_FOUND
                 ));
 
+        if (Boolean.FALSE.equals(miembro.getEstado())) {
+            throw new ApiException(
+                    "Este miembro está inactivo",
+                    HttpStatus.OK
+            );
+        }
+
         if (!miembro.getCasa().getId().equals(casaUsuarioId)) {
             throw new ApiException(
                     "No puedes modificar miembros que no pertenezcan a tu casa",
@@ -125,9 +138,13 @@ public class MiembroService implements IMiembroService {
             );
         }
         if(miembroRepository.existsByNumeroDocumentoAndIdNot(dto.getNumeroDocumento(), idMiembro)) {
-            throw new ApiException("El numero de documento ya  se encuentra registrado", HttpStatus.OK);
+            throw new ApiException(AppConstants.DOCUMENTO_REPETIDO, HttpStatus.OK);
+        }
+        if(personaRepository.existsByNumeroDocumento(dto.getNumeroDocumento())){
+            throw new ApiException(AppConstants.DOCUMENTO_REPETIDO, HttpStatus.OK);
         }
         miembro.setNombre(dto.getNombre());
+        miembro.setTipoDocumento(dto.getTipoDocumento());
         miembro.setNumeroDocumento(dto.getNumeroDocumento());
         miembro.setTelefono(dto.getTelefono());
         miembro.setParentesco(dto.getParentesco());
@@ -211,6 +228,7 @@ public class MiembroService implements IMiembroService {
                 nombreCompleto,
                 tipoMiembro,
                 persona.getNumeroDocumento(),
+                persona.getTipoDocumento(),
                 persona.getTelefono(),
                 user.getEmail()
         );
@@ -221,6 +239,7 @@ public class MiembroService implements IMiembroService {
                 miembro.getNombre(),
                 miembro.getParentesco(),
                 miembro.getNumeroDocumento(),
+                miembro.getTipoDocumento(),
                 miembro.getTelefono(),
                 null);
 
