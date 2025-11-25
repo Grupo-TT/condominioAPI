@@ -235,6 +235,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
                         .fechaReserva(reserva.getFechaSolicitud())
                         .fechaCreacion(reserva.getFechaCreacion())
                         .estadoSolicitud(reserva.getEstadoSolicitud())
+                        .idRecurso(reserva.getRecursoComun().getId())
                         .nombre(reserva.getRecursoComun().getNombre())
                         .descripcion(reserva.getRecursoComun().getDescripcion())
                         .tipoRecursoComun(reserva.getRecursoComun().getTipoRecursoComun())
