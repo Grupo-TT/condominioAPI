@@ -1,5 +1,6 @@
 package com.condominio.util.security;
 
+import com.condominio.service.implementation.PersonaService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -23,13 +24,14 @@ public class JwtUtil {
     private final Key key;
     private final long accessTokenValidityMillis;
     private final long refreshTokenValidityMillis;
+    private final PersonaService personaService;
 
 
-    public JwtUtil(JwtProperties jwtProperties) {
+    public JwtUtil(JwtProperties jwtProperties, PersonaService personaService) {
         this.key = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
         this.accessTokenValidityMillis = Duration.ofHours(jwtProperties.getExpiration()).toMillis();
         this.refreshTokenValidityMillis = Duration.ofHours(jwtProperties.getRefreshExpiration()).toMillis();
-
+        this.personaService = personaService;
     }
 
     public String generateAccessToken(UserDetails user) {
@@ -40,9 +42,11 @@ public class JwtUtil {
         List<String> rol = user.getAuthorities().stream()
                 .map(a -> a.getAuthority())
                 .toList();
+        Long idCasa = personaService.getPersonaFromUserDetails(user).getCasa().getId();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
+        claims.put("idCasa", idCasa);
         claims.put("type", "access");
         claims.put("iatReadable", formatDate(now));
         claims.put("expReadable", formatDate(expiry));
