@@ -49,10 +49,12 @@ public class AuthController {
 
             String nombre = null;
             Long idCasa = null;
+            Long idPersona = null;
             if (userEntity != null) {
                 Persona personaOpt = userService.findPersonaByUser(userEntity);
                     nombre = buildNombreCompleto(personaOpt);
                     idCasa = personaOpt.getCasa().getId();
+                    idPersona = personaOpt.getId();
                 }
 
             List<String> roles = userEntity.getRoles().stream()
@@ -64,7 +66,8 @@ public class AuthController {
                     userDetails.getUsername(),
                     nombre,
                     roles,
-                    idCasa
+                    idCasa,
+                    idPersona
             );
 
             return ResponseEntity.ok(new AuthResponse(token, refreshToken,userResponse));
