@@ -3,6 +3,7 @@ package com.condominio.service.implementation;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.PersonaUpdateDTO;
 import com.condominio.dto.response.PersonaPerfilDTO;
+import com.condominio.dto.response.PersonaSimpleRolDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.MascotaRepository;
@@ -22,8 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import java.util.Optional;
-
 
 @Service
 public class PersonaService implements IPersonaService {
@@ -83,9 +85,7 @@ public class PersonaService implements IPersonaService {
                     propietarioAntiguo.getUser().setEnabled(false);
                     propietarioAntiguo.setCasa(null);
                     personaRepository.save(propietarioAntiguo);
-                    System.out.println("Llegó bien antes de registarPersona.");
                     Persona savedPersona = registrarPersona(persona);
-                    System.out.println("Llegó bien hasta el final.");
                     return new SuccessResult<>("Persona registrada correctamente", savedPersona);
                 }
             }
@@ -156,7 +156,23 @@ public class PersonaService implements IPersonaService {
         return new SuccessResult<>("Persona actualizada correctamente",null);
 
     }
-
+    public List<PersonaSimpleRolDTO> obtenerTodasPersonas() {
+        Iterable<Persona> personas = personaRepository.findAll();
+        return StreamSupport.stream(personas.spliterator(), false)
+                .map(this::convertirASimpleRolDTO)
+                .collect(Collectors.toList());
+        }
+    private PersonaSimpleRolDTO convertirASimpleRolDTO(Persona persona) {
+        PersonaSimpleRolDTO dto = new PersonaSimpleRolDTO();
+        dto.setNombreCompleto(persona.getNombreCompleto());
+        dto.setTelefono(persona.getTelefono());
+        dto.setCorreo(persona.getUser().getEmail());
+        List<String> roles = persona.getUser().getRoles().stream()
+                .map(role -> role.getRoleEnum().name())
+                .toList();
+        dto.setRoles(roles);
+        return dto;
+    }
     public Persona registrarPersona(PersonaRegistroDTO persona){
 
         if (existsByNumeroDeDocumento(persona.getNumeroDocumento())) {

@@ -1,18 +1,23 @@
 package com.condominio.service.implementation;
 
-
+import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.Persona;
+import com.condominio.util.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import java.time.format.TextStyle;
@@ -27,6 +32,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final int maxFileSizeMB = 10;
 
     public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;
@@ -202,6 +208,90 @@ public class EmailService {
         context.setVariable("loginUrl", "http://localhost:8080");
 
         return templateEngine.process("email/password-olvidada.html", context);
+    }
+    @Autowired
+    @Lazy
+    private EmailService self;
+
+    public void sendToMany(SendEmailsDTO request) {
+        if (request.getEmails() == null || request.getEmails().isEmpty()) {
+            throw new ApiException("Debe enviar al menos un correo", HttpStatus.OK);
+        }
+
+        if (request.getSubject() == null || request.getSubject().trim().isEmpty()) {
+            throw new ApiException("El asunto es obligatorio", HttpStatus.BAD_REQUEST);
+        }
+
+        MultipartFile file = request.getFile();
+        boolean hasFile = (file != null && !file.isEmpty());
+        boolean messageEmpty = (request.getMessage() == null || request.getMessage().trim().isEmpty());
+
+        if (!hasFile && messageEmpty) {
+            throw new ApiException("Debe diligenciar el cuerpo del correo si no adjunta una imagen o archivo", HttpStatus.OK);
+        }
+
+        byte[] fileBytes = null;
+        String filename = null;
+
+        if (hasFile) {
+            long maxBytes = maxFileSizeMB * 1024L * 1024L;
+            if (file.getSize() > maxBytes) {
+                throw new ApiException("El archivo es muy grande. Máximo " + maxFileSizeMB + " MB", HttpStatus.OK);
+            }
+
+            String type = file.getContentType();
+            if (!isAllowed(type)) {
+                throw new ApiException("Tipo de archivo no permitido", HttpStatus.OK);
+            }
+
+            try {
+                fileBytes = file.getBytes();
+                filename = file.getOriginalFilename();
+            } catch (java.io.IOException e) {
+                log.error("Error al leer el archivo adjunto.", e);
+                throw new ApiException("Error al leer el archivo adjunto.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        String body = request.getMessage();
+        if (body == null || body.trim().isEmpty()) {
+            body = " ";
+        }
+
+
+        self.sendToManyAsync(request.getEmails(), request.getSubject(), body, fileBytes, filename);
+    }
+
+    @Async("mailTaskExecutor")
+    public void sendToManyAsync(java.util.List<String> emails, String subject, String body, byte[] fileBytes, String filename) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, fileBytes != null);
+
+            helper.setSubject(subject);
+            helper.setText(body, false);
+            helper.setTo(emails.toArray(new String[0]));
+
+            if (fileBytes != null) {
+                String originalFilename = (filename != null) ? filename : "archivo";
+                helper.addAttachment(originalFilename, new org.springframework.core.io.ByteArrayResource(fileBytes));
+            }
+
+            mailSender.send(message);
+            log.info("Correo masivo asíncrono enviado a {} destinatarios.", emails.size());
+        } catch (Exception e) {
+            log.error("Error al enviar el correo masivo asíncrono: {}", e.getMessage(), e);
+
+        }
+    }
+
+    private boolean isAllowed(String type) {
+        return type != null && (
+                type.startsWith("image/") ||
+                        type.equals("application/pdf") ||
+                        type.equals("application/msword") ||
+                        type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        );
     }
 }
 
