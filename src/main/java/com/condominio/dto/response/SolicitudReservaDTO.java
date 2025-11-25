@@ -20,6 +20,7 @@ public class SolicitudReservaDTO {
     private LocalTime horaFin;
     private int numeroInvitados;
     private EstadoSolicitud estadoSolicitud;
+    private Long idRecurso;
     private String nombre;
     private String descripcion;
     private TipoRecursoComun tipoRecursoComun;
