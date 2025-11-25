@@ -43,10 +43,12 @@ public class JwtUtil {
                 .map(a -> a.getAuthority())
                 .toList();
         Long idCasa = personaService.getPersonaFromUserDetails(user).getCasa().getId();
+        Long idPersona = personaService.getPersonaFromUserDetails(user).getId();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
         claims.put("idCasa", idCasa);
+        claims.put("idPersona", idPersona);
         claims.put("type", "access");
         claims.put("iatReadable", formatDate(now));
         claims.put("expReadable", formatDate(expiry));
