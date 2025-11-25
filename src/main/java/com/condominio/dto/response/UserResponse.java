@@ -6,6 +6,7 @@ public record UserResponse(
         String email,
         String nombre,
         List<String> roles,
-        Long idCasa
+        Long idCasa,
+        Long idPersona
 ) {
 }
