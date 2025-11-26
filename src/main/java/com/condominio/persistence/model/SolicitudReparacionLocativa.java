@@ -24,6 +24,12 @@ public class SolicitudReparacionLocativa {
     @Column
     private String responsable;
 
+    @Column
+    private LocalDate inicioObra;
+
+    @Column
+    private LocalDate finObra;
+
     @Enumerated(EnumType.STRING)
     private EstadoSolicitud estadoSolicitud;
 
@@ -33,4 +39,10 @@ public class SolicitudReparacionLocativa {
 
     @Column
     private String comentarios;
+
+    @Enumerated(EnumType.STRING)
+    private TipoObra tipoObra;
+
+    @Column
+    private String tipoObraDetalle;
 }

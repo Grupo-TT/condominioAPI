@@ -124,7 +124,7 @@ public class PersonaService implements IPersonaService {
     public PersonaPerfilDTO getPersonaPerfil( UserDetails userDetails) {
         Persona persona = getPersonaFromUserDetails(userDetails);
         return PersonaPerfilDTO.builder()
-                .numeroCasa(persona.getCasa().getNumeroCasa())
+                .numeroCasa(persona.getCasa() != null ? persona.getCasa().getNumeroCasa() : 0)
                 .junta(persona.getJunta())
                 .comiteConvivencia(persona.getComiteConvivencia())
                 .numeroDocumento(persona.getNumeroDocumento())

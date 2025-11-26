@@ -1,5 +1,6 @@
 package com.condominio.util.security;
 
+import com.condominio.persistence.model.Persona;
 import com.condominio.service.implementation.PersonaService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -42,8 +43,13 @@ public class JwtUtil {
         List<String> rol = user.getAuthorities().stream()
                 .map(a -> a.getAuthority())
                 .toList();
-        Long idCasa = personaService.getPersonaFromUserDetails(user).getCasa().getId();
-        Long idPersona = personaService.getPersonaFromUserDetails(user).getId();
+        Persona persona = personaService.getPersonaFromUserDetails(user);
+
+        Long idCasa = persona.getCasa() != null
+                ? persona.getCasa().getId()
+                : null;
+
+        Long idPersona = persona.getId();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
@@ -71,8 +77,13 @@ public class JwtUtil {
         List<String> rol = user.getAuthorities().stream()
                 .map(a -> a.getAuthority())
                 .toList();
-        Long idCasa = personaService.getPersonaFromUserDetails(user).getCasa().getId();
-        Long idPersona = personaService.getPersonaFromUserDetails(user).getId();
+        Persona persona = personaService.getPersonaFromUserDetails(user);
+
+        Long idCasa = persona.getCasa() != null
+                ? persona.getCasa().getId()
+                : null;
+
+        Long idPersona = persona.getId();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
