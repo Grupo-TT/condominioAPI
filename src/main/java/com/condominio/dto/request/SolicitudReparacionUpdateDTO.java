@@ -1,6 +1,5 @@
-package com.condominio.dto.response;
+package com.condominio.dto.request;
 
-import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.TipoObra;
 import lombok.*;
@@ -12,8 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SolicitudReparacionLocativaDTO {
-
+public class SolicitudReparacionUpdateDTO {
     private Long id;
 
     private LocalDate fechaRealizacion;
@@ -22,15 +20,11 @@ public class SolicitudReparacionLocativaDTO {
 
     private String responsable;
 
-    private EstadoSolicitud estadoSolicitud;
-
     private LocalDate inicioObra;
 
     private LocalDate finObra;
 
-    private Casa casa;
-
-    private PersonaSimpleDTO solicitante;
+    private EstadoSolicitud estadoSolicitud;
 
     private TipoObra tipoObra;
 

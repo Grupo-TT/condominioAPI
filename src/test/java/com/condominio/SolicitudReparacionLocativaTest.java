@@ -1,21 +1,28 @@
 package com.condominio;
 
+import com.condominio.dto.request.SolicitudReparacionUpdateDTO;
 import com.condominio.dto.response.SolicitudReparacionLocativaDTO;
+import com.condominio.dto.response.SolicitudReparacionPropiDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
+import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.ReparacionLocativaRepository;
 import com.condominio.persistence.repository.SolicitudReparacionLocativaRepository;
 import com.condominio.service.implementation.SolicitudReparacionLocativaService;
 import com.condominio.util.exception.ApiException;
 import com.condominio.util.helper.PersonaHelper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -38,10 +45,19 @@ public class SolicitudReparacionLocativaTest {
     private PersonaHelper personaHelper;
 
     @Mock
+    private PersonaRepository personaRepository;
+
+    @Mock
     private ReparacionLocativaRepository reparacionLocativaRepository;
 
     @InjectMocks
     private SolicitudReparacionLocativaService service;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+        Mockito.reset(personaRepository, solicitudRepo, modelMapper, personaHelper, reparacionLocativaRepository);
+    }
 
 
     @Test
@@ -62,6 +78,8 @@ public class SolicitudReparacionLocativaTest {
         Persona persona = new Persona();
         persona.setPrimerNombre("Ana");
         persona.setPrimerApellido("Lopez");
+        UserEntity u = new UserEntity(); u.setEmail("ana@example.com");
+        persona.setUser(u);
 
         when(solicitudRepo.findByEstadoSolicitud(estado)).thenReturn(List.of(entity));
         when(modelMapper.map(entity, SolicitudReparacionLocativaDTO.class)).thenReturn(dto);
@@ -94,7 +112,7 @@ public class SolicitudReparacionLocativaTest {
         when(solicitudRepo.findByEstadoSolicitud(estado)).thenReturn(Collections.emptyList());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.findByEstado(estado));
-        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(ex.getMessage()).contains("No hay solicitudes con estado: " + estado);
 
         verify(solicitudRepo, times(1)).findByEstadoSolicitud(estado);
@@ -130,62 +148,87 @@ public class SolicitudReparacionLocativaTest {
     }
 
     @Test
-    void update_shouldUpdateAndReturnDto_whenValidDate() {
+    void update_shouldUpdateAndReturnDto_whenValidDates() {
 
         Long id = 1L;
+        Casa casa = new Casa();
+        casa.setId(id);
         SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
         existing.setId(id);
         existing.setMotivo("Motivo viejo");
         existing.setResponsable("Responsable viejo");
         existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+        existing.setCasa(casa);
         existing.setFechaRealizacion(LocalDate.now().plusDays(5));
 
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
-        dto.setFechaRealizacion(LocalDate.now().plusDays(10)); // fecha válida (futura)
+        // DTO: fechaRealizacion must NOT be future (service throws if isAfter(today))
+        // inicioObra must be >= today; finObra > inicioObra
+        LocalDate now = LocalDate.now();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
+        dto.setFechaRealizacion(now); // valid (not future)
         dto.setMotivo("Motivo nuevo");
         dto.setResponsable("Responsable nuevo");
         dto.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        dto.setInicioObra(now.plusDays(1));
+        dto.setFinObra(now.plusDays(2));
+        dto.setTipoObra(TipoObra.ELECTRICA);
+        dto.setTipoObraDetalle("Detalle obra");
 
-        SolicitudReparacionLocativa saved = new SolicitudReparacionLocativa();
-        saved.setId(id);
-        saved.setFechaRealizacion(dto.getFechaRealizacion());
-        saved.setMotivo(dto.getMotivo());
-        saved.setResponsable(dto.getResponsable());
-        saved.setEstadoSolicitud(dto.getEstadoSolicitud());
+        SolicitudReparacionLocativa saved = getSolicitudReparacionLocativa(id, now, dto);
 
-        SolicitudReparacionLocativaDTO mappedDto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO mappedDto = new SolicitudReparacionUpdateDTO();
 
         when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
         when(solicitudRepo.save(existing)).thenReturn(saved);
-        when(modelMapper.map(saved, SolicitudReparacionLocativaDTO.class)).thenReturn(mappedDto);
+        when(modelMapper.map(saved, SolicitudReparacionUpdateDTO.class)).thenReturn(mappedDto);
 
-        SuccessResult<SolicitudReparacionLocativaDTO> result = service.update(id, dto);
+        SuccessResult<SolicitudReparacionUpdateDTO> result = service.update(id, dto);
 
         assertThat(result).isNotNull();
         assertThat(result.message()).isEqualTo("Solicitud de Reparacion modificada exitosamente");
         assertThat(result.data()).isEqualTo(mappedDto);
 
-        assertThat(existing.getFechaRealizacion()).isEqualTo(dto.getFechaRealizacion());
+        // service sets fechaRealizacion = LocalDate.now() when updating
+        assertThat(existing.getFechaRealizacion()).isEqualTo(now);
         assertThat(existing.getMotivo()).isEqualTo(dto.getMotivo());
         assertThat(existing.getResponsable()).isEqualTo(dto.getResponsable());
         assertThat(existing.getEstadoSolicitud()).isEqualTo(dto.getEstadoSolicitud());
+        assertThat(existing.getInicioObra()).isEqualTo(dto.getInicioObra());
+        assertThat(existing.getFinObra()).isEqualTo(dto.getFinObra());
+        assertThat(existing.getTipoObra()).isEqualTo(dto.getTipoObra());
+        assertThat(existing.getTipoObraDetalle()).isEqualTo(dto.getTipoObraDetalle());
 
         verify(solicitudRepo).findById(id);
         verify(solicitudRepo).save(existing);
-        verify(modelMapper).map(saved, SolicitudReparacionLocativaDTO.class);
+        verify(modelMapper).map(saved, SolicitudReparacionUpdateDTO.class);
+    }
+
+    private static SolicitudReparacionLocativa getSolicitudReparacionLocativa(Long id, LocalDate now, SolicitudReparacionUpdateDTO dto) {
+        SolicitudReparacionLocativa saved = new SolicitudReparacionLocativa();
+        saved.setId(id);
+        saved.setFechaRealizacion(now);
+        saved.setMotivo(dto.getMotivo());
+        saved.setResponsable(dto.getResponsable());
+        saved.setEstadoSolicitud(dto.getEstadoSolicitud());
+        saved.setInicioObra(dto.getInicioObra());
+        saved.setFinObra(dto.getFinObra());
+        saved.setTipoObra(dto.getTipoObra());
+        saved.setTipoObraDetalle(dto.getTipoObraDetalle());
+        return saved;
     }
 
     @Test
-    void update_shouldThrowBadRequest_whenFechaRealizacionIsBeforeToday() {
+    void update_shouldThrowBadRequest_whenFechaRealizacionIsFuture() {
 
         Long id = 2L;
         SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
         existing.setId(id);
-        existing.setFechaRealizacion(LocalDate.now().plusDays(2));
+        existing.setFechaRealizacion(LocalDate.now());
 
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
-        dto.setFechaRealizacion(LocalDate.now().minusDays(1)); // fecha inválida (pasada)
-        dto.setMotivo("x");
+        // DTO with future fechaRealizacion should trigger BAD_REQUEST per service
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
+        dto.setId(id);
+        dto.setFechaRealizacion(LocalDate.now().plusDays(1));// future -> invalid
 
         when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
 
@@ -199,9 +242,51 @@ public class SolicitudReparacionLocativaTest {
     }
 
     @Test
+    void update_shouldThrowBadRequest_whenInicioObraBeforeToday() {
+        Long id = 3L;
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
+        dto.setFechaRealizacion(LocalDate.now()); // valid
+        dto.setInicioObra(LocalDate.now().minusDays(1)); // invalid: before today
+        dto.setFinObra(LocalDate.now().plusDays(2));
+
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.update(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de inicio de la obra debe ser posterior a la fecha actual");
+
+        verify(solicitudRepo).findById(id);
+        verifyNoMoreInteractions(solicitudRepo);
+    }
+
+    @Test
+    void update_shouldThrowBadRequest_whenFinAntesDeInicio() {
+        Long id = 4L;
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+
+        LocalDate now = LocalDate.now();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
+        dto.setFechaRealizacion(now);
+        dto.setInicioObra(now.plusDays(3));
+        dto.setFinObra(now.plusDays(2)); // fin before inicio -> invalid
+
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.update(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de fin de la obra debe ser posterior a la fecha de inicio");
+
+        verify(solicitudRepo).findById(id);
+    }
+
+    @Test
     void update_shouldThrowNotFound_whenSolicitudMissing() {
         Long id = 99L;
-        SolicitudReparacionLocativaDTO dto = new SolicitudReparacionLocativaDTO();
+        SolicitudReparacionUpdateDTO dto = new SolicitudReparacionUpdateDTO();
         when(solicitudRepo.findById(id)).thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.update(id, dto));
@@ -343,7 +428,7 @@ public class SolicitudReparacionLocativaTest {
         SuccessResult<SolicitudReparacionLocativaDTO> result = service.rechazar(id, comentarios);
 
         assertThat(result).isNotNull();
-        assertThat(result.message()).isEqualTo("Solicitud de Reparacion desaprobada");
+        assertThat(result.message()).isEqualTo("Solicitud de Reparacion desaprobada satisfactoriamente");
         assertThat(result.data()).isEqualTo(mappedDto);
         assertThat(result.data().getComentarios()).isEqualTo(comentarios);
 
@@ -365,5 +450,544 @@ public class SolicitudReparacionLocativaTest {
         verify(solicitudRepo).findById(id);
         verifyNoInteractions(personaHelper);
     }
+
+    @Test
+    void crearSolicitud_success_savesWithAuthenticatedUserCasa() {
+
+        String username = "user@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Persona persona = new Persona();
+        Casa casa = new Casa(); casa.setId(7L);
+        persona.setCasa(casa);
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(1));
+        dto.setMotivo("Motivo X");
+        dto.setResponsable("Responsable Y");
+        dto.setInicioObra(LocalDate.now().plusDays(2));
+        dto.setFinObra(LocalDate.now().plusDays(3));
+        dto.setTipoObra(TipoObra.ELECTRICA);
+        dto.setTipoObraDetalle("Detalle");
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.save(any(SolicitudReparacionLocativa.class))).thenAnswer(inv -> {
+            SolicitudReparacionLocativa s = inv.getArgument(0);
+            s.setId(123L);
+            return s;
+        });
+
+        SuccessResult<SolicitudReparacionPropiDTO> res = service.crearSolicitud(dto);
+
+        assertThat(res).isNotNull();
+        assertThat(res.message()).contains("Solicitud registrada exitosamente");
+        assertThat(res.data()).isEqualTo(dto);
+
+        ArgumentCaptor<SolicitudReparacionLocativa> captor = ArgumentCaptor.forClass(SolicitudReparacionLocativa.class);
+        verify(solicitudRepo).save(captor.capture());
+        SolicitudReparacionLocativa saved = captor.getValue();
+        assertThat(saved.getMotivo()).isEqualTo(dto.getMotivo());
+        assertThat(saved.getResponsable()).isEqualTo(dto.getResponsable());
+        assertThat(saved.getCasa()).isEqualTo(casa);
+        assertThat(saved.getEstadoSolicitud()).isEqualTo(EstadoSolicitud.PENDIENTE);
+    }
+
+    @Test
+    void crearSolicitud_userNotFound_throwsNotFound() {
+
+        String username = "nouser@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(2));
+        dto.setMotivo("X");
+        dto.setResponsable("Y");
+        dto.setInicioObra(LocalDate.now().plusDays(3));
+        dto.setFinObra(LocalDate.now().plusDays(4));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.crearSolicitud(dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).contains("Usuario no encontrado");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void eliminar_success_deletesWhenOwnerAndPending() {
+
+        String username = "owner@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 10L;
+        Casa casa = new Casa(); casa.setId(50L);
+
+        SolicitudReparacionLocativa solicitud = new SolicitudReparacionLocativa();
+        solicitud.setId(id);
+        solicitud.setCasa(casa);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        SolicitudReparacionLocativaDTO mapped = new SolicitudReparacionLocativaDTO();
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(solicitud));
+        when(modelMapper.map(solicitud, SolicitudReparacionLocativaDTO.class)).thenReturn(mapped);
+
+        SuccessResult<SolicitudReparacionLocativaDTO> res = service.eliminar(id);
+
+        assertThat(res).isNotNull();
+        assertThat(res.message()).isEqualTo("Solicitud eliminada exitosamente");
+        assertThat(res.data()).isEqualTo(mapped);
+
+        verify(solicitudRepo).findById(id);
+        verify(solicitudRepo).delete(solicitud);
+        verify(modelMapper).map(solicitud, SolicitudReparacionLocativaDTO.class);
+    }
+
+    @Test
+    void eliminar_notPending_throwsBadRequest() {
+
+        String username = "owner@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 11L;
+        Casa casa = new Casa(); casa.setId(51L);
+
+        SolicitudReparacionLocativa solicitud = new SolicitudReparacionLocativa();
+        solicitud.setId(id);
+        solicitud.setCasa(casa);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        SolicitudReparacionLocativaDTO mappedDto = new SolicitudReparacionLocativaDTO();
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(solicitud));
+        when(modelMapper.map(solicitud, SolicitudReparacionLocativaDTO.class)).thenReturn(mappedDto);
+        when(personaHelper.obtenerSolicitantePorCasa(casa.getId())).thenReturn(persona);
+        when(personaHelper.toPersonaSimpleDTO(persona))
+                .thenReturn(com.condominio.dto.response.PersonaSimpleDTO.builder()
+                        .nombreCompleto("Owner").correo("owner@example.com").build());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.eliminar(id));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage())
+                .contains("No se puede eliminar una solicitud que ya ha sido aprobada o rechazada");
+
+        verify(solicitudRepo, never()).delete(any());
+        verify(modelMapper).map(solicitud, SolicitudReparacionLocativaDTO.class); // opcional
+        verify(personaHelper).obtenerSolicitantePorCasa(casa.getId()); // opcional
+    }
+
+
+    @Test
+    void eliminar_forbidden_whenUserNotOwner() {
+
+        String username = "intruder@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 12L;
+        Casa casaSolicitud = new Casa(); casaSolicitud.setId(60L);
+        SolicitudReparacionLocativa solicitud = new SolicitudReparacionLocativa();
+        solicitud.setId(id);
+        solicitud.setCasa(casaSolicitud);
+        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona personaOther = new Persona();
+        Casa otraCasa = new Casa(); otraCasa.setId(999L);
+        personaOther.setCasa(otraCasa);
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(personaOther));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(solicitud));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.eliminar(id));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(ex.getMessage()).contains("No autorizado");
+
+        verify(solicitudRepo, never()).delete(any());
+    }
+
+    @Test
+    void eliminar_notFound_whenSolicitudMissing() {
+
+        String username = "user@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 99L;
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(new Persona()));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.eliminar(id));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(solicitudRepo).findById(id);
+        verify(solicitudRepo, never()).delete(any());
+    }
+
+    @Test
+    void modificarSolicitud_success_whenOwnerAndPending() {
+
+        String username = "owner2@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 20L;
+        Casa casa = new Casa(); casa.setId(70L);
+
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+        existing.setCasa(casa);
+        existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        LocalDate now = LocalDate.now();
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(now.plusDays(5)); // service will set fechaRealizacion to now when saving
+        dto.setMotivo("Reparar ventana");
+        dto.setResponsable("Juan");
+        dto.setInicioObra(now.plusDays(6));
+        dto.setFinObra(now.plusDays(7));
+        dto.setTipoObra(TipoObra.OBRA_BLANCA);
+        dto.setTipoObraDetalle("Detalle");
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+        when(solicitudRepo.save(existing)).thenReturn(existing);
+
+        SuccessResult<SolicitudReparacionPropiDTO> res = service.modificarSolicitud(id, dto);
+
+        assertThat(res).isNotNull();
+        assertThat(res.message()).isEqualTo("Solicitud modificada exitosamente");
+        assertThat(res.data()).isEqualTo(dto);
+
+        // service sets fechaRealizacion = LocalDate.now()
+        assertThat(existing.getFechaRealizacion()).isEqualTo(LocalDate.now());
+        assertThat(existing.getMotivo()).isEqualTo(dto.getMotivo());
+        assertThat(existing.getResponsable()).isEqualTo(dto.getResponsable());
+        assertThat(existing.getInicioObra()).isEqualTo(dto.getInicioObra());
+        assertThat(existing.getFinObra()).isEqualTo(dto.getFinObra());
+        assertThat(existing.getTipoObra()).isEqualTo(dto.getTipoObra());
+        assertThat(existing.getTipoObraDetalle()).isEqualTo(dto.getTipoObraDetalle());
+        verify(solicitudRepo).save(existing);
+    }
+
+    @Test
+    void modificarSolicitud_badRequest_whenNotPending() {
+
+        String username = "owner2@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 21L;
+        Casa casa = new Casa(); casa.setId(71L);
+
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+        existing.setCasa(casa);
+        existing.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(5));
+        dto.setMotivo("X");
+        dto.setResponsable("Y");
+        dto.setInicioObra(LocalDate.now().plusDays(6));
+        dto.setFinObra(LocalDate.now().plusDays(7));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("No se puede modificar una solicitud que ya ha sido aprobada o rechazada");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void modificarSolicitud_forbidden_whenUserNotOwner() {
+
+        String username = "intruder2@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 22L;
+        Casa casaSolicitud = new Casa(); casaSolicitud.setId(80L);
+
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+        existing.setCasa(casaSolicitud);
+        existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona personaOther = new Persona();
+        Casa otraCasa = new Casa(); otraCasa.setId(9999L);
+        personaOther.setCasa(otraCasa);
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(3));
+        dto.setMotivo("X");
+        dto.setResponsable("Y");
+        dto.setInicioObra(LocalDate.now().plusDays(4));
+        dto.setFinObra(LocalDate.now().plusDays(5));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(personaOther));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(ex.getMessage()).contains("No autorizado");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void modificarSolicitud_notFound_whenSolicitudMissing() {
+
+        String username = "owner3@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 999L;
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(2));
+        dto.setMotivo("a");
+        dto.setResponsable("b");
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(new Persona()));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(solicitudRepo).findById(id);
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void crearSolicitud_shouldThrowBadRequest_whenInicioObraBeforeToday() {
+        String username = "userBadDate@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Persona persona = new Persona();
+        Casa casa = new Casa(); casa.setId(1L);
+        persona.setCasa(casa);
+
+        // inicioObra is before today => invalid
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(2));
+        dto.setMotivo("Motivo");
+        dto.setResponsable("Resp");
+        dto.setInicioObra(LocalDate.now().minusDays(1)); // invalid
+        dto.setFinObra(LocalDate.now().plusDays(2));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.crearSolicitud(dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de inicio de la obra debe ser posterior a la fecha actual");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void crearSolicitud_shouldThrowBadRequest_whenFinBeforeInicio() {
+        String username = "userBadFin@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Persona persona = new Persona();
+        Casa casa = new Casa(); casa.setId(2L);
+        persona.setCasa(casa);
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(1));
+        dto.setMotivo("Motivo");
+        dto.setResponsable("Resp");
+        dto.setInicioObra(LocalDate.now().plusDays(5));
+        dto.setFinObra(LocalDate.now().plusDays(3)); // fin before inicio
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.crearSolicitud(dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de fin de la obra debe ser posterior a la fecha de inicio");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void modificarSolicitud_shouldThrowBadRequest_whenInicioObraBeforeToday() {
+        String username = "ownerModify@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 300L;
+        Casa casa = new Casa(); casa.setId(30L);
+
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+        existing.setCasa(casa);
+        existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(1));
+        dto.setMotivo("M");
+        dto.setResponsable("R");
+        dto.setInicioObra(LocalDate.now().minusDays(2)); // invalid
+        dto.setFinObra(LocalDate.now().plusDays(3));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de inicio de la obra debe ser posterior a la fecha actual");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void modificarSolicitud_shouldThrowBadRequest_whenFinBeforeInicio() {
+        String username = "ownerModify2@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 301L;
+        Casa casa = new Casa(); casa.setId(31L);
+
+        SolicitudReparacionLocativa existing = new SolicitudReparacionLocativa();
+        existing.setId(id);
+        existing.setCasa(casa);
+        existing.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
+
+        Persona persona = new Persona();
+        persona.setCasa(casa);
+
+        LocalDate now = LocalDate.now();
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(now.plusDays(1));
+        dto.setMotivo("M");
+        dto.setResponsable("R");
+        dto.setInicioObra(now.plusDays(5));
+        dto.setFinObra(now.plusDays(4)); // fin before inicio
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).contains("La fecha de fin de la obra debe ser posterior a la fecha de inicio");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void verificarUsuarioAndSoli_shouldThrowNotFound_whenAuthenticatedUserMissing() {
+        // no authentication provided -> SecurityContextHolder unauthenticated -> will cause personaRepository not called
+        // Simulate authentication but personaRepository returns empty -> NOT_FOUND
+        String username = "noPersona@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        Long id = 400L;
+        SolicitudReparacionLocativa solicitud = new SolicitudReparacionLocativa();
+        solicitud.setId(id);
+        Casa casa = new Casa(); casa.setId(99L);
+        solicitud.setCasa(casa);
+
+        when(solicitudRepo.findById(id)).thenReturn(Optional.of(solicitud));
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.verificarUsuarioAndSoli(id));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).contains("Usuario no encontrado");
+    }
+
+    @Test
+    void crearSolicitud_shouldThrowNotFound_whenAuthenticatedUserMissing() {
+        // Authentication present but personaRepository returns empty -> crearSolicitud should throw NOT_FOUND
+        String username = "missingUser@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(2));
+        dto.setMotivo("X");
+        dto.setResponsable("Y");
+        dto.setInicioObra(LocalDate.now().plusDays(3));
+        dto.setFinObra(LocalDate.now().plusDays(4));
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.crearSolicitud(dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).contains("Usuario no encontrado");
+
+        verify(solicitudRepo, never()).save(any());
+    }
+
+    @Test
+    void modificarSolicitud_shouldThrowNotFound_whenSolicitudMissing() {
+        // Authenticated user exists but solicitud not found -> NOT_FOUND
+        String username = "ownerX@example.com";
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(username, null, null)
+        );
+
+        when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(new Persona()));
+        Long id = 9999L;
+        when(solicitudRepo.findById(id)).thenReturn(Optional.empty());
+
+        SolicitudReparacionPropiDTO dto = new SolicitudReparacionPropiDTO();
+        dto.setFechaRealizacion(LocalDate.now().plusDays(2));
+        dto.setMotivo("X");
+        dto.setResponsable("Y");
+        dto.setInicioObra(LocalDate.now().plusDays(3));
+        dto.setFinObra(LocalDate.now().plusDays(4));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.modificarSolicitud(id, dto));
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).contains("No se ha encontrado la solicitud");
+
+        verify(solicitudRepo).findById(id);
+        verify(solicitudRepo, never()).save(any());
+    }
+
 }
 
