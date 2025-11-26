@@ -52,10 +52,16 @@ public class AuthController {
             Long idPersona = null;
             if (userEntity != null) {
                 Persona personaOpt = userService.findPersonaByUser(userEntity);
+                if (personaOpt != null) {
+
                     nombre = buildNombreCompleto(personaOpt);
-                    idCasa = personaOpt.getCasa().getId();
                     idPersona = personaOpt.getId();
+
+                    idCasa = personaOpt.getCasa() != null
+                            ? personaOpt.getCasa().getId()
+                            : null;
                 }
+            }
 
             List<String> roles = userEntity.getRoles().stream()
                     .map(r -> r.getRoleEnum().name())
