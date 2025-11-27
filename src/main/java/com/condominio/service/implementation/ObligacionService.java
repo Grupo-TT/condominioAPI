@@ -149,10 +149,9 @@ public class ObligacionService implements IObligacionService {
         LocalDate fechaActual = LocalDate.now(ZONE);
 
         DateTimeFormatter formatoMostrar = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        DateTimeFormatter formatoArchivo = DateTimeFormatter.ofPattern("yyyyMMdd");
 
         String fechaEmision = fechaActual.format(formatoMostrar);
-        String fechaArchivo = fechaActual.format(formatoArchivo);
+
 
         byte[] pdfBytes;
 
