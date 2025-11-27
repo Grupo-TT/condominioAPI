@@ -149,10 +149,9 @@ public class ObligacionService implements IObligacionService {
         LocalDate fechaActual = LocalDate.now(ZONE);
 
         DateTimeFormatter formatoMostrar = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        DateTimeFormatter formatoArchivo = DateTimeFormatter.ofPattern("yyyyMMdd");
 
         String fechaEmision = fechaActual.format(formatoMostrar);
-        String fechaArchivo = fechaActual.format(formatoArchivo);
+
 
         byte[] pdfBytes;
 
@@ -166,7 +165,7 @@ public class ObligacionService implements IObligacionService {
         } catch (IOException e) {
             throw new ApiException("Error al generar el PDF: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        String nombreArchivo = "paz_y_salvo_" + fechaArchivo + ".pdf";
+        String nombreArchivo = "paz_y_salvo_" + solicitante.getPrimerNombre() + solicitante.getPrimerApellido()+".pdf";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(ContentDisposition.builder("attachment")
