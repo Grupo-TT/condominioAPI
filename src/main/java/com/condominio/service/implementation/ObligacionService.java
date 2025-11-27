@@ -166,7 +166,7 @@ public class ObligacionService implements IObligacionService {
         } catch (IOException e) {
             throw new ApiException("Error al generar el PDF: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        String nombreArchivo = "paz_y_salvo_" + fechaArchivo + ".pdf";
+        String nombreArchivo = "paz_y_salvo_" + solicitante.getPrimerNombre() + solicitante.getPrimerApellido()+".pdf";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(ContentDisposition.builder("attachment")
