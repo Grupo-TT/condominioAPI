@@ -1,6 +1,5 @@
 package com.condominio.persistence.repository;
 
-import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.SolicitudReservaRecurso;

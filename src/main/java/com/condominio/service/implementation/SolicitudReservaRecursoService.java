@@ -32,7 +32,6 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
     private final ReservaRepository reservaRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final PersonaHelper personaHelper;
-    private final CasaRepository casaRepository;
 
 
     public  SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(EstadoSolicitud estado){
@@ -130,17 +129,10 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("Por favor, ingresa una fecha y hora validas", HttpStatus.BAD_REQUEST);
         }
 
-        List<SolicitudReservaRecurso> solicitudesReservas = solicitudReservaRecursoRepository.findByRecursoComunAndFechaSolicitud(recursoComun, solicitud.getFechaSolicitud());
-
         LocalTime nuevaHoraInicio = solicitud.getHoraInicio();
         LocalTime nuevaHoraFin = solicitud.getHoraFin();
 
-        boolean hayConflicto = solicitudesReservas.stream().anyMatch(reserva -> {
-            LocalTime horaInicioExistente = reserva.getHoraInicio();
-            LocalTime horaFinExistente = reserva.getHoraFin();
-
-            return nuevaHoraInicio.isBefore(horaFinExistente) && nuevaHoraFin.isAfter(horaInicioExistente);
-        });
+        boolean hayConflicto = validarFechaSolicitud(recursoComun, solicitud.getFechaSolicitud(), nuevaHoraInicio, nuevaHoraFin, id);
 
         if (hayConflicto) {
             throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
@@ -181,7 +173,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
             throw new ApiException("El recurso ya tiene una solicitud en el horario solicitado.", HttpStatus.BAD_REQUEST);
         }
         SolicitudReservaRecurso reservaRecurso = SolicitudReservaRecurso.builder()
-                .fechaSolicitud(LocalDate.now())
+                .fechaSolicitud(solicitudDTO.getFechaSolicitud())
                 .recursoComun(recursoComun)
                 .casa(persona.getCasa())
                 .horaInicio(solicitudDTO.getHoraInicio())
