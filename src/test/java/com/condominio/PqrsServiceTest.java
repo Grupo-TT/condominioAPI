@@ -219,6 +219,7 @@ public class PqrsServiceTest {
 
     @Test
     void eliminar_shouldDeleteAndReturnDto_whenOwnerAndNotRevisada() {
+        // Arrange
         String username = "owner@example.com";
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(username, null, null)
@@ -239,17 +240,28 @@ public class PqrsServiceTest {
         when(personaRepository.findByUserEmail(username)).thenReturn(Optional.of(persona));
         when(pqrsRepository.findById(id)).thenReturn(Optional.of(entity));
         when(modelMapper.map(entity, PqrsDTO.class)).thenReturn(mapped);
-        when(personaHelper.obtenerSolicitantePorCasa(casa.getId())).thenReturn(persona);
-        when(personaHelper.toPersonaSimpleDTO(persona)).thenReturn(
-                com.condominio.dto.response.PersonaSimpleDTO.builder().nombreCompleto("Owner").correo("o@o.com").build()
-        );
 
+        // Use doReturn to avoid strict-stubbing issues
+        doReturn(persona).when(personaHelper).obtenerSolicitantePorCasa(eq(casa.getId()));
+        doReturn(com.condominio.dto.response.PersonaSimpleDTO.builder()
+                .nombreCompleto("Owner")
+                .correo("o@o.com")
+                .telefono(null)
+                .build())
+                .when(personaHelper).toPersonaSimpleDTO(persona);
+
+        // Act
         SuccessResult<PqrsDTO> res = service.eliminar(id);
 
+        // Assert
         assertThat(res).isNotNull();
         assertThat(res.message()).isEqualTo("PQRS eliminada exitosamente");
         assertThat(res.data()).isEqualTo(mapped);
 
+        verify(pqrsRepository).findById(id);
+        verify(modelMapper).map(entity, PqrsDTO.class);
+        verify(personaHelper).obtenerSolicitantePorCasa(casa.getId());
+        verify(personaHelper).toPersonaSimpleDTO(persona);
         verify(pqrsRepository).delete(entity);
     }
 
