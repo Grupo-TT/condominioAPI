@@ -65,8 +65,8 @@ public class SolicitudReservaRecursoController {
 
     @GetMapping("/mis-reservas/{id}")
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
-    public SuccessResult<List<SolicitudReservaDTO>> findAllByCasa(@PathVariable Long idCasa){
-        return solicitudReservaService.findReservasByCasa(idCasa);
+    public SuccessResult<List<SolicitudReservaDTO>> findAllByCasa(@PathVariable Long id){
+        return solicitudReservaService.findReservasByCasa(id);
     }
 
     @DeleteMapping("/mis-reservas/delete/{id}")
