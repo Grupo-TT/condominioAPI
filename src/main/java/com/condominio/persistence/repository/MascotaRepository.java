@@ -24,4 +24,6 @@ public interface MascotaRepository extends CrudRepository<Mascota, Long> {
     void deleteAllByCasa(Casa casa);
     Optional<Mascota> findByTipoMascotaAndCasa_Id(TipoMascota tipoMascota, Long casaId);
     List<Mascota> findAllByCasa_Id(Long casaId);
+    @Query("SELECT COALESCE(SUM(m.cantidad), 0) FROM Mascota m WHERE m.casa.id = :idCasa")
+    int sumCantidadMascotasByCasaId(@Param("idCasa") Long idCasa);
 }
