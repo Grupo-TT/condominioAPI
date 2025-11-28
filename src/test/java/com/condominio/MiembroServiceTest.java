@@ -68,14 +68,14 @@ class MiembroServiceTest {
     void testCountByCasaId_ShouldReturnCorrectValue() {
         // Given
         Long casaId = 1L;
-        when(miembroRepository.countByCasaId(casaId)).thenReturn(3);
+        when(miembroRepository.countByEstadoAndCasa_Id(true, casaId)).thenReturn(3);
 
         // When
         int result = miembroService.countByCasaId(casaId);
 
         // Then
         assertThat(result).isEqualTo(3);
-        verify(miembroRepository).countByCasaId(casaId);
+        verify(miembroRepository).countByEstadoAndCasa_Id(true, casaId);
     }
 
     @Test
