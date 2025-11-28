@@ -75,7 +75,8 @@ public class CasaService implements ICasaService {
             Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                     orElse(null);
             int cantidadMiembros = miembroService.countByCasaId(casa.getId());
-            int cantidadMascotas = mascotaService.countByCasaId(casa.getId());
+//            int cantidadMascotas = mascotaService.countByCasaId(casa.getId());
+            int cantidadMascotas = mascotaRepository.sumCantidadMascotasByCasaId(casa.getId());
 
             PersonaSimpleDTO propietarioDTO = null;
             if (propietario != null) {
