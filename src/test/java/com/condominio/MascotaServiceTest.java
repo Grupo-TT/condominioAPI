@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -189,5 +190,66 @@ class MascotaServiceTest {
 
         assertEquals("No tiene mascotas para editar.", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    }
+
+    @Test
+    void findMascotasByCasa_ShouldReturnMascotasList_WhenExist() {
+        // Arrange
+        Long casaId = 1L;
+
+        Casa casa = Casa.builder().id(casaId).build();
+
+        Mascota mascota1 = Mascota.builder()
+                .tipoMascota(TipoMascota.PERRO)
+                .cantidad((short)2)
+                .casa(casa)
+                .build();
+
+        Mascota mascota2 = Mascota.builder()
+                .tipoMascota(TipoMascota.GATO)
+                .cantidad((short)1)
+                .casa(casa)
+                .build();
+
+        when(mascotaRepository.findAllByCasa_Id(casaId))
+                .thenReturn(List.of(mascota1, mascota2));
+
+        // Act
+        SuccessResult<List<MascotaDTO>> result = mascotaService.findMascotasByCasa(casaId);
+
+        // Assert
+        assertEquals("Sus mascotas", result.message());
+        assertEquals(2, result.data().size());
+
+        MascotaDTO dto1 = result.data().get(0);
+        MascotaDTO dto2 = result.data().get(1);
+
+        assertEquals(casaId, dto1.getIdCasa());
+        assertEquals((short)2, dto1.getCantidad());
+        assertEquals(TipoMascota.PERRO, dto1.getTipoMascota());
+
+        assertEquals(casaId, dto2.getIdCasa());
+        assertEquals((short)1, dto2.getCantidad());
+        assertEquals(TipoMascota.GATO, dto2.getTipoMascota());
+
+        verify(mascotaRepository).findAllByCasa_Id(casaId);
+    }
+
+
+
+    @Test
+    void findMascotasByCasa_ShouldThrowException_WhenNoneExist() {
+        // Arrange
+        Long casaId = 10L;
+        when(mascotaRepository.findAllByCasa_Id(casaId))
+                .thenReturn(List.of()); // lista vacía
+
+        // Act & Assert
+        ApiException exception = assertThrows(ApiException.class,
+                () -> mascotaService.findMascotasByCasa(casaId));
+
+        assertEquals("No tiene mascotas registradas.", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(mascotaRepository).findAllByCasa_Id(casaId);
     }
 }
