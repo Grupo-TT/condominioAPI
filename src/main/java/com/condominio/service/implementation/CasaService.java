@@ -7,7 +7,6 @@ import com.condominio.persistence.repository.MascotaRepository;
 import com.condominio.persistence.repository.ObligacionRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.ICasaService;
-import com.condominio.service.interfaces.IMascotaService;
 import com.condominio.service.interfaces.IMiembroService;
 import com.condominio.service.interfaces.IPagoService;
 import com.condominio.util.exception.ApiException;
@@ -26,7 +25,6 @@ public class CasaService implements ICasaService {
 
     private final CasaRepository casaRepository;
     private final IMiembroService miembroService;
-    private final IMascotaService mascotaService;
     private final PersonaRepository personaRepository;
     private final ObligacionRepository obligacionRepository;
     private final MascotaRepository mascotaRepository;
@@ -75,7 +73,6 @@ public class CasaService implements ICasaService {
             Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
                     orElse(null);
             int cantidadMiembros = miembroService.countByCasaId(casa.getId());
-//            int cantidadMascotas = mascotaService.countByCasaId(casa.getId());
             int cantidadMascotas = mascotaRepository.sumCantidadMascotasByCasaId(casa.getId());
 
             PersonaSimpleDTO propietarioDTO = null;

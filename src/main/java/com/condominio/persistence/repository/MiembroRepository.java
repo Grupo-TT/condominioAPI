@@ -14,4 +14,5 @@ public interface MiembroRepository extends CrudRepository<Miembro, Long> {
     List<Miembro> findByCasaId(Long casaId);
     boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
     void deleteAllByCasa(Casa casa);
+    int countByEstadoAndCasa_Id(Boolean estado, Long casaId);
 }
