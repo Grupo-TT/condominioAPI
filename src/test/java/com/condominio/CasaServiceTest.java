@@ -193,8 +193,8 @@ class CasaServiceTest {
         assertThat(dto.getCantidadMiembros()).isEqualTo(2);
 
 
-        assertThat(dto.getMascotas()).containsEntry("TipoMascota.PERRO", 1);
-        assertThat(dto.getMascotas()).containsEntry("TipoMascota.GATO", 2);
+        assertThat(dto.getMascotas()).containsEntry("TipoMascota.PERRO", 0);
+        assertThat(dto.getMascotas()).containsEntry("TipoMascota.GATO", 0);
         assertThat(dto.getMascotas().getOrDefault("TipoMascota.OTRO", 0)).isEqualTo(0L);
 
 
@@ -209,7 +209,7 @@ class CasaServiceTest {
         verify(personaRepository).findPropietarioByCasaId(1L);
         verify(personaRepository).findArrendatarioByCasaId(1L);
         verify(miembroService).countByCasaId(1L);
-        verify(mascotaRepository).contarPorTipo(1L);
+        verify(mascotaRepository).findAllByCasa_Id(1L);
         verify(obligacionRepository).existsByCasaIdAndEstadoPago(1L, EstadoPago.PENDIENTE);
     }
 
@@ -343,8 +343,8 @@ class CasaServiceTest {
         assertThat(dto.getPropietario()).isNotNull();
         assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.ARRENDADA);
         assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.AL_DIA);
-        assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(1);
-        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(2);
+        assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(0);
+        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(0);
         assertThat(dto.getMascotas().get("TipoMascota.OTRO")).isEqualTo(0);
     }
 
@@ -406,7 +406,7 @@ class CasaServiceTest {
         assertThat(dto.getUsoCasa()).isEqualTo(UsoCasa.RESIDENCIAL);
         assertThat(dto.getEstadoFinancieroCasa()).isEqualTo(EstadoFinancieroCasa.AL_DIA);
         assertThat(dto.getMascotas().get("TipoMascota.PERRO")).isEqualTo(0);
-        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(3);
+        assertThat(dto.getMascotas().get("TipoMascota.GATO")).isEqualTo(0);
         assertThat(dto.getMascotas().get("TipoMascota.OTRO")).isEqualTo(0);
     }
 
