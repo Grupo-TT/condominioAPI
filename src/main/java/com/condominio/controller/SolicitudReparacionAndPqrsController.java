@@ -1,10 +1,11 @@
 package com.condominio.controller;
 
+import com.condominio.dto.request.PqrsUpdateDTO;
 import com.condominio.dto.request.SolicitudReparacionUpdateDTO;
 import com.condominio.dto.response.*;
-//import com.condominio.persistence.model.EstadoPqrs;
+import com.condominio.persistence.model.EstadoPqrs;
 import com.condominio.persistence.model.EstadoSolicitud;
-//import com.condominio.service.interfaces.IDetallePqrs;
+import com.condominio.service.interfaces.IPqrsService;
 import com.condominio.service.interfaces.ISolicitudReparacionLocativaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,7 +19,7 @@ import java.util.List;
 public class SolicitudReparacionAndPqrsController {
 
     private final ISolicitudReparacionLocativaService solicitudReparacionLocativaService;
-    //private final IDetallePqrs detallePqrsService;
+    private final IPqrsService pqrsService;
 
     //----
     //Endpoints para Solicitudes de Reparaciones
@@ -69,40 +70,40 @@ public class SolicitudReparacionAndPqrsController {
     //----
     //Endpoints para PQRS
     //----
-//    @GetMapping("/all-pqrs")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public SuccessResult<List<DetallePqrsDTO>> obtenerDetallesPqrs(@RequestParam ("estado") EstadoPqrs estado){
-//        return detallePqrsService.findByEstado(estado);
-//    }
-//
-//    @PutMapping("/edit-pqrs/{id}")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public SuccessResult<DetallePqrsDTO> updateDetallePqrs(@PathVariable Long id, @RequestBody DetallePqrsDTO detallePqrs){
-//        return detallePqrsService.update(id, detallePqrs);
-//    }
-//
-//    @PutMapping("/marcar-revisada-pqrs/{id}")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public SuccessResult<DetallePqrsDTO> marcarRevisada(@PathVariable Long id){
-//        return detallePqrsService.marcarRevisada(id);
-//    }
-//
-//    @DeleteMapping("/delete-pqrs/{id}")
-//    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
-//    public SuccessResult<DetallePqrsDTO> eliminarPqrs(@PathVariable Long id){
-//        return detallePqrsService.eliminar(id);
-//    }
-//
-//    @PostMapping("/crear-pqrs")
-//    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
-//    public SuccessResult<DetallePqrsPropiDTO> crearPqrs(@RequestBody DetallePqrsPropiDTO detallePqrs){
-//        return detallePqrsService.crearDetallePqrs(detallePqrs);
-//    }
-//
-//    @PutMapping("/modificar-pqrs/{id}")
-//    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
-//    public SuccessResult<DetallePqrsPropiDTO> modificarDetallePqrs(@PathVariable Long id, @RequestBody DetallePqrsPropiDTO detallePqrs){
-//        return detallePqrsService.modificarDetallePqrs(id, detallePqrs);
-//    }
-//
+    @GetMapping("/all-pqrs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<List<PqrsDTO>> obtenerDetallesPqrs(@RequestParam ("estado") EstadoPqrs estado){
+        return pqrsService.findByEstado(estado);
+    }
+
+    @PutMapping("/edit-pqrs/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<PqrsUpdateDTO> updatePqrs(@PathVariable Long id, @RequestBody PqrsUpdateDTO pqrs){
+        return pqrsService.update(id, pqrs);
+    }
+
+    @PutMapping("/marcar-revisada-pqrs/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<PqrsDTO> marcarRevisada(@PathVariable Long id){
+        return pqrsService.marcarRevisada(id);
+    }
+
+    @DeleteMapping("/delete-pqrs/{id}")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<PqrsDTO> eliminarPqrs(@PathVariable Long id){
+        return pqrsService.eliminar(id);
+    }
+
+    @PostMapping("/crear-pqrs")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<PqrsPropiDTO> crearPqrs(@RequestBody PqrsPropiDTO pqrs){
+        return pqrsService.crearPqrs(pqrs);
+    }
+
+    @PutMapping("/modificar-pqrs/{id}")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<PqrsPropiDTO> modificarPqrs(@PathVariable Long id, @RequestBody PqrsPropiDTO pqrs){
+        return pqrsService.modificarPqrs(id, pqrs);
+    }
+
 }
