@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/mascota")
 @RequiredArgsConstructor
@@ -23,5 +25,11 @@ public class MascotaController {
     @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
     public SuccessResult<Void> modificarCantidadMascota(@RequestBody MascotaDTO mascotaDTO) {
         return mascotaService.subtractMascota(mascotaDTO);
+    }
+
+    @GetMapping("/casa/{id}")
+    @PreAuthorize("hasAnyRole( 'PROPIETARIO', 'ARRENDATARIO')")
+    public SuccessResult<List<MascotaDTO>> obtenerMascotasByCasa(@PathVariable Long id) {
+        return mascotaService.findMascotasByCasa(id);
     }
 }
