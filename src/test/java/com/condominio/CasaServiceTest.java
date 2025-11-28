@@ -262,14 +262,14 @@ class CasaServiceTest {
 
         assertThat(dto.getNumeroCasa()).isEqualTo(101);
         assertThat(dto.getCantidadMiembros()).isEqualTo(2);
-        assertThat(dto.getCantidadMascotas()).isEqualTo(1);
+        assertThat(dto.getCantidadMascotas()).isEqualTo(0);
         assertThat(result.message()).isEqualTo("Casas obtenidas correctamente");
 
 
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(1L);
         verify(miembroService).countByCasaId(1L);
-        verify(mascotaService).countByCasaId(1L);
+        verify(mascotaRepository).sumCantidadMascotasByCasaId(1L);
     }
 
     @Test
@@ -307,7 +307,7 @@ class CasaServiceTest {
         verify(casaRepository).findAll();
         verify(personaRepository).findPropietarioByCasaId(2L);
         verify(miembroService).countByCasaId(2L);
-        verify(mascotaService).countByCasaId(2L);
+        verify(mascotaRepository).sumCantidadMascotasByCasaId(2L);
     }
 
     @Test
