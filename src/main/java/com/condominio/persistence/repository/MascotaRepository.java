@@ -23,4 +23,5 @@ public interface MascotaRepository extends CrudRepository<Mascota, Long> {
     List<MascotaCountDTO> contarPorTipo(@Param("casaId") Long casaId);
     void deleteAllByCasa(Casa casa);
     Optional<Mascota> findByTipoMascotaAndCasa_Id(TipoMascota tipoMascota, Long casaId);
+    List<Mascota> findAllByCasa_Id(Long casaId);
 }

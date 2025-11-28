@@ -90,9 +90,9 @@ public class CasaService implements ICasaService {
             for (TipoMascota tipo : TipoMascota.values()) {
                 mascotasMap.put(tipo.toString(), 0);
             }
-            List<MascotaCountDTO> conteos = mascotaRepository.contarPorTipo(casa.getId());
-            for (MascotaCountDTO c : conteos) {
-                mascotasMap.put(c.getTipo(), c.getCantidad().intValue());
+            List<Mascota> conteos = mascotaRepository.findAllByCasa_Id(casa.getId());
+            for (Mascota c : conteos) {
+                mascotasMap.put(c.getTipoMascota().toString(), (int)c.getCantidad());
             }
 
             UsoCasa usoCasa;
