@@ -19,4 +19,9 @@ public class Mascota {
     private TipoMascota tipoMascota;
     @ManyToOne(targetEntity = Casa.class)
     private Casa casa;
+    private short cantidad;
+
+    public void addCantidad(short cantidad) {
+        this.cantidad += cantidad;
+    }
 }
