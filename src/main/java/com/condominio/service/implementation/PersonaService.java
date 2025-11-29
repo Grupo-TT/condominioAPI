@@ -157,7 +157,7 @@ public class PersonaService implements IPersonaService {
 
     }
     public List<PersonaSimpleRolDTO> obtenerTodasPersonas() {
-        Iterable<Persona> personas = personaRepository.findAll();
+        Iterable<Persona> personas = personaRepository.findByEstadoTrue();
         return StreamSupport.stream(personas.spliterator(), false)
                 .map(this::convertirASimpleRolDTO)
                 .collect(Collectors.toList());
@@ -171,6 +171,9 @@ public class PersonaService implements IPersonaService {
                 .map(role -> role.getRoleEnum().name())
                 .toList();
         dto.setRoles(roles);
+        dto.setIdCasa(
+                persona.getCasa() != null ? persona.getCasa().getId() : null
+        );
         return dto;
     }
     public Persona registrarPersona(PersonaRegistroDTO persona){

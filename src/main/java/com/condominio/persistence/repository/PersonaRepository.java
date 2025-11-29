@@ -49,6 +49,7 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
     Persona findByUser_Id(Long id);
     List<Persona> findAllByCasa_Id(Long casaId);
     boolean existsByNumeroDocumento(Long numeroDocumento);
+    List<Persona> findByEstadoTrue();
 }
 
 
