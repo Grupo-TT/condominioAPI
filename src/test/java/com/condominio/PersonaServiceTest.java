@@ -462,11 +462,15 @@ class PersonaServiceTest {
     @Test
     void obtenerTodasPersonas_ShouldReturnListOfPersonaSimpleRolDTO() {
 
+        // ===== USER 1 =====
         UserEntity user1 = new UserEntity();
         RoleEntity role1 = new RoleEntity();
         role1.setRoleEnum(RoleEnum.ADMIN);
         user1.setRoles(Set.of(role1));
         user1.setEmail("user1@example.com");
+
+        Casa casa1 = new Casa();
+        casa1.setId(10L);
 
         Persona persona1 = new Persona();
         persona1.setPrimerNombre("Juan");
@@ -475,45 +479,54 @@ class PersonaServiceTest {
         persona1.setSegundoApellido("Gómez");
         persona1.setTelefono(123456789L);
         persona1.setUser(user1);
+        persona1.setCasa(casa1);
 
+        // ===== USER 2 =====
         UserEntity user2 = new UserEntity();
         RoleEntity role2 = new RoleEntity();
         role2.setRoleEnum(RoleEnum.PROPIETARIO);
         user2.setRoles(Set.of(role2));
         user2.setEmail("user2@example.com");
 
+        Casa casa2 = new Casa();
+        casa2.setId(20L);
+
         Persona persona2 = new Persona();
         persona2.setPrimerNombre("Ana");
         persona2.setPrimerApellido("López");
         persona2.setTelefono(987654321L);
         persona2.setUser(user2);
+        persona2.setCasa(casa2);
 
-        when(personaRepository.findAll()).thenReturn(List.of(persona1, persona2));
+        // Mock
+        when(personaRepository.findByEstadoTrue()).thenReturn(List.of(persona1, persona2));
 
-
+        // Run
         List<PersonaSimpleRolDTO> result = personaService.obtenerTodasPersonas();
 
-
+        // ===== Checks =====
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        PersonaSimpleRolDTO dto1 = result.getFirst();
+        PersonaSimpleRolDTO dto1 = result.get(0);
         assertEquals("Juan Carlos Pérez Gómez", dto1.getNombreCompleto());
         assertEquals(123456789L, dto1.getTelefono());
         assertEquals("user1@example.com", dto1.getCorreo());
         assertEquals(List.of("ADMIN"), dto1.getRoles());
+        assertEquals(10L, dto1.getIdCasa()); // nuevo check
 
         PersonaSimpleRolDTO dto2 = result.get(1);
         assertEquals("Ana López", dto2.getNombreCompleto());
         assertEquals(987654321L, dto2.getTelefono());
         assertEquals("user2@example.com", dto2.getCorreo());
         assertEquals(List.of("PROPIETARIO"), dto2.getRoles());
+        assertEquals(20L, dto2.getIdCasa()); // nuevo check
     }
 
     @Test
     void obtenerTodasPersonas_ShouldReturnEmptyList_WhenNoPersonas() {
 
-        when(personaRepository.findAll()).thenReturn(Collections.emptyList());
+        when(personaRepository.findByEstadoTrue()).thenReturn(Collections.emptyList());
 
 
         List<PersonaSimpleRolDTO> result = personaService.obtenerTodasPersonas();
@@ -522,4 +535,64 @@ class PersonaServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    void obtenerTodasPersonas_NoDebeIncluirPersonasConEstadoFalse() {
+
+        // ===== Persona con estado TRUE =====
+        UserEntity userTrue = new UserEntity();
+        RoleEntity roleTrue = new RoleEntity();
+        roleTrue.setRoleEnum(RoleEnum.ADMIN);
+        userTrue.setRoles(Set.of(roleTrue));
+        userTrue.setEmail("activo@example.com");
+
+        Casa casaTrue = new Casa();
+        casaTrue.setId(1L);
+
+        Persona personaActiva = new Persona();
+        personaActiva.setPrimerNombre("Pedro");
+        personaActiva.setPrimerApellido("Ruiz");
+        personaActiva.setTelefono(123123123L);
+        personaActiva.setUser(userTrue);
+        personaActiva.setCasa(casaTrue);
+        personaActiva.setEstado(true);
+
+        // ===== Persona con estado FALSE =====
+        UserEntity userFalse = new UserEntity();
+        RoleEntity roleFalse = new RoleEntity();
+        roleFalse.setRoleEnum(RoleEnum.PROPIETARIO);
+        userFalse.setRoles(Set.of(roleFalse));
+        userFalse.setEmail("inactivo@example.com");
+
+        Casa casaFalse = new Casa();
+        casaFalse.setId(2L);
+
+        Persona personaInactiva = new Persona();
+        personaInactiva.setPrimerNombre("Sara");
+        personaInactiva.setPrimerApellido("Martinez");
+        personaInactiva.setTelefono(999999999L);
+        personaInactiva.setUser(userFalse);
+        personaInactiva.setCasa(casaFalse);
+        personaInactiva.setEstado(false);
+
+
+        when(personaRepository.findByEstadoTrue()).thenReturn(List.of(personaActiva));
+
+
+        List<PersonaSimpleRolDTO> result = personaService.obtenerTodasPersonas();
+
+        // ===== Checks =====
+        assertEquals(1, result.size());
+        PersonaSimpleRolDTO dto = result.get(0);
+
+        assertEquals("Pedro Ruiz", dto.getNombreCompleto());
+        assertEquals("activo@example.com", dto.getCorreo());
+        assertEquals(1L, dto.getIdCasa());
+
+
+        assertTrue(
+                result.stream().noneMatch(r -> r.getCorreo().equals("inactivo@example.com"))
+        );
+    }
+
 }
