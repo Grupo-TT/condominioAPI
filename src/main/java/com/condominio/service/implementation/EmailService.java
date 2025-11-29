@@ -327,12 +327,7 @@ public class EmailService {
     public String superClean(String input) {
         if (input == null) return null;
 
-        // Allow basic HTML tags, but still sanitize against XSS
-        String safeHtml = org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.basic());
-
-        // The previous regex was too restrictive for HTML, so it has been removed.
-        // Jsoup's cleaning is sufficient for sanitization.
-        return safeHtml;
+        return org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.basic());
     }
 }
 
