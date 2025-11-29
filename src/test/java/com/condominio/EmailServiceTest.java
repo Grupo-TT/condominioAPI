@@ -8,6 +8,7 @@ import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.service.implementation.EmailService;
 import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
@@ -46,11 +47,15 @@ class EmailServiceTest {
 
     private EmailService emailService;
     private MimeMessage mimeMessage;
+    @Mock
+    private CorreoEnviadoRepository correoEnviadoRepository;
+
+
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        emailService = new EmailService(mailSender, templateEngine);
+        emailService = new EmailService(mailSender, templateEngine,correoEnviadoRepository);
         mimeMessage = mock(MimeMessage.class);
     }
 
@@ -585,7 +590,7 @@ class EmailServiceTest {
             doThrow(new RuntimeException("SMTP server down")).when(mailSender).send(any(MimeMessage.class));
     
             // When & Then
-            // El método no debe lanzar la excepción, sino capturarla y registrarla.
+
             // La ausencia de una excepción aquí es la prueba de que el bloque catch funciona.
             assertDoesNotThrow(() -> {
                 emailService.sendToManyAsync(emails, subject, body, null, null);
@@ -594,5 +599,39 @@ class EmailServiceTest {
             // Verify que se intentó enviar el mensaje
             verify(mailSender).send(mimeMessage);
         }
+
+    @Test
+    void superClean_basicCases() {
+        // Caso con HTML y caracteres especiales
+        String input = "<b>Hola</b> & <script>alert('x');</script> ñ á é í ó ú";
+        String result = emailService.superClean(input);
+
+        // No habrá <b>, <script>, ni &
+        assertFalse(result.contains("<"));
+        assertFalse(result.contains(">"));
+        assertFalse(result.contains("&"));
+        assertFalse(result.contains(";"));
+        assertFalse(result.contains("/script"));
+
+        // Las letras permitidas se mantienen
+        assertTrue(result.contains("Hola"));
+        assertTrue(result.contains("ñ"));
+        assertTrue(result.contains("á"));
+        assertTrue(result.contains("é"));
+        assertTrue(result.contains("í"));
+        assertTrue(result.contains("ó"));
+        assertTrue(result.contains("ú"));
+    }
+
+    @Test
+    void superClean_nullInput_returnsNull() {
+        assertNull(emailService.superClean(null));
+    }
+
+    void superClean_onlySpecialCharacters_removesAll() {
+        String input = "@#$%^&*+=/<>[]{}";
+        String result = emailService.superClean(input);
+        assertEquals("ltgt", result);
+    }
     }
     
