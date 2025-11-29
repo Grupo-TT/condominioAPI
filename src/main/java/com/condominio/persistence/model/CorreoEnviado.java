@@ -25,7 +25,6 @@ public class CorreoEnviado {
     private String cuerpo;
     private LocalDateTime fechaEnvio;
 
-    @OneToMany(mappedBy = "correoEnviado", cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private List<CorreoDestinatario> destinatarios;
+    @Lob
+    private String destinatarios;
 }

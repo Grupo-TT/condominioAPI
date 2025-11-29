@@ -2,53 +2,66 @@ package com.condominio;
 
 import com.condominio.dto.response.DestinatarioInfoDTO;
 import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.CorreoDestinatario;
+import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.UserEntity;
-import com.condominio.persistence.repository.CorreoDestinatarioRepository;
+import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.UserRepository;
 import com.condominio.service.implementation.CorreoDestinatarioService;
 import com.condominio.util.exception.ApiException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CorreoDestinatarioServiceTest {
 
-    private CorreoDestinatarioRepository correoDestinatarioRepository;
+    @Mock
+    private CorreoEnviadoRepository correoEnviadoRepository;
+    @Mock
     private UserRepository userRepository;
+    @Mock
     private PersonaRepository personaRepository;
+    @Mock
+    private ObjectMapper objectMapper;
+
     private CorreoDestinatarioService service;
 
     @BeforeEach
     void setUp() {
-        correoDestinatarioRepository = mock(CorreoDestinatarioRepository.class);
-        userRepository = mock(UserRepository.class);
-        personaRepository = mock(PersonaRepository.class);
-
-        service = new CorreoDestinatarioService(correoDestinatarioRepository, userRepository, personaRepository);
+        service = new CorreoDestinatarioService(correoEnviadoRepository, userRepository, personaRepository, objectMapper);
     }
 
     @Test
-    void getDestinatariosInfo_validData_returnsList() {
+    void getDestinatariosInfo_validData_returnsList() throws IOException {
         Long correoId = 1L;
+        String jsonDestinatarios = "[\"test@correo.com\"]";
+        List<String> emailList = List.of("test@correo.com");
 
-        // Mock CorreoDestinatario
-        CorreoDestinatario dest = new CorreoDestinatario();
-        dest.setEmailDestinatario("test@correo.com");
-        List<CorreoDestinatario> lista = new ArrayList<>();
-        lista.add(dest);
+        // Mock CorreoEnviado
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setId(correoId);
+        correo.setDestinatarios(jsonDestinatarios);
+        when(correoEnviadoRepository.findById(correoId)).thenReturn(Optional.of(correo));
 
-        when(correoDestinatarioRepository.findByCorreoEnviadoId(correoId)).thenReturn(lista);
+        // Mock ObjectMapper
+        when(objectMapper.readValue(eq(jsonDestinatarios), any(TypeReference.class))).thenReturn(emailList);
 
         // Mock UserEntity
         UserEntity user = new UserEntity();
@@ -63,10 +76,10 @@ class CorreoDestinatarioServiceTest {
         persona.setCasa(casa);
         when(personaRepository.findByUser_Id(10L)).thenReturn(persona);
 
-        // Ejecutar
+        // Execute
         List<DestinatarioInfoDTO> result = service.getDestinatariosInfo(correoId);
 
-        // Verificar
+        // Verify
         assertEquals(1, result.size());
         DestinatarioInfoDTO dto = result.get(0);
         assertEquals("Juan Pérez", dto.getNombreCompleto());
@@ -75,9 +88,22 @@ class CorreoDestinatarioServiceTest {
     }
 
     @Test
-    void getDestinatariosInfo_noDestinatarios_throwsException() {
+    void getDestinatariosInfo_correoNotFound_throwsException() {
+        when(correoEnviadoRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.getDestinatariosInfo(1L));
+        assertEquals("Correo no encontrado", ex.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+
+    @Test
+    void getDestinatariosInfo_emptyEmailList_throwsException() throws IOException {
         Long correoId = 1L;
-        when(correoDestinatarioRepository.findByCorreoEnviadoId(correoId)).thenReturn(List.of());
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setId(correoId);
+        correo.setDestinatarios("[]");
+        when(correoEnviadoRepository.findById(correoId)).thenReturn(Optional.of(correo));
+        when(objectMapper.readValue(eq("[]"), any(TypeReference.class))).thenReturn(List.of());
 
         ApiException ex = assertThrows(ApiException.class, () -> service.getDestinatariosInfo(correoId));
         assertEquals("No se encontraron destinatarios para este correo", ex.getMessage());
@@ -85,19 +111,47 @@ class CorreoDestinatarioServiceTest {
     }
 
     @Test
-    void getDestinatariosInfo_userOrPersonaNull_skipsEntry() {
+    void getDestinatariosInfo_nullJsonString_returnsEmptyList() {
         Long correoId = 1L;
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setId(correoId);
+        correo.setDestinatarios(null);
+        when(correoEnviadoRepository.findById(correoId)).thenReturn(Optional.of(correo));
 
-        CorreoDestinatario dest = new CorreoDestinatario();
-        dest.setEmailDestinatario("noexist@correo.com");
-        List<CorreoDestinatario> lista = new ArrayList<>();
-        lista.add(dest);
+        List<DestinatarioInfoDTO> result = service.getDestinatariosInfo(correoId);
 
-        when(correoDestinatarioRepository.findByCorreoEnviadoId(correoId)).thenReturn(lista);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getDestinatariosInfo_emptyJsonString_returnsEmptyList() {
+        Long correoId = 1L;
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setId(correoId);
+        correo.setDestinatarios("");
+        when(correoEnviadoRepository.findById(correoId)).thenReturn(Optional.of(correo));
+
+        List<DestinatarioInfoDTO> result = service.getDestinatariosInfo(correoId);
+
+        assertTrue(result.isEmpty());
+    }
+
+
+    @Test
+    void getDestinatariosInfo_userOrPersonaNull_skipsEntry() throws IOException {
+        Long correoId = 1L;
+        String jsonDestinatarios = "[\"noexist@correo.com\"]";
+        List<String> emailList = List.of("noexist@correo.com");
+
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setId(correoId);
+        correo.setDestinatarios(jsonDestinatarios);
+        when(correoEnviadoRepository.findById(correoId)).thenReturn(Optional.of(correo));
+        when(objectMapper.readValue(eq(jsonDestinatarios), any(TypeReference.class))).thenReturn(emailList);
         when(userRepository.findByEmail("noexist@correo.com")).thenReturn(Optional.empty());
 
         List<DestinatarioInfoDTO> result = service.getDestinatariosInfo(correoId);
 
-        assertTrue(result.isEmpty(), "Debe omitir entradas sin user o persona");
+        assertTrue(result.isEmpty(), "Should skip entries without a user or persona");
     }
 }

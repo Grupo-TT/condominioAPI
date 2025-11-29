@@ -4,7 +4,7 @@ import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
-import com.condominio.persistence.model.CorreoDestinatario;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
@@ -42,11 +42,13 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final int maxFileSizeMB = 10;
     private final CorreoEnviadoRepository correoEnviadoRepository;
+    private final ObjectMapper objectMapper;
 
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine,CorreoEnviadoRepository correoEnviadoRepository) {
+    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine, CorreoEnviadoRepository correoEnviadoRepository, ObjectMapper objectMapper) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.correoEnviadoRepository = correoEnviadoRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Async("mailTaskExecutor")
@@ -306,24 +308,18 @@ public class EmailService {
     }
 
     private void saveEmailLog(String subject, String body, List<String> emails) {
-
-        // 1. Crear el correo principal
         CorreoEnviado correo = new CorreoEnviado();
         correo.setTitulo(subject);
         correo.setCuerpo(body);
         correo.setFechaEnvio(LocalDateTime.now());
 
-        // 2. Crear la lista de destinatarios
-        List<CorreoDestinatario> destinatarios = emails.stream()
-                .map(email -> {
-                    CorreoDestinatario d = new CorreoDestinatario();
-                    d.setEmailDestinatario(email);
-                    d.setCorreoEnviado(correo);  // link
-                    return d;
-                })
-                .collect(Collectors.toList());
-
-        correo.setDestinatarios(destinatarios);
+        try {
+            String destinatariosJson = objectMapper.writeValueAsString(emails);
+            correo.setDestinatarios(destinatariosJson);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("Error serializando los destinatarios a JSON", e);
+            throw new ApiException("Error interno al guardar el registro del correo", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
         correoEnviadoRepository.save(correo);
     }
