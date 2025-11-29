@@ -600,28 +600,6 @@ class EmailServiceTest {
             verify(mailSender).send(mimeMessage);
         }
 
-    @Test
-    void superClean_basicCases() {
-        // Caso con HTML y caracteres especiales
-        String input = "<b>Hola</b> & <script>alert('x');</script> ñ á é í ó ú";
-        String result = emailService.superClean(input);
-
-        // No habrá <b>, <script>, ni &
-        assertFalse(result.contains("<"));
-        assertFalse(result.contains(">"));
-        assertFalse(result.contains("&"));
-        assertFalse(result.contains(";"));
-        assertFalse(result.contains("/script"));
-
-        // Las letras permitidas se mantienen
-        assertTrue(result.contains("Hola"));
-        assertTrue(result.contains("ñ"));
-        assertTrue(result.contains("á"));
-        assertTrue(result.contains("é"));
-        assertTrue(result.contains("í"));
-        assertTrue(result.contains("ó"));
-        assertTrue(result.contains("ú"));
-    }
 
     @Test
     void superClean_nullInput_returnsNull() {

@@ -280,7 +280,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, fileBytes != null);
 
             helper.setSubject(subject);
-            helper.setText(body, false);
+            helper.setText(body, true);
             helper.setTo(emails.toArray(new String[0]));
 
             if (fileBytes != null) {
@@ -331,12 +331,12 @@ public class EmailService {
     public String superClean(String input) {
         if (input == null) return null;
 
-        String noHtml = org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.none());
+        // Allow basic HTML tags, but still sanitize against XSS
+        String safeHtml = org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.basic());
 
-
-        String normalized = java.text.Normalizer.normalize(noHtml, java.text.Normalizer.Form.NFC);
-
-        return normalized.replaceAll("[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ,.!?()\"'\\-\\n]", "");
+        // The previous regex was too restrictive for HTML, so it has been removed.
+        // Jsoup's cleaning is sufficient for sanitization.
+        return safeHtml;
     }
 }
 
