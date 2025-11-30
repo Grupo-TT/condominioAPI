@@ -30,7 +30,7 @@ public class SecurityConfig {
         return httpSecurity
                 .authorizeHttpRequests(auth -> {
                     auth
-                            .requestMatchers("/login", "/auth/**", "/error").permitAll()
+                            .requestMatchers("/login", "/auth/**", "/error", "/user/recuperar-password").permitAll()
                             .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
