@@ -1,13 +1,11 @@
 package com.condominio.controller;
 
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.CorreoEnviado;
-import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.service.implementation.CorreoEnviadoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,5 +20,11 @@ public class CorreoEnviadoController {
     @PreAuthorize("hasRole('ADMIN')")
     public List<CorreoEnviado> findAll() {
         return correoEnviadoService.findAll();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<Void> delete(@PathVariable Long id) {
+        return correoEnviadoService.delete(id);
     }
 }

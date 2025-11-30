@@ -1,15 +1,19 @@
 package com.condominio;
 
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.service.implementation.CorreoEnviadoService;
 import com.condominio.util.exception.ApiException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -53,6 +57,44 @@ class CorreoEnviadoServiceTest {
 
         assertEquals("No hay correos enviados", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+    @Test
+    void delete_shouldRemoveRecord_whenIdExists() {
+        Long id = 1L;
+
+        CorreoEnviado fakeCorreo = new CorreoEnviado();
+        fakeCorreo.setId(id);
+
+        // Mock findById to return the object
+        Mockito.when(correoEnviadoRepository.findById(id))
+                .thenReturn(Optional.of(fakeCorreo));
+
+        SuccessResult<Void> result = service.delete(id);
+
+        // Check deleteById was called
+        Mockito.verify(correoEnviadoRepository).deleteById(id);
+
+        Assertions.assertEquals(
+                "Registro de  comunicado eliminado correctamente",
+                result.message()
+        );
+    }
+
+    @Test
+    void delete_shouldThrowError_whenIdNotFound() {
+        Long id = 999L;
+
+
+        Mockito.when(correoEnviadoRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        ApiException ex = Assertions.assertThrows(
+                ApiException.class,
+                () -> service.delete(id)
+        );
+
+        Assertions.assertEquals("No existe un comunicado con ese id", ex.getMessage());
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
     }
 }
 

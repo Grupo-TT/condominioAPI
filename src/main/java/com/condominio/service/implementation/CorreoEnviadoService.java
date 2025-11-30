@@ -1,5 +1,6 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.util.exception.ApiException;
@@ -21,5 +22,14 @@ public class CorreoEnviadoService {
             throw new ApiException("No hay correos enviados", HttpStatus.NOT_FOUND);
         }
         return lista;
+    }
+    public SuccessResult<Void>delete(Long id){
+        CorreoEnviado correoEnviado = correoEnviadoRepository.findById(id)
+                .orElseThrow(() -> new ApiException(
+                        "No existe un comunicado con ese id",
+                        HttpStatus.NOT_FOUND
+                ));
+        correoEnviadoRepository.deleteById(id);
+        return new SuccessResult<>("Registro de  comunicado eliminado correctamente",null);
     }
 }
