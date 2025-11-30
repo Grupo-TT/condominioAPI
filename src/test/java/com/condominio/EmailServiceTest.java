@@ -4,10 +4,12 @@ import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
+import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.service.implementation.EmailService;
 import com.condominio.util.exception.ApiException;
 import jakarta.mail.MessagingException;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,11 +49,17 @@ class EmailServiceTest {
 
     private EmailService emailService;
     private MimeMessage mimeMessage;
+    @Mock
+    private CorreoEnviadoRepository correoEnviadoRepository;
+    @Mock
+    private ObjectMapper objectMapper;
+
+
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        emailService = new EmailService(mailSender, templateEngine);
+        emailService = new EmailService(mailSender, templateEngine, correoEnviadoRepository, objectMapper);
         mimeMessage = mock(MimeMessage.class);
     }
 
@@ -585,7 +594,7 @@ class EmailServiceTest {
             doThrow(new RuntimeException("SMTP server down")).when(mailSender).send(any(MimeMessage.class));
     
             // When & Then
-            // El método no debe lanzar la excepción, sino capturarla y registrarla.
+
             // La ausencia de una excepción aquí es la prueba de que el bloque catch funciona.
             assertDoesNotThrow(() -> {
                 emailService.sendToManyAsync(emails, subject, body, null, null);
@@ -594,5 +603,52 @@ class EmailServiceTest {
             // Verify que se intentó enviar el mensaje
             verify(mailSender).send(mimeMessage);
         }
+
+
+    @Test
+    void superClean_nullInput_returnsNull() {
+        assertNull(emailService.superClean(null));
     }
+
+    void superClean_onlySpecialCharacters_removesAll() {
+        String input = "@#$%^&*+=/<>[]{}";
+        String result = emailService.superClean(input);
+        assertEquals("ltgt", result);
+    }
+
+    @Test
+    void testSendToMany_savesCorrectJsonInDatabase() throws Exception {
+        // Given
+        EmailService spyService = spy(emailService);
+        java.lang.reflect.Field selfField = EmailService.class.getDeclaredField("self");
+        selfField.setAccessible(true);
+        selfField.set(spyService, spyService);
+
+        List<String> emails = List.of("test1@correo.com", "test2@correo.com");
+        SendEmailsDTO request = new SendEmailsDTO();
+        request.setEmails(emails);
+        request.setSubject("Asunto de prueba");
+        request.setMessage("Mensaje de prueba");
+
+        // Mock the objectMapper behavior
+        String expectedJson = "[\"test1@correo.com\",\"test2@correo.com\"]";
+        when(objectMapper.writeValueAsString(emails)).thenReturn(expectedJson);
+
+        doNothing().when(spyService).sendToManyAsync(anyList(), anyString(), anyString(), any(), any());
+
+        // When
+        spyService.sendToMany(request);
+
+        // Then
+        ArgumentCaptor<CorreoEnviado> correoCaptor = ArgumentCaptor.forClass(CorreoEnviado.class);
+        verify(correoEnviadoRepository).save(correoCaptor.capture());
+
+        CorreoEnviado savedCorreo = correoCaptor.getValue();
+        assertThat(savedCorreo.getTitulo()).isEqualTo("Asunto de prueba");
+        assertThat(savedCorreo.getCuerpo()).isEqualTo("Mensaje de prueba");
+
+        // Verify the JSON content
+        assertThat(savedCorreo.getDestinatarios()).isEqualTo(expectedJson);
+    }
+}
     

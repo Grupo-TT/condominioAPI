@@ -62,7 +62,7 @@ public class MascotaService implements IMascotaService {
             mascotaRepository.save(mascota);
             return new SuccessResult<>("Se modificó la cantidad satisfactoriamente", null);
         }else {
-            throw new ApiException("No tiene mascotas para editar.", HttpStatus.NOT_FOUND);
+            throw new ApiException("No tiene mascotas para editar.", HttpStatus.OK);
         }
     }
 
@@ -70,7 +70,7 @@ public class MascotaService implements IMascotaService {
     public SuccessResult<List<MascotaDTO>> findMascotasByCasa(Long idCasa) {
         List<Mascota> mascotasCasa = mascotaRepository.findAllByCasa_Id(idCasa);
         if (mascotasCasa.isEmpty()) {
-            throw new ApiException("No tiene mascotas registradas.", HttpStatus.NOT_FOUND);
+            throw new ApiException("No tiene mascotas registradas.", HttpStatus.OK);
         }
         List<MascotaDTO> mascotasDTO = new ArrayList<>();
         for(Mascota mascota : mascotasCasa) {
