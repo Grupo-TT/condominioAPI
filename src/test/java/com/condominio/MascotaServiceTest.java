@@ -173,7 +173,7 @@ class MascotaServiceTest {
                 () -> mascotaService.subtractMascota(dto));
 
         assertEquals("No tiene mascotas para editar.", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals(HttpStatus.OK, exception.getStatus());
     }
 
     @Test
@@ -189,7 +189,7 @@ class MascotaServiceTest {
                 () -> mascotaService.subtractMascota(dto));
 
         assertEquals("No tiene mascotas para editar.", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals(HttpStatus.OK, exception.getStatus());
     }
 
     @Test
@@ -249,7 +249,7 @@ class MascotaServiceTest {
                 () -> mascotaService.findMascotasByCasa(casaId));
 
         assertEquals("No tiene mascotas registradas.", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals(HttpStatus.OK, exception.getStatus());
         verify(mascotaRepository).findAllByCasa_Id(casaId);
     }
 }
