@@ -4,8 +4,13 @@ import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.model.Persona;
+import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.util.exception.ApiException;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,9 +25,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
+import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import static com.condominio.util.constants.AppConstants.*;
 
@@ -33,10 +41,14 @@ public class EmailService {
     private final TemplateEngine templateEngine;
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final int maxFileSizeMB = 10;
+    private final CorreoEnviadoRepository correoEnviadoRepository;
+    private final ObjectMapper objectMapper;
 
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
+    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine, CorreoEnviadoRepository correoEnviadoRepository, ObjectMapper objectMapper) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
+        this.correoEnviadoRepository = correoEnviadoRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Async("mailTaskExecutor")
@@ -257,8 +269,9 @@ public class EmailService {
         if (body == null || body.trim().isEmpty()) {
             body = " ";
         }
-
-
+        String cleanTitle = superClean(request.getSubject());
+        String cleanBody = superClean(body);
+        saveEmailLog(cleanTitle, cleanBody, request.getEmails());
         self.sendToManyAsync(request.getEmails(), request.getSubject(), body, fileBytes, filename);
     }
 
@@ -269,7 +282,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, fileBytes != null);
 
             helper.setSubject(subject);
-            helper.setText(body, false);
+            helper.setText(body, true);
             helper.setTo(emails.toArray(new String[0]));
 
             if (fileBytes != null) {
@@ -292,6 +305,29 @@ public class EmailService {
                         type.equals("application/msword") ||
                         type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         );
+    }
+
+    private void saveEmailLog(String subject, String body, List<String> emails) {
+        CorreoEnviado correo = new CorreoEnviado();
+        correo.setTitulo(subject);
+        correo.setCuerpo(body);
+        correo.setFechaEnvio(LocalDateTime.now());
+
+        try {
+            String destinatariosJson = objectMapper.writeValueAsString(emails);
+            correo.setDestinatarios(destinatariosJson);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("Error serializando los destinatarios a JSON", e);
+            throw new ApiException("Error interno al guardar el registro del correo", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        correoEnviadoRepository.save(correo);
+    }
+
+    public String superClean(String input) {
+        if (input == null) return null;
+
+        return org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.basic());
     }
 }
 
