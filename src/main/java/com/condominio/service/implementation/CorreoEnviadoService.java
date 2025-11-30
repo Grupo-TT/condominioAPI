@@ -24,7 +24,7 @@ public class CorreoEnviadoService {
         return lista;
     }
     public SuccessResult<Void>delete(Long id){
-        CorreoEnviado correoEnviado = correoEnviadoRepository.findById(id)
+         correoEnviadoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(
                         "No existe un comunicado con ese id",
                         HttpStatus.NOT_FOUND
