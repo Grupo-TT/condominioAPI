@@ -9,11 +9,8 @@ import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.condominio.persistence.model.CorreoEnviado;
-import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.util.exception.ApiException;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -36,9 +33,7 @@ import java.util.List;
 
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
-import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import static com.condominio.util.constants.AppConstants.*;
 

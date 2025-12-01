@@ -3,7 +3,6 @@ package com.condominio.util.configuration;
 import com.condominio.dto.request.AsambleaDTO;
 import com.condominio.dto.request.PersonaRegistroDTO;
 import com.condominio.dto.request.RecursoComunDTO;
-import com.condominio.dto.request.TipoRecursoComunDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.*;
 import org.modelmapper.ModelMapper;

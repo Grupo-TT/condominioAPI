@@ -9,9 +9,7 @@ import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.condominio.persistence.model.CorreoEnviado;
 import com.condominio.persistence.model.EstadoSolicitud;
-import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RecursoComun;
-import com.condominio.persistence.model.UserEntity;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.service.implementation.EmailService;
 import com.condominio.util.exception.ApiException;
@@ -26,7 +24,6 @@ import org.mockito.MockitoAnnotations;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -38,7 +35,6 @@ import java.util.GregorianCalendar;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
