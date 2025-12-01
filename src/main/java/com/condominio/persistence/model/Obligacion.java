@@ -3,7 +3,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -23,11 +22,15 @@ public class Obligacion {
     private int monto;
 
     private LocalDate fechaLimite;
-    private int diasGracias;
-    private int diasMaxMora;
-    private int tasaInteres;
+    private double tasaInteres;
     private int interes;
+    @Column(columnDefinition = "int default 0")
+    private int montoPagado;
     private String motivo;
+    private String titulo;
+
+    private int valorTotal;
+    private int valorPendiente;
 
     @ManyToOne(targetEntity = Casa.class)
     @JoinColumn(nullable = false)
@@ -37,5 +40,15 @@ public class Obligacion {
     private TipoPago tipoPago;
 
     @Enumerated(EnumType.STRING)
+    private TipoObligacion tipoObligacion;
+
+    @Enumerated(EnumType.STRING)
     private EstadoPago estadoPago;
+
+    @PrePersist
+    @PreUpdate
+    private void calcularValores() {
+        this.valorTotal = this.monto + this.interes;
+        this.valorPendiente = this.valorTotal - this.montoPagado;
+    }
 }

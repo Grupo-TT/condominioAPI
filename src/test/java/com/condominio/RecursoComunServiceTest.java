@@ -1,11 +1,12 @@
 package com.condominio;
 
 import com.condominio.dto.request.RecursoComunDTO;
+import com.condominio.dto.response.RecursoComunPropiDTO;
 import com.condominio.dto.response.SuccessResult;
+import com.condominio.persistence.model.DisponibilidadRecurso;
 import com.condominio.persistence.model.RecursoComun;
 import com.condominio.persistence.model.TipoRecursoComun;
 import com.condominio.persistence.repository.RecursoComunRepository;
-import com.condominio.persistence.repository.TipoRecursoComunRepository;
 import com.condominio.service.implementation.RecursoComunService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.Test;
@@ -16,11 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -33,9 +32,6 @@ class RecursoComunServiceTest {
     @Mock
     private ModelMapper modelMapper;
 
-    @Mock
-    private TipoRecursoComunRepository tipoRecursoComunRepository;
-
     @InjectMocks
     private RecursoComunService recursoComunService;
 
@@ -45,18 +41,18 @@ class RecursoComunServiceTest {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
+        dto.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
 
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(1L);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
         dto.setTipoRecursoComun(tipo);
 
         RecursoComun entidad = new RecursoComun();
         entidad.setNombre("Cancha");
         entidad.setDescripcion("Cancha de fútbol");
         entidad.setTipoRecursoComun(tipo);
+        entidad.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
 
         when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
-        when(tipoRecursoComunRepository.findById(1L)).thenReturn(Optional.of(tipo));
         when(modelMapper.map(dto, RecursoComun.class)).thenReturn(entidad);
         when(recursoComunRepository.save(any(RecursoComun.class))).thenReturn(entidad);
 
@@ -67,7 +63,8 @@ class RecursoComunServiceTest {
         assertEquals("Recurso registrado correctamente", result.message());
         assertEquals("Cancha", result.data().getNombre());
         assertEquals("Cancha de fútbol", result.data().getDescripcion());
-        assertEquals(1L, result.data().getTipoRecursoComun().getId());
+        assertEquals(tipo, result.data().getTipoRecursoComun());
+        assertEquals(DisponibilidadRecurso.DISPONIBLE, result.data().getDisponibilidadRecurso());
         verify(recursoComunRepository, times(1)).save(any(RecursoComun.class));
     }
 
@@ -121,29 +118,6 @@ class RecursoComunServiceTest {
     }
 
     @Test
-    void save_WhenTipoRecursoNoExiste_ShouldThrowApiException() {
-
-        RecursoComunDTO dto = new RecursoComunDTO();
-        dto.setNombre("Gimnasio");
-        dto.setDescripcion("Área de entrenamiento físico");
-
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(99L);
-        dto.setTipoRecursoComun(tipo);
-
-        when(recursoComunRepository.existsByNombreIgnoreCase("Gimnasio")).thenReturn(false);
-        when(tipoRecursoComunRepository.findById(99L)).thenReturn(Optional.empty());
-
-
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        assertTrue(exception.getMessage().contains("El Tipo de recurso no existe"));
-
-        verify(recursoComunRepository, never()).save(any());
-    }
-
-    @Test
     void testUpdate_Success() {
         Long id = 1L;
 
@@ -151,8 +125,9 @@ class RecursoComunServiceTest {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Piscina");
         dto.setDescripcion("Piscina olímpica");
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(2L);
+        dto.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
+
         dto.setTipoRecursoComun(tipo);
 
 
@@ -160,18 +135,15 @@ class RecursoComunServiceTest {
         oldRecurso.setId(id);
         oldRecurso.setNombre("Cancha");
         oldRecurso.setDescripcion("Cancha de fútbol");
-        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+        oldRecurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+        oldRecurso.setTipoRecursoComun(tipo);
 
 
-        TipoRecursoComun tipoEncontrado = new TipoRecursoComun();
-        tipoEncontrado.setId(2L);
-        tipoEncontrado.setNombre("Zona húmeda");
-        tipoEncontrado.setDescripcion("Área de piscina y jacuzzi");
+        TipoRecursoComun tipoEncontrado = TipoRecursoComun.ZONA;
 
 
         when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
         when(recursoComunRepository.findByNombreIgnoreCase("Piscina")).thenReturn(Optional.empty());
-        when(tipoRecursoComunRepository.findById(2L)).thenReturn(Optional.of(tipoEncontrado));
         when(recursoComunRepository.save(any(RecursoComun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 
@@ -182,15 +154,14 @@ class RecursoComunServiceTest {
         assertEquals("Recurso modificado exitosamente", result.message());
         assertEquals("Piscina", result.data().getNombre());
         assertEquals("Piscina olímpica", result.data().getDescripcion());
+        assertEquals(DisponibilidadRecurso.DISPONIBLE, result.data().getDisponibilidadRecurso());
         assertNotNull(result.data().getTipoRecursoComun());
-        assertEquals(2L, result.data().getTipoRecursoComun().getId());
-        assertEquals("Zona húmeda", result.data().getTipoRecursoComun().getNombre());
-        assertEquals("Área de piscina y jacuzzi", result.data().getTipoRecursoComun().getDescripcion());
+        assertEquals(tipoEncontrado, result.data().getTipoRecursoComun());
+
 
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
-        verify(tipoRecursoComunRepository).findById(2L);
         verify(recursoComunRepository).save(any(RecursoComun.class));
     }
 
@@ -202,8 +173,7 @@ class RecursoComunServiceTest {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Piscina");
         dto.setDescripcion("Piscina olímpica");
-        TipoRecursoComun tipo = new TipoRecursoComun();
-        tipo.setId(2L);
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
         dto.setTipoRecursoComun(tipo);
 
 
@@ -211,7 +181,7 @@ class RecursoComunServiceTest {
         oldRecurso.setId(id);
         oldRecurso.setNombre("Cancha");
         oldRecurso.setDescripcion("Cancha de fútbol");
-        oldRecurso.setTipoRecursoComun(new TipoRecursoComun());
+        oldRecurso.setTipoRecursoComun(tipo);
 
 
         RecursoComun other = new RecursoComun();
@@ -231,12 +201,32 @@ class RecursoComunServiceTest {
 
         verify(recursoComunRepository).findById(id);
         verify(recursoComunRepository).findByNombreIgnoreCase("Piscina");
-        verifyNoInteractions(tipoRecursoComunRepository);
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
     }
     @Test
-    void testSave_ThrowsException_WhenTipoRecursoIsNull() {
+    void testUpdate_ThrowsException_WhenTipoRecursoIsNull() {
+        Long id = 1L;
+        RecursoComunDTO dto = new RecursoComunDTO();
+        dto.setNombre("Cancha");
+        dto.setDescripcion("Cancha de fútbol");
+        dto.setTipoRecursoComun(null);
 
+        RecursoComun oldRecurso = new RecursoComun();
+        oldRecurso.setId(id);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(oldRecurso));
+
+        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.update(id, dto));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
+    }
+
+    @Test
+    void testSave_ThrowsException_WhenTipoRecursoIsNull() {
         RecursoComunDTO dto = new RecursoComunDTO();
         dto.setNombre("Cancha");
         dto.setDescripcion("Cancha de fútbol");
@@ -247,28 +237,219 @@ class RecursoComunServiceTest {
         ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+        assertTrue(exception.getMessage().toLowerCase().contains("tipo de recurso válido"));
 
         verify(recursoComunRepository, never()).save(any(RecursoComun.class));
-        verify(tipoRecursoComunRepository, never()).findById(anyLong());
     }
 
     @Test
-    void testSave_ThrowsException_WhenTipoRecursoIdIsNull() {
-        RecursoComunDTO dto = new RecursoComunDTO();
-        dto.setNombre("Cancha");
-        dto.setDescripcion("Cancha de fútbol");
-        dto.setTipoRecursoComun(new TipoRecursoComun());
+    void cambiarDisponibilidad_shouldSetToDisponible_whenResourceExistsAndWasNotDisponible() {
+        Long id = 1L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
 
-        when(recursoComunRepository.existsByNombreIgnoreCase("Cancha")).thenReturn(false);
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
 
-        ApiException exception = assertThrows(ApiException.class, () -> recursoComunService.save(dto));
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertTrue(exception.getMessage().contains("Tipo de recurso válido"));
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE);
 
-        verify(recursoComunRepository, never()).save(any(RecursoComun.class));
-        verify(tipoRecursoComunRepository, never()).findById(anyLong());
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Recurso habilitado exitosamente");
+        assertThat(result.data()).isEqualTo(saved);
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.DISPONIBLE);
     }
+
+    @Test
+    void cambiarDisponibilidad_shouldSetToNoDisponible_whenResourceExistsAndWasNotNoDisponible() {
+        Long id = 2L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
+
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.NO_DISPONIBLE);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("Recurso deshabilitado exitosamente");
+        assertThat(result.data()).isEqualTo(saved);
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.NO_DISPONIBLE);
+    }
+
+    @Test
+    void cambiarDisponibilidad_shouldSetToEnMantenimiento_whenResourceExistsAndWasNotEnMantenimiento() {
+        Long id = 3L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        RecursoComun saved = new RecursoComun();
+        saved.setId(id);
+        saved.setDisponibilidadRecurso(DisponibilidadRecurso.EN_MANTENIMIENTO);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+        when(recursoComunRepository.save(recurso)).thenReturn(saved);
+
+        SuccessResult<RecursoComun> result = recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.EN_MANTENIMIENTO);
+
+        assertThat(result).isNotNull();
+        assertThat(result.message()).isEqualTo("El recurso se ha puesto en mantenimiento exitosamente");
+        assertThat(result.data()).isEqualTo(saved);
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository).save(recurso);
+        assertThat(recurso.getDisponibilidadRecurso()).isEqualTo(DisponibilidadRecurso.EN_MANTENIMIENTO);
+    }
+
+    @Test
+    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyEnable() {
+        Long id = 4L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE));
+
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).isEqualTo("El recurso ya está habilitado");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarDisponibilidad_shouldThrowBadRequest_whenResourceAlreadyDisable() {
+        Long id = 4L;
+        RecursoComun recurso = new RecursoComun();
+        recurso.setId(id);
+        recurso.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.of(recurso));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.NO_DISPONIBLE));
+
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getMessage()).isEqualTo("El recurso ya está deshabilitado");
+
+        verify(recursoComunRepository).findById(id);
+        verify(recursoComunRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarDisponibilidad_shouldThrowNotFound_whenResourceMissing() {
+        Long id = 999L;
+        when(recursoComunRepository.findById(id)).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> recursoComunService.cambiarDisponibilidad(id, DisponibilidadRecurso.DISPONIBLE));
+
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getMessage()).isEqualTo("El recurso no existe");
+
+        verify(recursoComunRepository).findById(id);
+        verifyNoMoreInteractions(recursoComunRepository);
+    }
+
+    @Test
+    void testFindByTipoRecurso_ReturnsListOfResources() {
+
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
+
+        RecursoComun recurso1 = new RecursoComun();
+        recurso1.setId(1L);
+        recurso1.setNombre("Piscina Olímpica");
+        recurso1.setTipoRecursoComun(tipo);
+
+        RecursoComun recurso2 = new RecursoComun();
+        recurso2.setId(2L);
+        recurso2.setNombre("Piscina Infantil");
+        recurso2.setTipoRecursoComun(tipo);
+
+        List<RecursoComun> recursos = List.of(recurso1, recurso2);
+
+        when(recursoComunRepository.findByTipoRecursoComun(tipo)).thenReturn(recursos);
+
+        List<RecursoComun> result = recursoComunService.findByTipoRecurso(tipo);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("Piscina Olímpica", result.getFirst().getNombre());
+        assertEquals(TipoRecursoComun.ZONA, result.getFirst().getTipoRecursoComun());
+        verify(recursoComunRepository, times(1)).findByTipoRecursoComun(tipo);
+    }
+
+    @Test
+    void testFindByTipoRecurso_ReturnsEmptyList_WhenNoResourcesFound() {
+
+        TipoRecursoComun tipo = TipoRecursoComun.ZONA;
+        when(recursoComunRepository.findByTipoRecursoComun(tipo)).thenReturn(Collections.emptyList());
+
+        List<RecursoComun> result = recursoComunService.findByTipoRecurso(tipo);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(recursoComunRepository, times(1)).findByTipoRecursoComun(tipo);
+    }
+
+    @Test
+    void findByDisponibilidad_conRecursos_devuelveListaDTO() {
+        RecursoComun recurso1;
+        RecursoComun recurso2;
+
+        recurso1 = new RecursoComun();
+        recurso1.setId(1L);
+        recurso1.setNombre("Piscina");
+        recurso1.setDescripcion("Piscina olímpica");
+        recurso1.setDisponibilidadRecurso(DisponibilidadRecurso.DISPONIBLE);
+
+        recurso2 = new RecursoComun();
+        recurso2.setId(2L);
+        recurso2.setNombre("Salón Social");
+        recurso2.setDescripcion("Salón para eventos");
+        recurso2.setDisponibilidadRecurso(DisponibilidadRecurso.NO_DISPONIBLE);
+
+        when(recursoComunRepository.findAll()).thenReturn(List.of(recurso1, recurso2));
+
+        List<RecursoComunPropiDTO> resultado = recursoComunService.findByDisponibilidad();
+
+        assertNotNull(resultado);
+        assertEquals(2, resultado.size());
+        assertEquals("Piscina", resultado.get(0).getNombre());
+        assertEquals(DisponibilidadRecurso.NO_DISPONIBLE, resultado.get(1).getDisponibilidadRecurso());
+
+        verify(recursoComunRepository, times(1)).findAll();
+    }
+
+    @Test
+    void findByDisponibilidad_sinRecursos_lanzaExcepcion() {
+        when(recursoComunRepository.findAll()).thenReturn(Collections.emptyList());
+
+        ApiException ex = assertThrows(ApiException.class, () -> recursoComunService.findByDisponibilidad());
+
+        assertEquals("No hay recursos registrados", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(recursoComunRepository, times(1)).findAll();
+    }
+
 }
 

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Paz y Salvo - Condominio</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #222;
+            margin: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #e8e8e8;
+            padding: 24px;
+            border-radius: 8px;
+        }
+
+        /* Header usando tabla para compatibilidad */
+        header table { width: 100%; border-collapse: collapse; }
+        header td { vertical-align: middle; padding: 0; }
+        .condo-name { font-size: 20px; font-weight: 700; }
+        .doc-title { font-size: 18px; color: #444; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .info-table td { padding: 8px 6px; vertical-align: top; }
+        .label { width: 220px; font-weight: 600; color: #333; }
+        .value { color: #111; }
+
+        .status { display: inline-block; padding: 6px 10px; border-radius: 18px; font-weight: 600; font-size: 13px; }
+        .status.ok { background: #e6ffef; color: #0b7a3f; border: 1px solid #bff0c9; }
+
+        /* Footer usando tabla para compatibilidad */
+        .footer-table { width: 100%; margin-top: 28px; border-collapse: collapse; }
+        .signature-box {
+            width: 320px;
+            height: 90px;
+            border: 1px dashed #bbb;
+            padding: 8px;
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        /* Firma simulada: estilo cursiva, tamaño */
+        .signature-text {
+            font-family: "Brush Script MT", "Lucida Handwriting", "Segoe Script", "Dancing Script", cursive;
+            font-size: 34px;
+            color: #222;
+            letter-spacing: 1px;
+        }
+
+        .seal { font-size: 12px; color: #666; margin-top: 6px; }
+
+        .meta { font-size: 12px; color: #666; text-align: right; }
+        hr.separator { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <table>
+            <tr>
+                <td style="width:70%;">
+                    <div class="condo-name" th:text="${condominioNombre}"></div>
+                    <div class="doc-title">Certificado de Paz y Salvo</div>
+                </td>
+                <td style="width:30%; text-align:right;">
+                    <div>
+                        <img th:if="${logoPresent}"
+                             th:src="'data:image/png;base64,' + ${logoBase64}"
+                             alt="Logo Condominio"
+                             style="height:60px; width:auto;" />
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </header>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Nombre completo del propietario / arrendatario:</td>
+            <td class="value" th:text="${nombre}"></td>
+        </tr>
+
+        <tr>
+            <td class="label">Casa / Unidad:</td>
+            <td class="value" th:text="${casa}"></td>
+        </tr>
+
+        <tr>
+            <td class="label">Estado de cuenta:</td>
+            <td class="value">
+                <span th:if="${estado == 'al_dia'}" class="status ok">Al día</span>
+                <span th:unless="${estado == 'al_dia'}" class="status" th:text="${estado}"></span>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="label">Fecha de emisión:</td>
+            <td class="value" th:text="${fecha}"></td>
+        </tr>
+    </table>
+
+    <hr class="separator" />
+
+    <p>
+        Por medio del presente certificado se deja constancia que la persona arriba mencionada se encuentra
+        <strong th:text="${estado == 'al_dia' ? 'al día' : estado}"></strong>
+        con sus obligaciones ante el condominio.
+    </p>
+
+    <table class="footer-table">
+        <tr>
+            <td style="width:50%;">
+                <div class="signature-box">
+                    <div th:unless="${firmaPresent}">
+                        <div class="signature-text" th:text="${firmaNombre}"></div>
+                        <div class="seal">Firma / Sello digital</div>
+                    </div>
+                    <div th:if="${firmaPresent}">
+                        <img th:src="@{/images/signature.png}" alt="Firma" style="max-height:72px; max-width:100%; display:block;" />
+                    </div>
+                </div>
+            </td>
+            <td style="width:50%; text-align:right;">
+                <div class="meta">
+                    <div>Documento emitido por: <strong th:text="${condominioNombre}"></strong></div>
+                    <div>Emitido el: <span th:text="${fecha}"></span></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</div>
+</body>
+</html>

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -23,7 +22,13 @@ public class SolicitudReparacionLocativa {
     @Column
     private String motivo;
     @Column
-    private String reponsable;
+    private String responsable;
+
+    @Column
+    private LocalDate inicioObra;
+
+    @Column
+    private LocalDate finObra;
 
     @Enumerated(EnumType.STRING)
     private EstadoSolicitud estadoSolicitud;
@@ -31,4 +36,13 @@ public class SolicitudReparacionLocativa {
     @ManyToOne(targetEntity = Casa.class)
     @JoinColumn(nullable = false)
     private Casa casa;
+
+    @Column
+    private String comentarios;
+
+    @Enumerated(EnumType.STRING)
+    private TipoObra tipoObra;
+
+    @Column
+    private String tipoObraDetalle;
 }

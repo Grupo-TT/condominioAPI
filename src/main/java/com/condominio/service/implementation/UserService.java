@@ -1,5 +1,7 @@
 package com.condominio.service.implementation;
 
+import com.condominio.dto.request.PasswordUpdateDTO;
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
@@ -17,7 +19,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
 import java.util.Set;
+
 
 @RequiredArgsConstructor
 @Service
@@ -27,6 +32,7 @@ public class UserService implements IUserService, UserDetailsService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final PersonaRepository personaRepository;
+    private final EmailService emailService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -89,4 +95,38 @@ public class UserService implements IUserService, UserDetailsService {
         return personaRepository.findPersonaByUser(user);
     }
 
+    public SuccessResult<Void> changePassword(UserDetails userDetails, PasswordUpdateDTO dto) {
+
+        UserEntity userEntity = userRepository.findUserEntityByEmail(userDetails.getUsername());
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), userEntity.getContrasenia())) {
+            throw new ApiException("La contraseña actual no es correcta", HttpStatus.OK);
+        }
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new ApiException("Las contraseñas nuevas no coinciden",HttpStatus.OK);
+        }
+
+        userEntity.setContrasenia(passwordEncoder.encode(dto.getNewPassword()));
+
+        userRepository.save(userEntity);
+        return new SuccessResult<>("Password actualizada correctamente",null);
+    }
+
+
+    public void recuperarPassword(String email) {
+        UserEntity usuario = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException("El usuario no existe", HttpStatus.OK));
+
+        SecureRandom random = new SecureRandom();
+        int numero = 100000 + random.nextInt(900000);
+        String nuevaPassword = String.valueOf(numero);
+        usuario.setContrasenia(passwordEncoder.encode(nuevaPassword));
+        userRepository.save(usuario);
+
+        Persona persona = personaRepository.findByUser_Id(usuario.getId());
+        String nombreUsuario = persona.getNombreCompleto();
+
+        emailService.enviarPasswordOlvidada(email, nuevaPassword, nombreUsuario);
+    }
 }

@@ -21,6 +21,8 @@ public class Miembro {
 
     private String nombre;
     private Long numeroDocumento;
+    @Enumerated(EnumType.STRING)
+    private TipoDocumento tipoDocumento;
     private Long telefono;
     private String parentesco;
 

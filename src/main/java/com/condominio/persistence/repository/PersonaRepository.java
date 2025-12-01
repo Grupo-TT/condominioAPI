@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -32,6 +33,23 @@ public interface PersonaRepository extends CrudRepository<Persona, Long> {
     Optional<Persona> findArrendatarioByCasaId(@Param("casaId") Long casaId);
 
     Persona findPersonaByUser(UserEntity user);
+    boolean existsByNumeroDocumentoAndIdNot(Long numeroDocumento, Long id);
+    Optional<Persona> findByUserEmail(String email);
+
+    @Query("""
+    SELECT DISTINCT p
+    FROM Persona p
+    JOIN FETCH p.casa c
+    JOIN p.user u
+    JOIN u.roles r
+    WHERE r.roleEnum = 'PROPIETARIO'
+""") List<Persona> findAllPropietariosConCasa();
+
+    Persona findByUser_Id(Long id);
+    List<Persona> findAllByCasa_Id(Long casaId);
+    boolean existsByNumeroDocumento(Long numeroDocumento);
+    List<Persona> findByEstadoTrue();
+
 }
 
 

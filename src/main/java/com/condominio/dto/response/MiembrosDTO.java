@@ -1,5 +1,6 @@
 package com.condominio.dto.response;
 
+import com.condominio.persistence.model.TipoDocumento;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ public class MiembrosDTO {
     private String nombreCompleto;
     private String tipoMiembro;
     private Long numeroDocumento;
+    private TipoDocumento tipoDocumento;
     private Long telefono;
     private String email;
 }

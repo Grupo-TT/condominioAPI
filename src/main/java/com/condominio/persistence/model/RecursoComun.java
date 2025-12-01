@@ -19,8 +19,10 @@ public class RecursoComun {
     private String nombre;
     @Column
     private String descripcion;
+    @Enumerated(EnumType.STRING)
+    private DisponibilidadRecurso disponibilidadRecurso;
 
-    @ManyToOne(targetEntity = TipoRecursoComun.class)
-    @JoinColumn(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_recurso_comun", nullable = false)
     private TipoRecursoComun tipoRecursoComun;
 }

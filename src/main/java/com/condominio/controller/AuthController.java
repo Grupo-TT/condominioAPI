@@ -48,19 +48,32 @@ public class AuthController {
             UserEntity userEntity = userService.findByEmail(userDetails.getUsername());
 
             String nombre = null;
+            Long idCasa = null;
+            Long idPersona = null;
             if (userEntity != null) {
                 Persona personaOpt = userService.findPersonaByUser(userEntity);
+                if (personaOpt != null) {
+
                     nombre = buildNombreCompleto(personaOpt);
+                    idPersona = personaOpt.getId();
+
+                    idCasa = personaOpt.getCasa() != null
+                            ? personaOpt.getCasa().getId()
+                            : null;
                 }
+            }
 
             List<String> roles = userEntity.getRoles().stream()
                     .map(r -> r.getRoleEnum().name())
                     .collect(Collectors.toList());
 
+
             var userResponse = new UserResponse(
                     userDetails.getUsername(),
                     nombre,
-                    roles
+                    roles,
+                    idCasa,
+                    idPersona
             );
 
             return ResponseEntity.ok(new AuthResponse(token, refreshToken,userResponse));

@@ -1,5 +1,7 @@
 package com.condominio;
 
+import com.condominio.dto.request.PasswordUpdateDTO;
+import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.model.RoleEntity;
 import com.condominio.persistence.model.RoleEnum;
@@ -7,6 +9,7 @@ import com.condominio.persistence.model.UserEntity;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.persistence.repository.RoleRepository;
 import com.condominio.persistence.repository.UserRepository;
+import com.condominio.service.implementation.EmailService;
 import com.condominio.service.implementation.UserService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
@@ -41,6 +44,9 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Mock
+    private EmailService emailService;
 
     private AutoCloseable closeable;
 
@@ -258,4 +264,112 @@ class UserServiceTest {
         verify(personaRepository, times(1)).findPersonaByUser(user);
     }
 
+    @Test
+    void changePassword_shouldUpdatePassword_whenCurrentPasswordIsCorrectAndNewPasswordsMatch() {
+
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("test@gmail.com");
+
+        PasswordUpdateDTO dto = new PasswordUpdateDTO();
+        dto.setCurrentPassword("oldPass");
+        dto.setNewPassword("newPass");
+        dto.setConfirmPassword("newPass");
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setContrasenia("encodedOldPass");
+
+        when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
+        when(passwordEncoder.matches("oldPass", "encodedOldPass")).thenReturn(true);
+        when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
+
+
+        SuccessResult<Void> result = userService.changePassword(userDetails, dto);
+
+
+        assertEquals("Password actualizada correctamente", result.message());
+        verify(passwordEncoder).matches("oldPass", "encodedOldPass");
+        verify(passwordEncoder).encode("newPass");
+        verify(userRepository).save(userEntity);
+        assertEquals("encodedNewPass", userEntity.getContrasenia());
+    }
+
+    @Test
+    void changePassword_shouldThrowException_whenCurrentPasswordIsIncorrect() {
+
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("test@gmail.com");
+
+        PasswordUpdateDTO dto = new PasswordUpdateDTO();
+        dto.setCurrentPassword("wrongPass");
+        dto.setNewPassword("newPass");
+        dto.setConfirmPassword("newPass");
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setContrasenia("encodedOldPass");
+
+        when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
+        when(passwordEncoder.matches("wrongPass", "encodedOldPass")).thenReturn(false);
+
+
+        ApiException exception = assertThrows(ApiException.class, () ->
+                userService.changePassword(userDetails, dto));
+
+        assertEquals("La contraseña actual no es correcta", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePassword_shouldThrowException_whenNewPasswordsDoNotMatch() {
+
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("test@gmail.com");
+
+        PasswordUpdateDTO dto = new PasswordUpdateDTO();
+        dto.setCurrentPassword("oldPass");
+        dto.setNewPassword("newPass1");
+        dto.setConfirmPassword("newPass2");
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setContrasenia("encodedOldPass");
+
+        when(userRepository.findUserEntityByEmail("test@gmail.com")).thenReturn(userEntity);
+        when(passwordEncoder.matches("oldPass", "encodedOldPass")).thenReturn(true);
+
+
+        ApiException exception = assertThrows(ApiException.class, () ->
+                userService.changePassword(userDetails, dto));
+
+        assertEquals("Las contraseñas nuevas no coinciden", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+    @Test
+    void recuperarPassword_deberiaGenerarGuardarYEnviar() {
+
+        String email = "test@mail.com";
+
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        user.setEmail(email);
+
+        Persona persona = new Persona();
+        persona.setPrimerNombre("Juan");
+        persona.setPrimerApellido("Perez");
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(anyString())).thenReturn("pw-codificada");
+        when(personaRepository.findByUser_Id(1L)).thenReturn(persona);
+
+        userService.recuperarPassword(email);
+
+        verify(userRepository).findByEmail(email);
+        verify(passwordEncoder).encode(anyString());
+        verify(userRepository).save(user);
+        verify(personaRepository).findByUser_Id(1L);
+
+        verify(emailService).enviarPasswordOlvidada(
+                eq(email),
+                anyString(),
+                eq("Juan Perez")
+        );
+    }
 }

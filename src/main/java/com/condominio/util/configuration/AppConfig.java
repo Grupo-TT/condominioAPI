@@ -31,13 +31,6 @@ public class AppConfig {
             }
         });
 
-
-        modelMapper.addMappings(new PropertyMap<TipoRecursoComunDTO, TipoRecursoComun>() {
-            @Override
-            protected void configure() {
-                skip(destination.getId());
-            }
-        });
         modelMapper.addMappings(new PropertyMap<RecursoComunDTO, RecursoComun>() {
             @Override
             protected void configure() {

@@ -14,6 +14,7 @@ import java.time.LocalTime;
 @Builder
 public class SolicitudReservaRecursoDTO {
 
+    private Long id;
 
     private LocalDate fechaSolicitud;
 

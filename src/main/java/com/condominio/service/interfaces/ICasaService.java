@@ -3,6 +3,7 @@ package com.condominio.service.interfaces;
 
 
 import com.condominio.dto.response.CasaCuentaDTO;
+import com.condominio.dto.response.CasaDeudoraDTO;
 import com.condominio.dto.response.CasaInfoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Casa;
@@ -15,7 +16,7 @@ public interface ICasaService {
     void save(Casa casa);
     SuccessResult<CasaCuentaDTO> estadoDeCuenta(Long idCasa);
     SuccessResult<List<CasaInfoDTO>> obtenerCasas();
-
-
+    SuccessResult<List<CasaDeudoraDTO>> obtenerCasasConObligacionesPorCobrar();
+    SuccessResult<List<CasaDeudoraDTO>>  obtenerObligacionesPorCasa();
 
 }
