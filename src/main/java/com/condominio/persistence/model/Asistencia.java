@@ -1,15 +1,13 @@
 package com.condominio.persistence.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Getter
+@Setter
 @Service
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,7 +19,7 @@ public class Asistencia {
     private Long id;
     private Date fecha;
     @ManyToOne(targetEntity = Casa.class)
-    private Casa casas;
+    private Casa casa;
     @OneToOne
     private Asamblea asamblea;
     private Boolean estado;

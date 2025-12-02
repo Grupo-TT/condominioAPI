@@ -1,16 +1,16 @@
 package com.condominio.service.implementation;
 
+
+import com.condominio.persistence.model.Asamblea;
+import com.condominio.persistence.model.Persona;
 import com.condominio.dto.request.SendEmailsDTO;
 import com.condominio.dto.response.MostrarObligacionDTO;
 import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.SolicitudReservaRecursoDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.condominio.persistence.model.CorreoEnviado;
-import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.repository.CorreoEnviadoRepository;
 import com.condominio.util.exception.ApiException;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -25,12 +25,15 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.List;
 
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
-import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import static com.condominio.util.constants.AppConstants.*;
 
@@ -93,6 +96,49 @@ public class EmailService {
     }
 
     @Async("mailTaskExecutor")
+    public void enviarInvitacionAsamblea(
+            String destinatario,
+            String nombreAsamblea,
+            Date fecha,
+            LocalTime hora) throws MessagingException {
+
+        String htmlContent = generarHtmlInvitacionAsamblea(nombreAsamblea, fecha, hora);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(destinatario);
+        helper.setSubject("Invitación a la Asamblea: " + nombreAsamblea);
+        helper.setText(htmlContent, true);
+        mailSender.send(mimeMessage);
+    }
+
+    @Async("mailTaskExecutor")
+    public void enviarInvitacionesAsambleaMasivas(List<Persona> personas, Asamblea asamblea) {
+        personas.forEach(persona -> {
+            try {
+                enviarInvitacionAsamblea(
+                        persona.getUser().getEmail(),
+                        asamblea.getTitulo(),
+                        asamblea.getFecha(),
+                        asamblea.getHoraInicio()
+                );
+            } catch (MessagingException e) {
+
+                System.err.println("No se pudo enviar correo a " + persona.getUser().getEmail() + ": " + e.getMessage());
+            }
+        });
+    }
+    public String generarHtmlInvitacionAsamblea(String nombreAsamblea, Date fecha, LocalTime hora) {
+        Context context = new Context();
+        context.setVariable("nombreAsamblea", nombreAsamblea);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        context.setVariable("fecha", sdf.format(fecha));
+
+        context.setVariable("hora", hora.format(DateTimeFormatter.ofPattern("HH:mm")));
+        return templateEngine.process("email/invitacion-asamblea", context);
+    }
+
+    @Async("mailTaskExecutor")
     public void enviarPazYSalvo(String destinatario, byte[] pdfBytes, String nombreArchivo) throws MessagingException {
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -121,15 +167,15 @@ public class EmailService {
     public void enviarSolicitud(String destinatario, SolicitudReservaRecursoDTO soliReservaDTO) throws MessagingException {
         log.info("EmailService.enviarSolicitud invoked para {}", destinatario);
         try {
-        String htmlContent = generarHtmlSolicitudConThymeleaf(soliReservaDTO);
+            String htmlContent = generarHtmlSolicitudConThymeleaf(soliReservaDTO);
 
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-        helper.setTo(destinatario);
-        helper.setSubject(EMAIL_SOLICITUD_SUBJECT);
-        helper.setText(htmlContent, true);
-        mailSender.send(mimeMessage);
-        log.info("Correo enviado a {}", destinatario);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+            helper.setTo(destinatario);
+            helper.setSubject(EMAIL_SOLICITUD_SUBJECT);
+            helper.setText(htmlContent, true);
+            mailSender.send(mimeMessage);
+            log.info("Correo enviado a {}", destinatario);
         } catch (Exception e) {
             log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
         }
@@ -330,4 +376,3 @@ public class EmailService {
         return org.jsoup.Jsoup.clean(input, org.jsoup.safety.Safelist.basic());
     }
 }
-
