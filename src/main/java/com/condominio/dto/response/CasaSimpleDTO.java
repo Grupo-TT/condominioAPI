@@ -8,4 +8,5 @@ import lombok.Data;
 public class CasaSimpleDTO {
     private int numeroCasa;
     private String nombrePropietario;
+    private boolean asistio;
 }

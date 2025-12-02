@@ -20,8 +20,9 @@ public class Asistencia {
     private Date fecha;
     @ManyToOne(targetEntity = Casa.class)
     private Casa casa;
-    @OneToOne
+    @ManyToOne(targetEntity = Asamblea.class)
     private Asamblea asamblea;
     private Boolean estado;
+    private String nombreResponsable;
 
 }
