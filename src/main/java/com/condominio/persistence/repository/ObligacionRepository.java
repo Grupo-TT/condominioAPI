@@ -12,12 +12,8 @@ import java.util.List;
 public interface ObligacionRepository extends CrudRepository<Obligacion, Long> {
 
     List<Obligacion> findByCasaId(Long casaId);
-
     List<Obligacion> findByCasaIdAndEstadoPagoIsNotOrderByFechaGeneradaDesc(Long id, EstadoPago estadoPago);
-
     boolean existsByCasaIdAndEstadoPago(Long casaId, EstadoPago estadoPago);
-
     List<Obligacion> findByTipoObligacionOrderByFechaGeneradaDesc(TipoObligacion tipoObligacion);
-
     List<Obligacion> findByCasaIdOrderByFechaGeneradaDesc(Long casaId);
 }
