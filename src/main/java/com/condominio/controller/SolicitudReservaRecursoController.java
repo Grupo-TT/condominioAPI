@@ -19,7 +19,7 @@ public class SolicitudReservaRecursoController {
 
 
     @GetMapping("/reservas")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
     public SuccessResult<List<SolicitudReservaRecursoDTO>> findByEstado(
             @RequestParam("estado")EstadoSolicitud estado
             ){

@@ -21,6 +21,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -57,25 +58,26 @@ public class AsistenciaServiceTest {
         asamblea.setFecha(todayInBogota);
 
         AsistenciaDTO dto1 = new AsistenciaDTO(101, true);
-        AsistenciaDTO dto2 = new AsistenciaDTO(102, false);
 
         Casa casa1 = new Casa();
         casa1.setNumeroCasa(101);
 
-        Casa casa2 = new Casa();
-        casa2.setNumeroCasa(102);
+        Asistencia asistencia = new Asistencia();
+        asistencia.setAsamblea(asamblea);
+        asistencia.setCasa(casa1);
+        asistencia.setEstado(false);
+
 
         when(asambleaRepository.findById(1L)).thenReturn(Optional.of(asamblea));
-        when(casaRepository.findByNumeroCasaIn(List.of(101, 102)))
-                .thenReturn(List.of(casa1, casa2));
+        when(asistenciaRepository.findByAsambleaAndCasa_NumeroCasa(asamblea, casa1.getNumeroCasa())).thenReturn(Optional.of(asistencia));
+
 
         // Act
-        SuccessResult<Void> result = service.registrarAsistencia(1L, List.of(dto1, dto2));
+        SuccessResult<Void> result = service.registrarAsistencia(1L,dto1);
 
         // Assert
         verify(asambleaRepository).findById(1L);
-        verify(casaRepository).findByNumeroCasaIn(List.of(101, 102));
-        verify(asistenciaRepository, times(2)).save(any(Asistencia.class));
+        verify(asistenciaRepository, times(1)).save(any(Asistencia.class));
 
         assertThat(result.message()).isEqualTo("Asistencias registradas correctamente.");
         assertThat(result.data()).isNull();
@@ -85,7 +87,7 @@ public class AsistenciaServiceTest {
     void registrarAsistencia_asambleaNoExiste_deberiaLanzarError() {
         lenient().when(asambleaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.registrarAsistencia(1L, List.of()))
+        assertThatThrownBy(() -> service.registrarAsistencia(1L, null))
                 .isInstanceOf(ApiException.class)
                 .hasMessage("No existe la asamblea.");
     }
