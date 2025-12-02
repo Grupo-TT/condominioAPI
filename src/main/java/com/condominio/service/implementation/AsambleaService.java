@@ -1,6 +1,8 @@
 package com.condominio.service.implementation;
 
 import com.condominio.dto.request.AsambleaDTO;
+import com.condominio.dto.response.AsambleaConAsistenciaDTO;
+import com.condominio.dto.response.CasaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Asamblea;
 import com.condominio.persistence.model.EstadoAsamblea;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -50,5 +53,62 @@ public class AsambleaService implements IAsambleaService {
 
         emailService.enviarInvitacionesAsambleaMasivas(personas, newAsamblea);
         return new SuccessResult<>("Asamblea programada correctamente",asamblea);
+    }
+
+    @Override
+    public SuccessResult<List<Asamblea>> findAllAsambleas() {
+        List<Asamblea> asambleas = (List<Asamblea>) asambleaRepository.findAll();
+        if (asambleas.isEmpty()) {
+            throw new ApiException("No se encontraron registros.", HttpStatus.OK);
+        }
+        return new SuccessResult<>("No se encontraron registros.", asambleas);
+    }
+
+    @Override
+    public SuccessResult<AsambleaDTO> edit(AsambleaDTO asambleaEdit, Long id) {
+        Optional<Asamblea> asambleaOptional = asambleaRepository.findById(id);
+        if (asambleaOptional.isPresent()) {
+            Asamblea asamblea = asambleaOptional.get();
+            asamblea.setEstado(asambleaEdit.getEstado());
+            asamblea.setFecha(asambleaEdit.getFecha());
+            asamblea.setLugar(asambleaEdit.getLugar());
+            asamblea.setHoraInicio(asambleaEdit.getHoraInicio());
+            asamblea.setTitulo(asambleaEdit.getTitulo());
+            asamblea.setDescripcion(asambleaEdit.getDescripcion());
+            asambleaRepository.save(asamblea);
+            return new SuccessResult<>("Se actualizó la asamblea satisfactoriamente.", asambleaEdit);
+        }
+        throw new ApiException("No se pudo actualizar el registro.", HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    public SuccessResult<Void> delete(Long id) {
+        asambleaRepository.deleteById(id);
+        return new SuccessResult<>("Se eliminó la asamblea satisfactoriamente.", null);
+    }
+
+    @Override
+    public SuccessResult<AsambleaConAsistenciaDTO> getAsambleaById(Long id) {
+        Optional<Asamblea> asambleaOptional = asambleaRepository.findById(id);
+        List<Persona> propietarios = personaRepository.findAllPropietariosConCasa();
+        if (asambleaOptional.isPresent()) {
+            Asamblea asamblea = asambleaOptional.get();
+            List<CasaSimpleDTO> infoPropietarios = propietarios.stream().map(persona -> new CasaSimpleDTO(
+                    persona.getCasa().getNumeroCasa(), persona.getNombreCompleto()
+            )).toList();
+
+            AsambleaConAsistenciaDTO dto = AsambleaConAsistenciaDTO.builder()
+                    .id(asamblea.getId())
+                    .titulo(asamblea.getTitulo())
+                    .descripcion(asamblea.getDescripcion())
+                    .fecha(asamblea.getFecha())
+                    .estado(asamblea.getEstado())
+                    .lugar(asamblea.getLugar())
+                    .horaInicio(asamblea.getHoraInicio())
+                    .propietarios(infoPropietarios)
+                    .build();
+            return new SuccessResult<>("Asamblea encontrada.", dto) ;
+        }
+        throw new ApiException("No se pudo obtener la información del registro.", HttpStatus.BAD_REQUEST);
     }
 }
