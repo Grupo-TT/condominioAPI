@@ -7,23 +7,17 @@ import com.condominio.persistence.model.Asistencia;
 import com.condominio.persistence.model.Casa;
 import com.condominio.persistence.repository.AsambleaRepository;
 import com.condominio.persistence.repository.AsistenciaRepository;
-import com.condominio.persistence.repository.CasaRepository;
-import com.condominio.service.implementation.AsambleaService;
 import com.condominio.service.implementation.AsistenciaService;
 import com.condominio.util.constants.AppConstants;
 import com.condominio.util.exception.ApiException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -35,9 +29,6 @@ public class AsistenciaServiceTest {
 
     @Mock
     private AsambleaRepository asambleaRepository;
-
-    @Mock
-    private CasaRepository casaRepository;
 
     @Mock
     private AsistenciaRepository asistenciaRepository;
