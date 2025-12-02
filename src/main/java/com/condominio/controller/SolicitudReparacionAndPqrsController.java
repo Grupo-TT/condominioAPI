@@ -8,6 +8,7 @@ import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.IPqrsService;
 import com.condominio.service.interfaces.ISolicitudReparacionLocativaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,15 @@ public class SolicitudReparacionAndPqrsController {
     public SuccessResult<List<SolicitudReparacionLocativaDTO>> obtenerSolicitudesReparacion(
             @RequestParam ("estado")EstadoSolicitud estado){
         return solicitudReparacionLocativaService.findByEstado(estado);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<AllReparacionesAndPqrsDTO> ObtenerReparacionesAndPqrs(@RequestParam ("estadoSolicitud") EstadoSolicitud estadoSoli, @RequestParam ("estadoPqrs") EstadoPqrs estadoPqrs) {
+        SuccessResult<List<SolicitudReparacionLocativaDTO>> reparaciones = solicitudReparacionLocativaService.findByEstado(estadoSoli);
+        SuccessResult<List<PqrsDTO>> listaPqrs = pqrsService.findByEstado(estadoPqrs);
+
+        AllReparacionesAndPqrsDTO out = new AllReparacionesAndPqrsDTO(reparaciones.data(), listaPqrs.data());
+        return ResponseEntity.ok(out);
     }
 
     @PutMapping("/approve-solicitud-reparacion/{id}")
