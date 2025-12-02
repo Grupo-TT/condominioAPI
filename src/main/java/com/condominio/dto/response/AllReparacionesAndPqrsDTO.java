@@ -1,7 +1,5 @@
 package com.condominio.dto.response;
 
-import com.condominio.persistence.model.PqrsEntity;
-import com.condominio.persistence.model.ReparacionLocativa;
 import lombok.*;
 
 import java.util.List;
