@@ -19,7 +19,7 @@ public class AsistenciaController {
 
     @PostMapping("registrar/{idAsamblea}")
     @PreAuthorize("hasRole('ADMIN')")
-    SuccessResult<Void> registrarAsistencia(@PathVariable Long idAsamblea, @RequestBody List<AsistenciaDTO> asistencias){
-        return asistenciaService.registrarAsistencia(idAsamblea, asistencias);
+    SuccessResult<Void> registrarAsistencia(@PathVariable Long idAsamblea, @RequestBody AsistenciaDTO asistencia){
+        return asistenciaService.registrarAsistencia(idAsamblea, asistencia);
     }
 }
