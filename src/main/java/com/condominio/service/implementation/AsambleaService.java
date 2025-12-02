@@ -5,9 +5,11 @@ import com.condominio.dto.response.AsambleaConAsistenciaDTO;
 import com.condominio.dto.response.CasaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.Asamblea;
+import com.condominio.persistence.model.Asistencia;
 import com.condominio.persistence.model.EstadoAsamblea;
 import com.condominio.persistence.model.Persona;
 import com.condominio.persistence.repository.AsambleaRepository;
+import com.condominio.persistence.repository.AsistenciaRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.interfaces.IAsambleaService;
 import com.condominio.util.constants.AppConstants;
@@ -17,6 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +34,7 @@ public class AsambleaService implements IAsambleaService {
     private final ModelMapper modelMapper;
     private final PersonaRepository personaRepository;
     private final EmailService emailService;
+    private final AsistenciaRepository asistenciaRepository;
 
 
     @Override
@@ -46,6 +50,20 @@ public class AsambleaService implements IAsambleaService {
         Asamblea newAsamblea = modelMapper.map(asamblea, Asamblea.class);
         newAsamblea.setEstado(EstadoAsamblea.PROGRAMADA);
         newAsamblea = asambleaRepository.save(newAsamblea);
+
+        List<Persona> propietarios = personaRepository.findAllPropietariosConCasa();
+        List<Asistencia> asistencias = new ArrayList<>();
+        for (Persona propietario : propietarios) {
+            Asistencia asistencia = new Asistencia();
+            asistencia.setAsamblea(newAsamblea);
+            asistencia.setEstado(false);
+            asistencia.setFecha(todayInBogota);
+            asistencia.setCasa(propietario.getCasa());
+            asistencia.setNombreResponsable(propietario.getNombreCompleto());
+            asistencias.add(asistencia);
+        }
+        System.out.println("Asistencias: " + asistencias);
+        asistenciaRepository.saveAll(asistencias);
 
         Iterable<Persona> iterable = personaRepository.findAll();
         List<Persona> personas = StreamSupport.stream(iterable.spliterator(), false)
@@ -90,13 +108,12 @@ public class AsambleaService implements IAsambleaService {
     @Override
     public SuccessResult<AsambleaConAsistenciaDTO> getAsambleaById(Long id) {
         Optional<Asamblea> asambleaOptional = asambleaRepository.findById(id);
-        List<Persona> propietarios = personaRepository.findAllPropietariosConCasa();
         if (asambleaOptional.isPresent()) {
             Asamblea asamblea = asambleaOptional.get();
-            List<CasaSimpleDTO> infoPropietarios = propietarios.stream().map(persona -> new CasaSimpleDTO(
-                    persona.getCasa().getNumeroCasa(), persona.getNombreCompleto()
+            List<Asistencia> asistencias = asistenciaRepository.findAllByAsamblea(asamblea);
+            List<CasaSimpleDTO> propietarios = asistencias.stream().map(asistencia -> new CasaSimpleDTO(
+                    asistencia.getCasa().getNumeroCasa(), asistencia.getNombreResponsable(), asistencia.getEstado()
             )).toList();
-
             AsambleaConAsistenciaDTO dto = AsambleaConAsistenciaDTO.builder()
                     .id(asamblea.getId())
                     .titulo(asamblea.getTitulo())
@@ -105,7 +122,7 @@ public class AsambleaService implements IAsambleaService {
                     .estado(asamblea.getEstado())
                     .lugar(asamblea.getLugar())
                     .horaInicio(asamblea.getHoraInicio())
-                    .propietarios(infoPropietarios)
+                    .propietarios(propietarios)
                     .build();
             return new SuccessResult<>("Asamblea encontrada.", dto) ;
         }
