@@ -59,7 +59,10 @@ public class AsambleaService implements IAsambleaService {
             asistencia.setEstado(false);
             asistencia.setFecha(todayInBogota);
             asistencia.setCasa(propietario.getCasa());
+            asistencia.setNombreResponsable(propietario.getNombreCompleto());
+            asistencias.add(asistencia);
         }
+        System.out.println("Asistencias: " + asistencias);
         asistenciaRepository.saveAll(asistencias);
 
         Iterable<Persona> iterable = personaRepository.findAll();
@@ -108,6 +111,9 @@ public class AsambleaService implements IAsambleaService {
         if (asambleaOptional.isPresent()) {
             Asamblea asamblea = asambleaOptional.get();
             List<Asistencia> asistencias = asistenciaRepository.findAllByAsamblea(asamblea);
+            List<CasaSimpleDTO> propietarios = asistencias.stream().map(asistencia -> new CasaSimpleDTO(
+                    asistencia.getCasa().getNumeroCasa(), asistencia.getNombreResponsable(), asistencia.getEstado()
+            )).toList();
             AsambleaConAsistenciaDTO dto = AsambleaConAsistenciaDTO.builder()
                     .id(asamblea.getId())
                     .titulo(asamblea.getTitulo())
@@ -116,7 +122,7 @@ public class AsambleaService implements IAsambleaService {
                     .estado(asamblea.getEstado())
                     .lugar(asamblea.getLugar())
                     .horaInicio(asamblea.getHoraInicio())
-                    .propietarios(asistencias)
+                    .propietarios(propietarios)
                     .build();
             return new SuccessResult<>("Asamblea encontrada.", dto) ;
         }

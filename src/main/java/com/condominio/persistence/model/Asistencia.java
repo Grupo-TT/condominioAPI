@@ -23,5 +23,6 @@ public class Asistencia {
     @ManyToOne(targetEntity = Asamblea.class)
     private Asamblea asamblea;
     private Boolean estado;
+    private String nombreResponsable;
 
 }

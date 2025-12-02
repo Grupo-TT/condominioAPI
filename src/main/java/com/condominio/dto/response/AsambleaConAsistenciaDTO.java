@@ -1,6 +1,5 @@
 package com.condominio.dto.response;
 
-import com.condominio.persistence.model.Asistencia;
 import com.condominio.persistence.model.EstadoAsamblea;
 import lombok.Builder;
 import lombok.Data;
@@ -19,5 +18,5 @@ public class AsambleaConAsistenciaDTO {
     private EstadoAsamblea estado;
     private String lugar;
     private LocalTime horaInicio;
-    private List<Asistencia> propietarios;
+    private List<CasaSimpleDTO> propietarios;
 }

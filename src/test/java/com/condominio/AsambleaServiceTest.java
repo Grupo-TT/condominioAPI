@@ -4,11 +4,9 @@ import com.condominio.dto.request.AsambleaDTO;
 import com.condominio.dto.response.AsambleaConAsistenciaDTO;
 import com.condominio.dto.response.CasaSimpleDTO;
 import com.condominio.dto.response.SuccessResult;
-import com.condominio.persistence.model.Asamblea;
-import com.condominio.persistence.model.Casa;
-import com.condominio.persistence.model.Persona;
-import com.condominio.persistence.model.UserEntity;
+import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.AsambleaRepository;
+import com.condominio.persistence.repository.AsistenciaRepository;
 import com.condominio.persistence.repository.PersonaRepository;
 import com.condominio.service.implementation.AsambleaService;
 import com.condominio.service.implementation.EmailService;
@@ -50,11 +48,14 @@ class AsambleaServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private AsistenciaRepository asistenciaRepository;
+
     private AsambleaService asambleaService;
 
     @BeforeEach
     void setUp() {
-        asambleaService = new AsambleaService(asambleaRepository, modelMapper, personaRepository, emailService);
+        asambleaService = new AsambleaService(asambleaRepository, modelMapper, personaRepository, emailService, asistenciaRepository);
     }
 
     @Test
@@ -179,14 +180,14 @@ class AsambleaServiceTest {
         asamblea.setTitulo("Asamblea 1");
         asamblea.setDescripcion("Desc");
 
-        Persona p = new Persona();
-        p.setPrimerNombre("Juan");
-        p.setPrimerApellido("Perez");
+        Asistencia p = new Asistencia();
+        p.setNombreResponsable("Juan Perez");
         p.setCasa(new Casa());
+        p.setEstado(false);
         p.getCasa().setNumeroCasa(101);
 
         when(asambleaRepository.findById(1L)).thenReturn(Optional.of(asamblea));
-        when(personaRepository.findAllPropietariosConCasa()).thenReturn(List.of(p));
+        when(asistenciaRepository.findAllByAsamblea(asamblea)).thenReturn(List.of(p));
 
         SuccessResult<AsambleaConAsistenciaDTO> result = asambleaService.getAsambleaById(1L);
 
