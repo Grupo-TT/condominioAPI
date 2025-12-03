@@ -19,4 +19,5 @@ public interface IObligacionService {
     ResponseEntity<?> generarPazYSalvo(Long idCasa);
     SuccessResult<List<MultasPorCasaDTO>> obtenerCasasConMultas();
     void generarObligacionesMensuales();
+    SuccessResult<EstadoCuentaDTO> estadoDeCuentaCasaSinFiltro(Long idCasa);
 }
