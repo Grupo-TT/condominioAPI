@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -317,5 +318,44 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         });
 
         return hayConflicto;
+    }
+
+    public SuccessResult<List<SolicitudReservaRecursoDTO>> findAll() {
+
+
+        Iterable<SolicitudReservaRecurso> iterable = solicitudReservaRecursoRepository.findAll();
+        List<SolicitudReservaRecurso> solicitudes = StreamSupport
+                .stream(iterable.spliterator(), false)
+                .toList();
+
+        if (solicitudes.isEmpty()) {
+            throw new ApiException("No hay solicitudes registradas", HttpStatus.OK);
+        }
+
+
+        List<SolicitudReservaRecursoDTO> dtos = solicitudes.stream().map(solicitud -> {
+            SolicitudReservaRecursoDTO dto = modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class);
+
+            Long casaId = solicitud.getCasa().getId();
+
+
+            Persona solicitante = personaRepository.findArrendatarioByCasaId(casaId)
+                    .orElseGet(() -> personaRepository.findPropietarioByCasaId(casaId)
+                            .orElseThrow(() -> new ApiException(
+                                    "No se encontró un solicitante (arrendatario o propietario) para la casa con ID " + casaId,
+                                    HttpStatus.BAD_REQUEST
+                            )));
+
+
+            dto.setSolicitante(PersonaSimpleDTO.builder()
+                    .nombreCompleto(solicitante.getNombreCompleto())
+                    .telefono(solicitante.getTelefono())
+                    .correo(solicitante.getUser().getEmail())
+                    .build());
+
+            return dto;
+        }).toList();
+
+        return new SuccessResult<>("Todas las solicitudes obtenidas correctamente", dtos);
     }
 }
