@@ -62,4 +62,14 @@ public class ObligacionController {
         obligacionService.generarObligacionesMensuales();
         return ResponseEntity.ok("Obligaciones mensuales generadas manualmente con éxito");
     }
+
+    @GetMapping("/all/{idCasa}")
+    public ResponseEntity<SuccessResult<EstadoCuentaDTO>> obtenerEstadoDeCuenta(
+            @PathVariable Long idCasa
+    ) {
+        SuccessResult<EstadoCuentaDTO> result =
+                obligacionService.estadoDeCuentaCasaSinFiltro(idCasa);
+
+        return ResponseEntity.ok(result);
+    }
 }
