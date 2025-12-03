@@ -978,6 +978,119 @@ class SolicitudReservaRecursoServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         verify(solicitudReservaRecursoRepository, never()).save(any());
     }
+    @Test
+    void testFindAll_ShouldReturnList() {
+
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setCasa(casa);
+
+        Persona persona = new Persona();
+        persona.setPrimerNombre("Juan");
+        persona.setPrimerApellido("Lopez");
+        persona.setTelefono(1234L);
+
+        UserEntity user = new UserEntity();
+        user.setEmail("juan@test.com");
+        persona.setUser(user);
+
+        SolicitudReservaRecursoDTO dtoMock = new SolicitudReservaRecursoDTO();
+
+        when(solicitudReservaRecursoRepository.findAll())
+                .thenReturn(List.of(solicitud));
+
+        when(personaRepository.findArrendatarioByCasaId(1L))
+                .thenReturn(Optional.of(persona));
+
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(dtoMock);
+
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findAll();
+
+        assertThat(result).isNotNull();
+        assertThat(result.data()).hasSize(1);
+        assertThat(result.message())
+                .contains("Todas las solicitudes obtenidas correctamente");
+    }
+
+
+
+    @Test
+    void testFindAll_ShouldThrow_WhenEmpty() {
+
+        when(solicitudReservaRecursoRepository.findAll())
+                .thenReturn(Collections.emptyList());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findAll())
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No hay solicitudes registradas");
+    }
+
+
+    @Test
+    void testFindAll_ShouldUsePropietario_WhenNoArrendatario() {
+
+        Casa casa = new Casa();
+        casa.setId(2L);
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setCasa(casa);
+
+        Persona propietario = new Persona();
+        propietario.setPrimerNombre("Ana");
+        propietario.setPrimerApellido("Diaz");
+
+        UserEntity user = new UserEntity();
+        user.setEmail("ana@prop.com");
+        propietario.setUser(user);
+
+        SolicitudReservaRecursoDTO dtoMock = new SolicitudReservaRecursoDTO();
+
+        when(solicitudReservaRecursoRepository.findAll())
+                .thenReturn(List.of(solicitud));
+
+        when(personaRepository.findArrendatarioByCasaId(2L))
+                .thenReturn(Optional.empty());
+
+        when(personaRepository.findPropietarioByCasaId(2L))
+                .thenReturn(Optional.of(propietario));
+
+        when(modelMapper.map(any(SolicitudReservaRecurso.class), eq(SolicitudReservaRecursoDTO.class)))
+                .thenReturn(dtoMock);
+
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result =
+                solicitudReservaRecursoService.findAll();
+
+        assertThat(result.data()).hasSize(1);
+    }
+
+
+
+    @Test
+    void testFindAll_ShouldThrow_WhenNoSolicitanteFound() {
+
+        Casa casa = new Casa();
+        casa.setId(3L);
+
+        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
+        solicitud.setCasa(casa);
+
+        when(solicitudReservaRecursoRepository.findAll())
+                .thenReturn(List.of(solicitud));
+
+        when(personaRepository.findArrendatarioByCasaId(3L))
+                .thenReturn(Optional.empty());
+
+        when(personaRepository.findPropietarioByCasaId(3L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> solicitudReservaRecursoService.findAll())
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("No se encontró un solicitante");
+    }
 
 }
 

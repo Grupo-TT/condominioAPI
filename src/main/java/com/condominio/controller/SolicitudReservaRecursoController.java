@@ -6,6 +6,7 @@ import com.condominio.dto.response.*;
 import com.condominio.persistence.model.EstadoSolicitud;
 import com.condominio.service.interfaces.ISolicitudReservaRecursoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -79,6 +80,12 @@ public class SolicitudReservaRecursoController {
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO')")
     public SuccessResult<SolicitudRecursoPropiDTO> findAllByPersona(@RequestBody SolicitudReservaUpdateDTO solicitudReservaUpdateDTO){
         return solicitudReservaService.actualizarSolicitud(solicitudReservaUpdateDTO);
+    }
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
+    public ResponseEntity<SuccessResult<List<SolicitudReservaRecursoDTO>>> getAllSolicitudes() {
+        SuccessResult<List<SolicitudReservaRecursoDTO>> result = solicitudReservaService.findAll();
+        return ResponseEntity.ok(result);
     }
 
 }
