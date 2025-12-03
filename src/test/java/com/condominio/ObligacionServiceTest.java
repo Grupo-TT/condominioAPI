@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ObligacionServiceTest {
@@ -431,5 +431,14 @@ class ObligacionServiceTest {
         // Verificar que no hubo llamadas adicionales inesperadas
         verifyNoMoreInteractions(obligacionRepository, emailService);
     }
+    @Test
+    void estadoCuentaCasa_CasaNoExiste() {
+        Long idCasa = 10L;
 
+        when(casaRepository.findById(idCasa))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ApiException.class,
+                () -> obligacionService.estadoDeCuentaCasaSinFiltro(idCasa));
+    }
 }

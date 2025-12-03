@@ -268,4 +268,44 @@ public class ObligacionService implements IObligacionService {
             }
         }
     }
+
+
+    public SuccessResult<EstadoCuentaDTO> estadoDeCuentaCasaSinFiltro(Long idCasa) {
+        Casa casa = casaRepository.findById(idCasa).orElseThrow(() -> new ApiException(
+                "No se encontró una casa con el ID " + idCasa, HttpStatus.BAD_REQUEST
+        ));
+
+        Persona propietario = personaRepository.findPropietarioByCasaId(casa.getId()).
+                orElse(null);
+
+        PersonaSimpleDTO propietarioDTO = null;
+        if (propietario != null) {
+            String nombreCompleto = String.format("%s %s",
+                    propietario.getPrimerNombre(),
+                    propietario.getPrimerApellido()
+            ).trim().replaceAll(" +", " ");
+            propietarioDTO = PersonaSimpleDTO.builder()
+                    .nombreCompleto(nombreCompleto)
+                    .correo(propietario.getUser().getEmail())
+                    .telefono(propietario.getTelefono())
+                    .build();
+        }
+
+        List<Obligacion> todasObligaciones = obligacionRepository.findByCasaId(idCasa);
+
+        Long saldoPendienteTotal = todasObligaciones.stream()
+                .filter(o -> o.getEstadoPago() != EstadoPago.CONDONADO)
+                .mapToLong(Obligacion::getMonto)
+                .sum();
+
+        EstadoCuentaDTO dto = EstadoCuentaDTO.builder()
+                .numeroCasa(casa.getNumeroCasa())
+                .propietario(propietarioDTO)
+                .saldoPendienteTotal(saldoPendienteTotal)
+                .deudasActivas(todasObligaciones)
+                .ultimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(idCasa).orElse(null))
+                .build();
+        return new SuccessResult<>("Estado de cuenta obtenido correctamente", dto);
+    }
+
 }
