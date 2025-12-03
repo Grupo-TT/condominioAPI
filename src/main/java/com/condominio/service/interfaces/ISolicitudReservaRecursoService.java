@@ -18,6 +18,7 @@ public interface ISolicitudReservaRecursoService {
     SuccessResult<List<SolicitudReservaDTO>> findReservasByCasa(Long idCasa);
     SuccessResult<Void> deleteSolicitud(Long id);
     SuccessResult<SolicitudRecursoPropiDTO> actualizarSolicitud(SolicitudReservaUpdateDTO solicitudReservaUpdateDTO);
+    SuccessResult<List<SolicitudReservaRecursoDTO>> findAll();
 
 
 }
