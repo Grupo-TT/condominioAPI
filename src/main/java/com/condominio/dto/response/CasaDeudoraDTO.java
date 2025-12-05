@@ -19,4 +19,5 @@ public class CasaDeudoraDTO {
     private int saldoPendiente;
     private List<MostrarObligacionDTO> obligacionesPendientes;
     private LocalDate ultimoPago;
+    private int interes;
 }
