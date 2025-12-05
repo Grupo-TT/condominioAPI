@@ -202,6 +202,10 @@ public class CasaService implements ICasaService {
                     .mapToInt(Obligacion::getValorPendiente)
                     .sum();
 
+            int interes = obligaciones.stream()
+                    .mapToInt(Obligacion::getInteres)
+                    .sum();
+
             List<MostrarObligacionDTO> obligacionesDTO = obligaciones.stream()
                     .map(o -> MostrarObligacionDTO.builder()
                             .id((o.getId()))
@@ -214,6 +218,7 @@ public class CasaService implements ICasaService {
                             .estadoPago(o.getEstadoPago())
                             .montoPagado(o.getMontoPagado())
                             .tipoObligacion(o.getTipoObligacion())
+                            .interes(o.getInteres())
                             .build())
                     .toList();
 
@@ -223,6 +228,7 @@ public class CasaService implements ICasaService {
             dto.setSaldoPendiente(saldoPendiente);
             dto.setObligacionesPendientes(obligacionesDTO);
             dto.setUltimoPago(pagoService.obtenerFechaUltimoPagoPorCasa(casa.getId()).orElse(null));
+            dto.setInteres(interes);
             return dto;
         }).toList();
 
