@@ -29,4 +29,5 @@ public class MostrarObligacionDTO {
     private TipoObligacion tipoObligacion;
     private EstadoPago estadoPago;
     private int interes;
+    private int mora;
 }

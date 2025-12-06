@@ -24,6 +24,7 @@ public class Obligacion {
     private LocalDate fechaLimite;
     private double tasaInteres;
     private int interes;
+    private int mora;
     @Column(columnDefinition = "int default 0")
     private int montoPagado;
     private String motivo;
@@ -48,7 +49,7 @@ public class Obligacion {
     @PrePersist
     @PreUpdate
     private void calcularValores() {
-        this.valorTotal = this.monto + this.interes;
+        this.valorTotal = this.monto + this.interes + this.mora;
         this.valorPendiente = this.valorTotal - this.montoPagado;
     }
 }
