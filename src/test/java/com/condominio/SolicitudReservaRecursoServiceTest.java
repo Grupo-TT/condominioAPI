@@ -529,7 +529,7 @@ class SolicitudReservaRecursoServiceTest {
 
         assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(3L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten eliminar reservas que ya pasaron.")
+                .hasMessage("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -547,7 +547,7 @@ class SolicitudReservaRecursoServiceTest {
 
         assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(4L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten eliminar reservas que ya pasaron.")
+                .hasMessage("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -865,8 +865,8 @@ class SolicitudReservaRecursoServiceTest {
         reserva.setHoraInicio(LocalTime.from(LocalDateTime.of(2025, 11, 12, 10, 0)));
         reserva.setHoraFin(LocalTime.from(LocalDateTime.of(2025, 11, 12, 12, 0)));
         reserva.setNumeroInvitados(5);
-        reserva.setFechaSolicitud(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 0)));
-        reserva.setFechaCreacion(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 5)));
+        reserva.setFechaSolicitud(LocalDate.now());
+        reserva.setFechaCreacion(LocalDate.now());
         reserva.setEstadoSolicitud(EstadoSolicitud.APROBADA);
         reserva.setRecursoComun(recurso);
         when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(reserva));

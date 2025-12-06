@@ -112,7 +112,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         }
 
         if(!solicitud.getFechaSolicitud().isBefore(LocalDate.now().minusDays(1))) {
-            throw new ApiException("Solo se permiten eliminar reservas que ya pasaron.", HttpStatus.BAD_REQUEST);
+            throw new ApiException("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.", HttpStatus.BAD_REQUEST);
         }
 
         solicitudReservaRecursoRepository.delete(solicitud);
@@ -244,8 +244,8 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if(!solicitud.getFechaSolicitud().isBefore(LocalDate.now().minusDays(1))) {
-            throw new ApiException("Solo se permiten eliminar reservas que ya pasaron.", HttpStatus.BAD_REQUEST);
+        if(solicitud.getFechaSolicitud().isBefore(LocalDate.now()) && solicitud.getEstadoSolicitud() == EstadoSolicitud.APROBADA) {
+            throw new ApiException("Solo se permiten eliminar reservas porteriores a hoy", HttpStatus.BAD_REQUEST);
         }
         solicitudReservaRecursoRepository.deleteById(id);
 
