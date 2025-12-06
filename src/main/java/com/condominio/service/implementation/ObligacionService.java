@@ -107,6 +107,7 @@ public class ObligacionService implements IObligacionService {
                 .estadoPago(EstadoPago.PENDIENTE)
                 .tasaInteres(0)
                 .interes(0)
+                .mora(0)
                 .build();
 
         Obligacion guardada = obligacionRepository.save(obligacion);
@@ -211,7 +212,7 @@ public class ObligacionService implements IObligacionService {
         return new SuccessResult<>("Casas con multas obtenidas correctamente", obligacionesDTO);
     }
 
-    @Scheduled(cron = "0 0 0 18 * *", zone = "America/Bogota")
+    @Scheduled(cron = "0 0 0 1 * *", zone = "America/Bogota")
     public void generarObligacionesMensuales() {
         LocalDate hoy = LocalDate.now();
         String mes = hoy.getMonth().getDisplayName(TextStyle.FULL, Locale.of("es", "ES"));
