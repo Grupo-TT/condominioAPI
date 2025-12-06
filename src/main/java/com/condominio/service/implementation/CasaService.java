@@ -219,6 +219,7 @@ public class CasaService implements ICasaService {
                             .montoPagado(o.getMontoPagado())
                             .tipoObligacion(o.getTipoObligacion())
                             .interes(o.getInteres())
+                            .mora(o.getMora())
                             .build())
                     .toList();
 
