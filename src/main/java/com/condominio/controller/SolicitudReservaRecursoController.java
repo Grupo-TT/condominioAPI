@@ -42,8 +42,8 @@ public class SolicitudReservaRecursoController {
 
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public SuccessResult<SolicitudReservaRecursoDTO> eliminar(@PathVariable Long id){
-        return solicitudReservaService.cancelar(id);
+    public  SuccessResult<Void> eliminar(@PathVariable Long id){
+        return solicitudReservaService.deleteSolicitud(id);
     }
 
     @PutMapping("/edit/{id}")
@@ -72,8 +72,8 @@ public class SolicitudReservaRecursoController {
 
     @DeleteMapping("/mis-reservas/delete/{id}")
     @PreAuthorize("hasAnyRole('PROPIETARIO', 'ARRENDATARIO', 'ADMIN')")
-    public SuccessResult<Void> deleteReserva(@PathVariable Long id){
-        return solicitudReservaService.deleteSolicitud(id);
+    public SuccessResult<SolicitudReservaRecursoDTO> deleteReserva(@PathVariable Long id){
+        return solicitudReservaService.cancelar(id);
     }
 
     @PutMapping("/mis-reservas/update")
