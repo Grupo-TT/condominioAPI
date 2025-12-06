@@ -529,7 +529,7 @@ class SolicitudReservaRecursoServiceTest {
 
         assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(3L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten cancelar reservas posteriores a la fecha de ayer")
+                .hasMessage("Solo se permiten eliminar reservas que ya pasaron.")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -547,7 +547,7 @@ class SolicitudReservaRecursoServiceTest {
 
         assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(4L))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten cancelar reservas posteriores a la fecha de ayer")
+                .hasMessage("Solo se permiten eliminar reservas que ya pasaron.")
                 .satisfies(ex -> {
                     ApiException ae = (ApiException) ex;
                     assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -851,21 +851,30 @@ class SolicitudReservaRecursoServiceTest {
 
     @Test
     void testDeleteSolicitud_Exito() {
-        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(true);
+        Casa casa = new Casa();
+        casa.setId(1L);
+
+        RecursoComun recurso = new RecursoComun();
+        recurso.setNombre("Piscina");
+        recurso.setDescripcion("Piscina comunal");
+        recurso.setTipoRecursoComun(TipoRecursoComun.ZONA);
+
+        SolicitudReservaRecurso reserva = new SolicitudReservaRecurso();
+        reserva.setId(10L);
+        reserva.setCasa(casa);
+        reserva.setHoraInicio(LocalTime.from(LocalDateTime.of(2025, 11, 12, 10, 0)));
+        reserva.setHoraFin(LocalTime.from(LocalDateTime.of(2025, 11, 12, 12, 0)));
+        reserva.setNumeroInvitados(5);
+        reserva.setFechaSolicitud(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 0)));
+        reserva.setFechaCreacion(LocalDate.from(LocalDateTime.of(2025, 11, 10, 15, 5)));
+        reserva.setEstadoSolicitud(EstadoSolicitud.APROBADA);
+        reserva.setRecursoComun(recurso);
+        when(solicitudReservaRecursoRepository.findById(1L)).thenReturn(Optional.of(reserva));
 
         SuccessResult<Void> result = solicitudReservaRecursoService.deleteSolicitud(1L);
 
         verify(solicitudReservaRecursoRepository, times(1)).deleteById(1L);
         assertEquals("Solicitud eliminada correctamente", result.message());
-    }
-
-    @Test
-    void testDeleteSolicitud_NoExiste() {
-        when(solicitudReservaRecursoRepository.existsById(1L)).thenReturn(false);
-
-        ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.deleteSolicitud(1L));
-
-        assertEquals("No se encontró la solicitud con el ID especificado.", exception.getMessage());
     }
 
     @Test

@@ -5,6 +5,8 @@ import lombok.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -40,4 +42,11 @@ public class SolicitudReservaRecurso {
     @ManyToOne(targetEntity = RecursoComun.class)
     @JoinColumn(nullable = false)
     private RecursoComun recursoComun;
+
+    @OneToMany(
+            mappedBy = "solicitudReservaRecurso",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Reserva> reservas = new ArrayList<>();
 }
