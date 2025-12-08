@@ -23,4 +23,11 @@ public interface MovimientoRepository extends CrudRepository<Movimiento, Long> {
     @Query("select coalesce(sum(m.monto),0) from movimientos m where m.fechaMovimiento <= :hasta")
     int sumMontoUntil(@Param("hasta") LocalDate hasta);
 
+    @Query(
+            value = "SELECT * FROM movimientos WHERE YEAR(fecha_movimiento) = :year",
+            nativeQuery = true
+    )
+    List<Movimiento> findByYear(@Param("year") int year);
+
+
 }
