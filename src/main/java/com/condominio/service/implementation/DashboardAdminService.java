@@ -2,10 +2,8 @@ package com.condominio.service.implementation;
 
 import com.condominio.dto.response.*;
 import com.condominio.persistence.model.Movimiento;
-import com.condominio.persistence.model.Pago;
 import com.condominio.persistence.model.TipoMovimiento;
 import com.condominio.persistence.repository.MovimientoRepository;
-import com.condominio.persistence.repository.PagoRepository;
 import com.condominio.service.interfaces.IDashboardAdminService;
 import com.condominio.service.interfaces.IMovimientoService;
 import com.condominio.util.exception.ApiException;

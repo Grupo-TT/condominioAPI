@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.condominio.persistence.model.EstadoAsamblea.PROGRAMADA;
+import static com.condominio.persistence.model.EstadoAsamblea.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -207,4 +207,60 @@ class AsambleaServiceTest {
                 .isInstanceOf(ApiException.class)
                 .hasMessage("No se pudo obtener la información del registro.");
     }
+
+    @Test
+    void cambairEstado_ok(){
+        Asamblea existente = new Asamblea();
+        existente.setId(1L);
+        existente.setEstado(PROGRAMADA);
+
+        when(asambleaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        SuccessResult<Void> result = asambleaService.cambiarEstado(1L, "REALIZADA");
+
+        assertThat(result.message()).isEqualTo("Se cambió a realizada la asamblea.");
+    }
+
+    @Test
+    void cambairEstado_ProgramadaACancelada(){
+        Asamblea existente = new Asamblea();
+        existente.setId(1L);
+        existente.setEstado(PROGRAMADA);
+
+        when(asambleaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        SuccessResult<Void> result = asambleaService.cambiarEstado(1L, "CANCELADA");
+
+        assertThat(result.message()).isEqualTo("Se cambió el estado de la asamblea.");
+    }
+
+    @Test
+    void cambairEstado_RealizadaACancelada_deberiaLanzarExcepcion() {
+        Asamblea existente = new Asamblea();
+        existente.setId(1L);
+        existente.setEstado(REALIZADA);
+
+        when(asambleaRepository.findById(1L)).thenReturn(Optional.of(existente));
+
+        ApiException thrown = assertThrows(ApiException.class, () -> {
+            asambleaService.cambiarEstado(1L, "CANCELADA");
+        });
+
+        assertEquals("No se puede cancelar una asamblea realizada.", thrown.getMessage());
+    }
+
+    @Test
+    void cambairEstado_CanceladaARealizada_deberiaLanzarExcepcion() {
+        Asamblea existente = new Asamblea();
+        existente.setId(1L);
+        existente.setEstado(CANCELADA);
+
+        when(asambleaRepository.findById(1L)).thenReturn(Optional.of(existente));
+
+        ApiException thrown = assertThrows(ApiException.class, () -> {
+            asambleaService.cambiarEstado(1L, "REALIZADA");
+        });
+
+        assertEquals("No se puede finalizar una asamblea cancelada.", thrown.getMessage());
+    }
+
+
 }

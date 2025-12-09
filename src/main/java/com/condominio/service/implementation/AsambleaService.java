@@ -128,4 +128,27 @@ public class AsambleaService implements IAsambleaService {
         }
         throw new ApiException("No se pudo obtener la información del registro.", HttpStatus.BAD_REQUEST);
     }
+
+    @Override
+    public SuccessResult<Void> cambiarEstado(Long id, String estado) {
+        Optional<Asamblea> asambleaOptional = asambleaRepository.findById(id);
+        if (asambleaOptional.isPresent()) {
+            Asamblea asamblea = asambleaOptional.get();
+            if(asamblea.getEstado().equals(EstadoAsamblea.PROGRAMADA) && EstadoAsamblea.REALIZADA.equals(EstadoAsamblea.valueOf(estado))) {
+                asamblea.setEstado(EstadoAsamblea.REALIZADA);
+                asambleaRepository.save(asamblea);
+                return new SuccessResult<>("Se cambió a realizada la asamblea.", null);
+            }
+            if (asamblea.getEstado().equals(EstadoAsamblea.REALIZADA) && EstadoAsamblea.CANCELADA.equals(EstadoAsamblea.valueOf(estado))) {
+                throw new ApiException("No se puede cancelar una asamblea realizada.", HttpStatus.BAD_REQUEST);
+            }
+            if (asamblea.getEstado().equals(EstadoAsamblea.CANCELADA) && EstadoAsamblea.REALIZADA.equals(EstadoAsamblea.valueOf(estado))) {
+                throw new ApiException("No se puede finalizar una asamblea cancelada.", HttpStatus.BAD_REQUEST);
+            }
+            asamblea.setEstado(EstadoAsamblea.valueOf(estado));
+            asambleaRepository.save(asamblea);
+            return new SuccessResult<>("Se cambió el estado de la asamblea.", null);
+        }
+        throw new ApiException("No se encontró la asamblea.", HttpStatus.BAD_REQUEST);
+    }
 }

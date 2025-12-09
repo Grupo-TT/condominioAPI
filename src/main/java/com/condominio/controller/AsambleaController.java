@@ -51,4 +51,10 @@ public class AsambleaController {
     public SuccessResult<AsambleaConAsistenciaDTO> getAsambleaById(@PathVariable Long id){
         return asambleaService.getAsambleaById(id);
     }
+
+    @PutMapping("/cambiar-estado/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResult<Void> cambiarEstado(@PathVariable Long id, @RequestParam String estado) {
+        return asambleaService.cambiarEstado(id, estado);
+    }
 }

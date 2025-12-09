@@ -14,4 +14,5 @@ public interface IAsambleaService {
     SuccessResult<AsambleaDTO> edit(AsambleaDTO asambleaEdit, Long id);
     SuccessResult<Void> delete(Long id);
     SuccessResult<AsambleaConAsistenciaDTO> getAsambleaById(Long id);
+    SuccessResult<Void> cambiarEstado(Long id, String estado);
 }
