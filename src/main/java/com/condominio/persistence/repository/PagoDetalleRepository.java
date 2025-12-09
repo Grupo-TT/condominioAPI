@@ -17,4 +17,6 @@ public interface PagoDetalleRepository extends CrudRepository<PagoDetalle, Long>
            WHERE pd.obligacion.casa.id = :idCasa
            """)
     Optional<LocalDate> findFechaUltimoPagoByCasaId(@Param("idCasa") Long idCasa);
+
+    Optional<PagoDetalle> findTopByObligacionCasaIdOrderByPagoFechaPagoDesc(Long id);
 }
