@@ -9,6 +9,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class InfoCasaPropiDTO {
+    private String nombre;
+    private String email;
     private int numeroCasa;
     private UsoCasa tipoUso;
     private int cantidadMiembros;

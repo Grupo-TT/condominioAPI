@@ -59,6 +59,8 @@ public class DashboardPropiService implements IDashboardPropiService {
         int cantidadMascotas = mascotaRepository.countByCasaId(casa.getId());
 
         InfoCasaPropiDTO infoCasaPropiDTO = InfoCasaPropiDTO.builder()
+                .nombre(propietario.getNombreCompleto())
+                .email(propietario.getUser().getEmail())
                 .numeroCasa(casa.getNumeroCasa())
                 .tipoUso(tipoUso)
                 .cantidadMiembros(cantidadMiembros)
