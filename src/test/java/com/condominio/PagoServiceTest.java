@@ -4,10 +4,7 @@ import com.condominio.dto.response.ObligacionDTO;
 import com.condominio.dto.response.PagoDTO;
 import com.condominio.dto.response.SuccessResult;
 import com.condominio.persistence.model.*;
-import com.condominio.persistence.repository.ObligacionRepository;
-import com.condominio.persistence.repository.PagoDetalleRepository;
-import com.condominio.persistence.repository.PagoRepository;
-import com.condominio.persistence.repository.PersonaRepository;
+import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.PagoService;
 import com.condominio.util.events.CreatedPagoEvent;
 import com.condominio.util.exception.ApiException;
@@ -37,6 +34,10 @@ class PagoServiceTest {
 
     @Mock
     private PersonaRepository personaRepository;
+
+    @Mock
+    private MovimientoRepository movimientoRepository;
+
 
     @Mock
     private ObligacionRepository obligacionRepository;
