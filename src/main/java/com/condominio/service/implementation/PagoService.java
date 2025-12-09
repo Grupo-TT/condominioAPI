@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Objects;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -27,6 +27,7 @@ public class PagoService implements IPagoService {
     private final PersonaRepository personaRepository;
     private final ObligacionRepository obligacionRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final MovimientoRepository movimientoRepository;
 
     @Override
     @Transactional
@@ -69,6 +70,14 @@ public class PagoService implements IPagoService {
                 .total(pagoDTO.getMontoAPagar())
                 .build();
         pagoRepository.save(pago);
+
+        Movimiento movimiento = new Movimiento();
+        movimiento.setCategoriaMovimiento(CategoriaMovimiento.ADMINISTRACION_CUOTAS);
+        movimiento.setTipoMovimiento(TipoMovimiento.ENTRADA);
+        movimiento.setMonto(pagoDTO.getMontoAPagar());
+        movimiento.setFechaMovimiento(LocalDate.now());
+        movimiento.setDescripcion("Pago de administracion");
+        movimientoRepository.save(movimiento);
         pagoDetalleRepository.save(PagoDetalle.builder()
                 .montoPagado(pagoDTO.getMontoAPagar())
                 .obligacion(obligacion)
