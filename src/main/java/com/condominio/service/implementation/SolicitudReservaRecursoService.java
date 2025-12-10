@@ -213,7 +213,7 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         List<SolicitudReservaRecurso> reservasCasa = solicitudReservaRecursoRepository.findAllByCasa_Id(idCasa);
         List<SolicitudReservaDTO> reservasDTO = new ArrayList<>();
         if(reservasCasa.isEmpty()) {
-            throw new ApiException("No se encontró ninguna reserva.", HttpStatus.NOT_FOUND);
+            throw new ApiException("No se encontró ninguna reserva.", HttpStatus.OK);
         }else {
             for (SolicitudReservaRecurso reserva : reservasCasa) {
                 SolicitudReservaDTO solicitudReservaDTO = SolicitudReservaDTO.builder()
