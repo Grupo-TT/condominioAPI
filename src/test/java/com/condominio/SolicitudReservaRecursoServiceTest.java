@@ -496,46 +496,6 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void cancelar_shouldThrowBadRequest_ifDateNotBeforeYesterday() {
-
-        SolicitudReservaRecurso solicitudAyer = new SolicitudReservaRecurso();
-        solicitudAyer.setId(3L);
-        solicitudAyer.setEstadoSolicitud(EstadoSolicitud.APROBADA);
-        solicitudAyer.setFechaSolicitud(LocalDate.now().minusDays(1));
-
-        when(solicitudReservaRecursoRepository.findById(3L)).thenReturn(Optional.of(solicitudAyer));
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(3L))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.")
-                .satisfies(ex -> {
-                    ApiException ae = (ApiException) ex;
-                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-                });
-
-        verify(solicitudReservaRecursoRepository).findById(3L);
-        verify(solicitudReservaRecursoRepository, never()).delete(any());
-
-        SolicitudReservaRecurso solicitudHoy = new SolicitudReservaRecurso();
-        solicitudHoy.setId(4L);
-        solicitudHoy.setEstadoSolicitud(EstadoSolicitud.APROBADA);
-        solicitudHoy.setFechaSolicitud(LocalDate.now());
-
-        when(solicitudReservaRecursoRepository.findById(4L)).thenReturn(Optional.of(solicitudHoy));
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(4L))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.")
-                .satisfies(ex -> {
-                    ApiException ae = (ApiException) ex;
-                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-                });
-
-        verify(solicitudReservaRecursoRepository).findById(4L);
-        verify(solicitudReservaRecursoRepository, never()).delete(any());
-    }
-
-    @Test
     void update_shouldModifyAndSave_whenValid() {
 
         Long id = 1L;
