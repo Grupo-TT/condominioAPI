@@ -6,6 +6,7 @@ import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.DashboardPropiService;
 import com.condominio.util.exception.ApiException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 
 import java.time.LocalDate;
@@ -22,8 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class DashboardPropiServiceTest {
@@ -49,8 +50,15 @@ public class DashboardPropiServiceTest {
     private Persona persona;
     private Casa casa;
 
+    @BeforeAll
+    static void beforeAll() {
+        // Hacemos que el SecurityContext sea heredable por hilos hijos (útil en CI)
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+    }
+
     @BeforeEach
     void setup() {
+        // datos base
         casa = Casa.builder()
                 .id(11L)
                 .numeroCasa(101)
@@ -65,13 +73,18 @@ public class DashboardPropiServiceTest {
         persona.setPrimerApellido("Perez");
         persona.setUser(user);
         persona.setCasa(casa);
+
+        // establecer autenticación por defecto para cada test
+        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
     }
 
     @AfterEach
     void tearDown() {
+        // limpiar contexto para no contaminar otros tests
         TestSecurityUtil.clearAuth();
+        // resetear mocks (opcional, MockitoExtension normalmente lo maneja)
+        clearInvocations(personaRepository, miembroRepository, mascotaRepository, obligacionRepository, pagoDetalleRepository, solicitudRepository, modelMapper);
     }
-
 
     // ---------- getPropiBasicInfo tests ----------
 
@@ -82,9 +95,6 @@ public class DashboardPropiServiceTest {
         when(personaRepository.findArrendatarioByCasaId(casa.getId())).thenReturn(Optional.empty());
         when(miembroRepository.countByCasaId(casa.getId())).thenReturn(3);
         when(mascotaRepository.countByCasaId(casa.getId())).thenReturn(2);
-
-        // Simular principal en SecurityContextHolder
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 
         // act
         SuccessResult<InfoCasaPropiDTO> result = service.getPropiBasicInfo();
@@ -113,8 +123,6 @@ public class DashboardPropiServiceTest {
         when(miembroRepository.countByCasaId(casa.getId())).thenReturn(1);
         when(mascotaRepository.countByCasaId(casa.getId())).thenReturn(0);
 
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
-
         // act
         SuccessResult<InfoCasaPropiDTO> result = service.getPropiBasicInfo();
 
@@ -127,7 +135,6 @@ public class DashboardPropiServiceTest {
     void getPropiBasicInfo_noPersona_throws() {
         // arrange
         when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.empty());
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 
         // act & assert
         ApiException ex = assertThrows(ApiException.class, () -> service.getPropiBasicInfo());
@@ -139,7 +146,6 @@ public class DashboardPropiServiceTest {
         // persona sin casa
         persona.setCasa(null);
         when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.of(persona));
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 
         ApiException ex = assertThrows(ApiException.class, () -> service.getPropiBasicInfo());
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -151,27 +157,26 @@ public class DashboardPropiServiceTest {
     void getAccountStatus_withLastPayment() {
         // arrange
         when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.of(persona));
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 
         // obligations: one with pending value 200_000
         Obligacion o1 = Obligacion.builder()
                 .id(5L)
-                .monto(300000)
-                .valorPendiente(200000)
+                .monto(300_000)
+                .valorPendiente(200_000)
                 .motivo("Administración Enero")
                 .build();
         when(obligacionRepository.findByCasaId(casa.getId())).thenReturn(List.of(o1));
 
-        // pago detalle and pago
+        // pago detalle and pago (pago parcial: 200k < 300k)
         Pago pago = Pago.builder()
                 .id(10L)
                 .fechaPago(LocalDate.of(2024, 2, 15))
-                .total(200000)
+                .total(200_000)
                 .build();
 
         PagoDetalle pd = PagoDetalle.builder()
                 .id(20L)
-                .montoPagado(200000)
+                .montoPagado(200_000)
                 .pago(pago)
                 .obligacion(o1)
                 .build();
@@ -187,15 +192,16 @@ public class DashboardPropiServiceTest {
         assertEquals("Estado de la cuenta obtenido exitosamente", result.message());
         AccountStatusDTO dto = result.data();
         assertNotNull(dto);
-        assertEquals(200000, dto.getSaldoPendiente());
+        assertEquals(200_000, dto.getSaldoPendiente());
         assertEquals(EstadoFinancieroCasa.EN_MORA, dto.getEstadoCasa());
 
         UltimoPagoDTO ultimo = dto.getUltimoPago();
         assertNotNull(ultimo);
         assertEquals(LocalDate.of(2024, 2, 15), ultimo.getFecha());
         assertEquals("Administración Enero", ultimo.getConcepto());
-        assertEquals(200000, ultimo.getValor());
-        assertFalse(ultimo.isFueAbonoCompleto()); // 200k >= 300k? actually false; adapt depending on logic
+        assertEquals(200_000, ultimo.getValor());
+        // Pago parcial -> no fue pago completo
+        assertFalse(ultimo.isFueAbonoCompleto());
 
         verify(obligacionRepository).findByCasaId(casa.getId());
         verify(pagoDetalleRepository).findTopByObligacionCasaIdOrderByPagoFechaPagoDesc(casa.getId());
@@ -205,8 +211,6 @@ public class DashboardPropiServiceTest {
     void getAccountStatus_withoutLastPayment() {
         // arrange
         when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.of(persona));
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
-
         when(obligacionRepository.findByCasaId(casa.getId())).thenReturn(List.of()); // sin obligaciones
         when(pagoDetalleRepository.findTopByObligacionCasaIdOrderByPagoFechaPagoDesc(casa.getId()))
                 .thenReturn(Optional.empty());
@@ -230,7 +234,6 @@ public class DashboardPropiServiceTest {
     void getSolicitudesPropietario_returnsMappedList() {
         // arrange
         when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.of(persona));
-        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 
         SolicitudReservaRecurso s1 = SolicitudReservaRecurso.builder()
                 .id(100L)
@@ -260,56 +263,40 @@ public class DashboardPropiServiceTest {
         List<SolicitudPropiDTO> lista = result.data();
         assertNotNull(lista);
         assertEquals(1, lista.size());
-        assertEquals(100L, lista.getFirst().getId());
+        assertEquals(100L, lista.get(0).getId());
 
         verify(solicitudRepository).findAllByCasa_Id(casa.getId());
         verify(modelMapper).map(s1, SolicitudPropiDTO.class);
     }
-//
+
 //    @Test
 //    void getSolicitudesPropietario_noCasa_throws() {
 //        persona.setCasa(null);
 //        when(personaRepository.findByUserEmail("propietario@example.com")).thenReturn(Optional.of(persona));
-//        TestSecurityUtil.setAuthenticationWithUsername("propietario@example.com");
 //
-//        ApiException ex = assertThrows(ApiException.class, () -> service.getSolicitudesPropietario());
+//        //ApiException ex = assertThrows(ApiException.class, () -> service.getSolicitudesPropietario());
 //        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
 //    }
 
     // ---------- helper for setting SecurityContext principal ----------
     /**
      * Simple util to set Authentication principal for tests.
-     * Uses a lightweight anonymous Authentication implementation.
+     * Uses UsernamePasswordAuthenticationToken with String principal (email).
      */
-    // dentro de DashboardPropiServiceTest (puedes dejarla estática como helper)
-    // Dentro de tu clase de test (DashboardPropiServiceTest)
     static class TestSecurityUtil {
-        /**
-         * Coloca en el SecurityContext una Authentication construida con
-         * UsernamePasswordAuthenticationToken cuyo principal es el username (String).
-         * Esto produce isAuthenticated() = true y getPrincipal() = String -> compatible
-         * con getEmailFromTokenOrPrincipal().
-         */
         static void setAuthenticationWithUsername(String username) {
-            // authorities vacías -> no importa para estos tests
             var authorities = java.util.List.<org.springframework.security.core.GrantedAuthority>of();
-
             org.springframework.security.core.Authentication auth =
                     new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                            username, // principal -> String (email)
-                            null,     // credentials
+                            username,
+                            null,
                             authorities
                     );
-
-            // UsernamePasswordAuthenticationToken(...) con una lista de authorities no nula
-            // ya se considera autenticado (isAuthenticated == true).
-            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         static void clearAuth() {
-            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            SecurityContextHolder.clearContext();
         }
     }
-
-
 }
