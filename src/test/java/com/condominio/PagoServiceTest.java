@@ -75,6 +75,7 @@ class PagoServiceTest {
         pagoDTO = new PagoDTO();
         pagoDTO.setIdObligacion(1L);
         pagoDTO.setMontoAPagar(250000); // igual al monto
+        pagoDTO.setTipoObligacion(TipoObligacion.ADMINISTRACION);
     }
 
     //Caso 1: Monto igual a la deuda — pago exitoso
@@ -115,6 +116,7 @@ class PagoServiceTest {
     void registrarPago_montoMenor_registraPagoParcial() {
         // Arrange
         pagoDTO.setMontoAPagar(100000); // menor que la deuda total (250000)
+        pagoDTO.setTipoObligacion(TipoObligacion.ADMINISTRACION); // menor que la deuda total (250000)
         when(obligacionRepository.findById(1L)).thenReturn(Optional.of(obligacion));
         when(personaRepository.findPropietarioByCasaId(1L)).thenReturn(Optional.of(propietario));
 

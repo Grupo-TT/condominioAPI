@@ -72,11 +72,16 @@ public class PagoService implements IPagoService {
         pagoRepository.save(pago);
 
         Movimiento movimiento = new Movimiento();
-        movimiento.setCategoriaMovimiento(CategoriaMovimiento.ADMINISTRACION_CUOTAS);
+        if(pagoDTO.getTipoObligacion().equals(TipoObligacion.MULTA)){
+            movimiento.setCategoriaMovimiento(CategoriaMovimiento.MULTAS);
+            movimiento.setDescripcion("Pago de multa");
+        }else{
+            movimiento.setCategoriaMovimiento(CategoriaMovimiento.ADMINISTRACION_CUOTAS);
+            movimiento.setDescripcion("Pago de administracion");
+        }
         movimiento.setTipoMovimiento(TipoMovimiento.ENTRADA);
         movimiento.setMonto(pagoDTO.getMontoAPagar());
         movimiento.setFechaMovimiento(LocalDate.now());
-        movimiento.setDescripcion("Pago de administracion");
         movimientoRepository.save(movimiento);
         pagoDetalleRepository.save(PagoDetalle.builder()
                 .montoPagado(pagoDTO.getMontoAPagar())
