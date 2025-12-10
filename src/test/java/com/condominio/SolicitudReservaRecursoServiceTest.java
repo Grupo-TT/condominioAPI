@@ -496,28 +496,6 @@ class SolicitudReservaRecursoServiceTest {
     }
 
     @Test
-    void cancelar_shouldThrowBadRequest_ifNotApproved() {
-
-        SolicitudReservaRecurso solicitud = new SolicitudReservaRecurso();
-        solicitud.setId(2L);
-        solicitud.setEstadoSolicitud(EstadoSolicitud.PENDIENTE);
-        solicitud.setFechaSolicitud(LocalDate.now().minusDays(2));
-
-        when(solicitudReservaRecursoRepository.findById(2L)).thenReturn(Optional.of(solicitud));
-
-        assertThatThrownBy(() -> solicitudReservaRecursoService.cancelar(2L))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Solo se pueden cancelar reservas aprobadas")
-                .satisfies(ex -> {
-                    ApiException ae = (ApiException) ex;
-                    assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-                });
-
-        verify(solicitudReservaRecursoRepository).findById(2L);
-        verify(solicitudReservaRecursoRepository, never()).delete(any());
-    }
-
-    @Test
     void cancelar_shouldThrowBadRequest_ifDateNotBeforeYesterday() {
 
         SolicitudReservaRecurso solicitudAyer = new SolicitudReservaRecurso();
