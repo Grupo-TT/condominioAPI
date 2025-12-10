@@ -5,6 +5,7 @@ import com.condominio.persistence.model.*;
 import com.condominio.persistence.repository.*;
 import com.condominio.service.implementation.DashboardPropiService;
 import com.condominio.util.exception.ApiException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.GrantedAuthority;
+
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -65,6 +66,12 @@ public class DashboardPropiServiceTest {
         persona.setUser(user);
         persona.setCasa(casa);
     }
+
+    @AfterEach
+    void tearDown() {
+        TestSecurityUtil.clearAuth();
+    }
+
 
     // ---------- getPropiBasicInfo tests ----------
 
@@ -188,7 +195,7 @@ public class DashboardPropiServiceTest {
         assertEquals(LocalDate.of(2024, 2, 15), ultimo.getFecha());
         assertEquals("Administración Enero", ultimo.getConcepto());
         assertEquals(200000, ultimo.getValor());
-        //assertTrue(ultimo.isFueAbonoCompleto()); // 200k >= 300k? actually false; adapt depending on logic
+        assertFalse(ultimo.isFueAbonoCompleto()); // 200k >= 300k? actually false; adapt depending on logic
 
         verify(obligacionRepository).findByCasaId(casa.getId());
         verify(pagoDetalleRepository).findTopByObligacionCasaIdOrderByPagoFechaPagoDesc(casa.getId());
@@ -253,7 +260,7 @@ public class DashboardPropiServiceTest {
         List<SolicitudPropiDTO> lista = result.data();
         assertNotNull(lista);
         assertEquals(1, lista.size());
-        assertEquals(100L, lista.get(0).getId());
+        assertEquals(100L, lista.getFirst().getId());
 
         verify(solicitudRepository).findAllByCasa_Id(casa.getId());
         verify(modelMapper).map(s1, SolicitudPropiDTO.class);
@@ -274,19 +281,35 @@ public class DashboardPropiServiceTest {
      * Simple util to set Authentication principal for tests.
      * Uses a lightweight anonymous Authentication implementation.
      */
+    // dentro de DashboardPropiServiceTest (puedes dejarla estática como helper)
+    // Dentro de tu clase de test (DashboardPropiServiceTest)
     static class TestSecurityUtil {
+        /**
+         * Coloca en el SecurityContext una Authentication construida con
+         * UsernamePasswordAuthenticationToken cuyo principal es el username (String).
+         * Esto produce isAuthenticated() = true y getPrincipal() = String -> compatible
+         * con getEmailFromTokenOrPrincipal().
+         */
         static void setAuthenticationWithUsername(String username) {
-            org.springframework.security.core.Authentication auth = new org.springframework.security.core.Authentication() {
-                @Override public List<GrantedAuthority> getAuthorities() { return List.of(); }
-                @Override public Object getCredentials() { return null; }
-                @Override public Object getDetails() { return null; }
-                @Override public Object getPrincipal() { return username; } // return String principal
-                @Override public boolean isAuthenticated() { return true; }
-                @Override public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {}
-                @Override public String getName() { return username; }
-            };
-            org.springframework.security.core.context.SecurityContext securityContext = org.springframework.security.core.context.SecurityContextHolder.getContext();
-            securityContext.setAuthentication(auth);
+            // authorities vacías -> no importa para estos tests
+            var authorities = java.util.List.<org.springframework.security.core.GrantedAuthority>of();
+
+            org.springframework.security.core.Authentication auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                            username, // principal -> String (email)
+                            null,     // credentials
+                            authorities
+                    );
+
+            // UsernamePasswordAuthenticationToken(...) con una lista de authorities no nula
+            // ya se considera autenticado (isAuthenticated == true).
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        static void clearAuth() {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
         }
     }
+
+
 }
