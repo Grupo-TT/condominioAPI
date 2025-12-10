@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TasaDeInteresRepository  extends CrudRepository<TasaDeInteres,Long> {
-
 }

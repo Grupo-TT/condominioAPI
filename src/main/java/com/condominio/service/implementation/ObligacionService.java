@@ -77,7 +77,7 @@ public class ObligacionService implements IObligacionService {
                 .toList();
 
         Long saldoPendienteTotal = obligacionesPendientes.stream()
-                .mapToLong(Obligacion::getMonto)
+                .mapToLong(Obligacion::getValorPendiente)
                 .sum();
 
         EstadoCuentaDTO dto = EstadoCuentaDTO.builder()
@@ -296,7 +296,7 @@ public class ObligacionService implements IObligacionService {
 
         Long saldoPendienteTotal = todasObligaciones.stream()
                 .filter(o -> o.getEstadoPago() != EstadoPago.CONDONADO)
-                .mapToLong(Obligacion::getMonto)
+                .mapToLong(Obligacion::getValorPendiente)
                 .sum();
 
         EstadoCuentaDTO dto = EstadoCuentaDTO.builder()
