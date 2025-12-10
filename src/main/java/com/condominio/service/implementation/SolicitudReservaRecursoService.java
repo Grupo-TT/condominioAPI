@@ -107,10 +107,6 @@ public class SolicitudReservaRecursoService implements ISolicitudReservaRecursoS
         SolicitudReservaRecurso solicitud = solicitudReservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SOLICITUD_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if(!solicitud.getFechaSolicitud().isBefore(LocalDate.now().minusDays(1))) {
-            throw new ApiException("Solo se permiten eliminar solicitudes anteriores a hoy y que no estén aprobadas.", HttpStatus.BAD_REQUEST);
-        }
-
         solicitudReservaRecursoRepository.delete(solicitud);
         return new SuccessResult<>("Reserva cancelada exitosamente", modelMapper.map(solicitud, SolicitudReservaRecursoDTO.class));
     }
