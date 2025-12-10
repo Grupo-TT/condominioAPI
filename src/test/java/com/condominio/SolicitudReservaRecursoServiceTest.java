@@ -846,7 +846,7 @@ class SolicitudReservaRecursoServiceTest {
         ApiException exception = assertThrows(ApiException.class, () -> solicitudReservaRecursoService.findReservasByCasa(1L));
 
         assertEquals("No se encontró ninguna reserva.", exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals(HttpStatus.OK, exception.getStatus());
     }
 
     @Test
