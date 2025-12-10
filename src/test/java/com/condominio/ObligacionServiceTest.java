@@ -120,12 +120,14 @@ class ObligacionServiceTest {
         Obligacion obligacion1 = new Obligacion();
         obligacion1.setId(1L);
         obligacion1.setMonto(500);
+        obligacion1.setValorPendiente(500);
         obligacion1.setEstadoPago(EstadoPago.PENDIENTE);
         obligacion1.setFechaGenerada(LocalDate.now());
 
         Obligacion obligacion2 = new Obligacion();
         obligacion2.setId(2L);
         obligacion2.setMonto(300);
+        obligacion2.setValorPendiente(300);
         obligacion2.setEstadoPago(EstadoPago.CONDONADO);
 
         when(obligacionRepository.findByCasaId(1L))
