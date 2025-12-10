@@ -56,7 +56,7 @@ class CorreoEnviadoServiceTest {
         ApiException ex = assertThrows(ApiException.class, () -> service.findAll());
 
         assertEquals("No hay correos enviados", ex.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        assertEquals(HttpStatus.OK, ex.getStatus());
     }
     @Test
     void delete_shouldRemoveRecord_whenIdExists() {

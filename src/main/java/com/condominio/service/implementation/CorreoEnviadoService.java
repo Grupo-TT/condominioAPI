@@ -19,7 +19,7 @@ public class CorreoEnviadoService {
     public List<CorreoEnviado> findAll() {
         List<CorreoEnviado> lista = correoEnviadoRepository.findAll();
         if (lista.isEmpty()) {
-            throw new ApiException("No hay correos enviados", HttpStatus.NOT_FOUND);
+            throw new ApiException("No hay correos enviados", HttpStatus.OK);
         }
         return lista;
     }
