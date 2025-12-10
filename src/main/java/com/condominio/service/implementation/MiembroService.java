@@ -75,12 +75,12 @@ public class MiembroService implements IMiembroService {
                 ));
         if(miembroRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
             throw new ApiException("El numero  de documento " +
-                    "ya se  encuentra registrado", HttpStatus.OK);
+                    "ya se  encuentra registrado", HttpStatus.BAD_REQUEST);
 
         }
         if(personaRepository.existsByNumeroDocumento(miembroRegistroDTO.getNumeroDocumento())) {
             throw new ApiException("El numero  de documento " +
-                    "ya se  encuentra registrado", HttpStatus.OK);
+                    "ya se  encuentra registrado", HttpStatus.BAD_REQUEST);
         }
         Miembro newMiembro= Miembro.builder()
                 .nombre(miembroRegistroDTO.getNombre())
